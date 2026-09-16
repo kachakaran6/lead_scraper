@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "./dist",
+    "noImplicitAny": false,
+    "declaration": false,
+    "sourceMap": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@ultimate-leads/database": ["packages/database/src"],
+      "@ultimate-leads/database/*": ["packages/database/src/*"],
+      "@ultimate-leads/shared": ["packages/shared/src"],
+      "@ultimate-leads/shared/*": ["packages/shared/src/*"],
+      "@ultimate-leads/config": ["packages/config/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}

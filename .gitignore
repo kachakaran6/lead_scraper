@@ -1,2 +1,57 @@
-.agent
+# Node
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# Misc
+*.tgz
+*.tar.gz
+
+# Prisma - keep schema in repo, exclude migrations from accidental commits
+# (migrations are committed separately when created)
+prisma/migrations/
+
+# Docker
+docker-compose.override.yml
+
+# OS temp
+tmp/
 First.md
+.agent/
+.agents/
+
+# Build artifacts
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+
+# Lock files and local npm configs
+package-lock.json
+*-lock.json
+pnpm-lock.yaml
+.npmrc

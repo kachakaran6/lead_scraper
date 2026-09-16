@@ -1,0 +1,19 @@
+# Prometheus configuration for Ultimate Lead Engine
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "ultimate-leads-api"
+    static_configs:
+      - targets: ["api:4000"]
+    metrics_path: /metrics
+
+  - job_name: "ultimate-leads-worker"
+    static_configs:
+      - targets: ["worker:4001"]
+    metrics_path: /metrics
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["prometheus:9090"]

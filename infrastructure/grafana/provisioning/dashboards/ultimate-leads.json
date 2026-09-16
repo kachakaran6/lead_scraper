@@ -1,0 +1,26 @@
+# Grafana dashboard for Ultimate Lead Engine
+{
+  "title": "Ultimate Leads Overview",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total Businesses",
+      "targets": [
+        {
+          "expr": "ultimate_leads_businesses_total",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Jobs Completed",
+      "targets": [
+        {
+          "expr": "ultimate_leads_jobs_completed_total",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
