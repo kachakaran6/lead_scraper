@@ -96,7 +96,17 @@ export class BusinessesService {
     const { skip, take, page, limit } = parsePagination(query);
     const where: Prisma.BusinessWhereInput = {};
 
-    if (query.search) where.name = { contains: query.search as string, mode: "insensitive" };
+    if (query.search) {
+      const s = query.search as string;
+      where.OR = [
+        { name: { contains: s, mode: "insensitive" } },
+        { category: { contains: s, mode: "insensitive" } },
+        { city: { contains: s, mode: "insensitive" } },
+        { state: { contains: s, mode: "insensitive" } },
+        { country: { contains: s, mode: "insensitive" } },
+        { phone: { contains: s, mode: "insensitive" } },
+      ];
+    }
     if (query.city) where.city = { contains: query.city as string, mode: "insensitive" };
     if (query.state) where.state = { contains: query.state as string, mode: "insensitive" };
     if (query.country) where.country = { contains: query.country as string, mode: "insensitive" };

@@ -1,8 +1,7 @@
-import { Body, Controller, Post, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
+import { Body, Controller, Post, Get, Query } from "@nestjs/common";
 import { DiscoveryService } from "./discovery.service";
 
-@Controller("discover")
+@Controller(["discovery", "discover"])
 export class DiscoveryController {
   private readonly discoveryService: DiscoveryService;
   constructor(discoveryService?: DiscoveryService) {
@@ -17,5 +16,10 @@ export class DiscoveryController {
   @Post("search")
   async search(@Body() dto: Record<string, unknown>) {
     return this.discoveryService.search(dto as any);
+  }
+
+  @Get("search")
+  async searchGet(@Query() query: Record<string, unknown>) {
+    return this.discoveryService.search(query as any);
   }
 }

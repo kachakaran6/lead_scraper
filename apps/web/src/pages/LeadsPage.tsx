@@ -13,6 +13,8 @@ import {
   Flame,
   CheckCircle2,
   MessageSquare,
+  MapPin,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -27,24 +29,37 @@ export const LeadsPage: React.FC = () => {
   const [leads, setLeads] = useState<Business[]>([]);
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [cityFilter, setCityFilter] = useState("ALL");
   const [websiteFilter, setWebsiteFilter] = useState("ALL");
   const [gradeFilter, setGradeFilter] = useState("ALL");
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      const params: any = { limit: 50 };
-      if (search) params.search = search;
+      const params: any = { limit: 100 };
+      if (search.trim()) params.search = search.trim();
       if (statusFilter !== "ALL") params.status = statusFilter;
+      if (cityFilter !== "ALL") params.city = cityFilter;
       if (gradeFilter !== "ALL") params.grade = gradeFilter;
       if (websiteFilter === "NO_WEBSITE") params.hasWebsite = false;
       if (websiteFilter === "HAS_WEBSITE") params.hasWebsite = true;
 
-      const data = await leadEngineApi.getLeads(params);
+      const [data, statsData] = await Promise.all([
+        leadEngineApi.getLeads(params),
+        leadEngineApi.getDashboardKpis(),
+      ]);
+
       setLeads(data?.items || []);
       setTotalCount(data?.meta?.total || data?.items?.length || 0);
+
+      // Extract distinct cities from stats
+      const cities = statsData?.charts?.byCity?.map((c: any) => c.city).filter(Boolean) || [];
+      if (cities.length > 0) {
+        setAvailableCities(Array.from(new Set(cities)));
+      }
     } catch (err) {
       console.error("Failed to fetch leads", err);
     } finally {
@@ -54,7 +69,7 @@ export const LeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [search, statusFilter, websiteFilter, gradeFilter]);
+  }, [search, statusFilter, cityFilter, websiteFilter, gradeFilter]);
 
   const handleExport = (format: "csv" | "json") => {
     const dataStr =
@@ -62,11 +77,11 @@ export const LeadsPage: React.FC = () => {
         ? "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leads, null, 2))
         : "data:text/csv;charset=utf-8," +
           encodeURIComponent(
-            "Name,Category,City,Phone,Website,LeadScore,Grade,Status\n" +
+            "Name,Category,City,State,Phone,Website,LeadScore,Grade,Status\n" +
               leads
                 .map(
                   (l) =>
-                    `"${l.name}","${l.category || ""}","${l.city || ""}","${l.phone || ""}","${
+                    `"${l.name}","${l.category || ""}","${l.city || ""}","${l.state || ""}","${l.phone || ""}","${
                       l.website || "NO_WEBSITE"
                     }",${l.leadScore},"${l.leadGrade}","${l.status}"`
                 )
@@ -86,13 +101,18 @@ export const LeadsPage: React.FC = () => {
       {/* Page Heading */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Leads Database</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Leads Database</h1>
+            <Badge variant="info" className="font-mono font-bold text-xs">
+              {totalCount} Total Leads in CRM
+            </Badge>
+          </div>
           <p className="text-sm text-slate-400 mt-1">
-            Enriched business profiles, contact records, website audits, and conversion scores.
+            Search and filter businesses across any city, phone, category, or website status.
           </p>
         </div>
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -113,8 +133,9 @@ export const LeadsPage: React.FC = () => {
             <span>Export JSON</span>
           </Button>
           <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs shadow-lg shadow-indigo-600/25">
-              + Discover New
+            <Button variant="primary" size="sm" className="text-xs shadow-lg shadow-indigo-600/25 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Scrape New City</span>
             </Button>
           </Link>
         </div>
@@ -128,7 +149,7 @@ export const LeadsPage: React.FC = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Filter by name, phone, category, or city..."
+                placeholder="Search across city, state, niche, business name, or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-all"
@@ -136,19 +157,33 @@ export const LeadsPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              {/* City Filter */}
+              <select
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="ALL">All Cities ({availableCities.length || "Worldwide"})</option>
+                {availableCities.map((c) => (
+                  <option key={c} value={c}>
+                    📍 {c}
+                  </option>
+                ))}
+              </select>
+
               {/* Status Select */}
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
               >
-                <option value="ALL">All Statuses</option>
-                <option value="NEW">New</option>
-                <option value="QUALIFIED">Qualified</option>
-                <option value="CONTACTED">Contacted</option>
-                <option value="MEETING">Meeting</option>
-                <option value="PROPOSAL">Proposal</option>
-                <option value="WON">Won</option>
+                <option value="ALL">All Stages</option>
+                <option value="NEW">NEW</option>
+                <option value="QUALIFIED">QUALIFIED</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="MEETING">MEETING</option>
+                <option value="PROPOSAL">PROPOSAL</option>
+                <option value="WON">WON</option>
               </select>
 
               {/* Website Filter */}
@@ -158,7 +193,7 @@ export const LeadsPage: React.FC = () => {
                 className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
               >
                 <option value="ALL">All Websites</option>
-                <option value="NO_WEBSITE">🚫 No Website Only (High ROI)</option>
+                <option value="NO_WEBSITE">🚫 No Website Only (Goldmine)</option>
                 <option value="HAS_WEBSITE">🌐 Has Website (Redesign/SEO)</option>
               </select>
 
@@ -185,7 +220,7 @@ export const LeadsPage: React.FC = () => {
             <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
               <tr>
                 <th className="py-3.5 px-4 font-semibold">Business / Company</th>
-                <th className="py-3.5 px-4 font-semibold">Location</th>
+                <th className="py-3.5 px-4 font-semibold">City & Region</th>
                 <th className="py-3.5 px-4 font-semibold">Contact Intel</th>
                 <th className="py-3.5 px-4 font-semibold">Web Presence</th>
                 <th className="py-3.5 px-4 font-semibold">Lead Score</th>
@@ -208,7 +243,7 @@ export const LeadsPage: React.FC = () => {
 
                   {/* Location */}
                   <td className="py-4 px-4 text-xs">
-                    <div className="text-slate-200">{lead.city || "Rajkot"}</div>
+                    <div className="text-slate-200 font-semibold">{lead.city || "Local"}</div>
                     <div className="text-slate-400">{lead.state || lead.country || "India"}</div>
                   </td>
 
@@ -217,13 +252,13 @@ export const LeadsPage: React.FC = () => {
                     <div className="space-y-1">
                       {lead.phone && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <Phone className="w-3 h-3 text-slate-400" />
+                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
                           <span>{lead.phone}</span>
                         </div>
                       )}
                       {lead.emails && lead.emails.length > 0 && (
                         <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                          <Mail className="w-3 h-3 text-slate-400" />
+                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
                           <span className="truncate max-w-[140px]">{lead.emails[0].value}</span>
                         </div>
                       )}
@@ -291,7 +326,16 @@ export const LeadsPage: React.FC = () => {
             <div className="py-12 text-center text-slate-400">
               <Building2 className="w-10 h-10 mx-auto text-slate-400 mb-2" />
               <p className="text-base font-semibold text-slate-300">No leads match your current filter</p>
-              <p className="text-xs text-slate-400 mt-1">Try resetting search or discover new businesses.</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Try resetting search or click below to discover businesses in any city or state.
+              </p>
+              <div className="mt-4">
+                <Link to="/discover">
+                  <Button variant="primary" size="sm" className="text-xs">
+                    Go to Universal Discovery
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
         </div>
