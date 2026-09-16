@@ -2,23 +2,20 @@ import React from "react";
 import { cn } from "../../lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  glass?: boolean;
   hoverEffect?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   className,
-  glass = true,
   hoverEffect = false,
   ...props
 }) => {
   return (
     <div
       className={cn(
-        "rounded-2xl transition-all duration-300 overflow-hidden",
-        glass ? "glass-panel" : "bg-slate-900 border border-slate-800",
-        hoverEffect && "glass-panel-hover",
+        "rounded-lg bg-[#131315] border border-[#232326] transition-colors duration-150",
+        hoverEffect && "hover:border-[#2E2E32] hover:bg-[#18181B]",
         className
       )}
       {...props}
@@ -34,7 +31,7 @@ export const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   return (
-    <div className={cn("p-6 pb-3", className)} {...props}>
+    <div className={cn("p-5 pb-3", className)} {...props}>
       {children}
     </div>
   );
@@ -46,7 +43,7 @@ export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
   ...props
 }) => {
   return (
-    <h3 className={cn("text-lg font-semibold text-slate-100 tracking-tight", className)} {...props}>
+    <h3 className={cn("text-[15px] font-semibold text-[#EDEDEF] tracking-tight", className)} {...props}>
       {children}
     </h3>
   );
@@ -58,7 +55,7 @@ export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement
   ...props
 }) => {
   return (
-    <p className={cn("text-sm text-slate-400 mt-1", className)} {...props}>
+    <p className={cn("text-[13px] text-[#9B9BA1] mt-0.5", className)} {...props}>
       {children}
     </p>
   );
@@ -70,7 +67,7 @@ export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   return (
-    <div className={cn("p-6 pt-0", className)} {...props}>
+    <div className={cn("p-5 pt-0", className)} {...props}>
       {children}
     </div>
   );
@@ -82,7 +79,7 @@ export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   return (
-    <div className={cn("flex items-center p-6 pt-0", className)} {...props}>
+    <div className={cn("flex items-center p-5 pt-0", className)} {...props}>
       {children}
     </div>
   );

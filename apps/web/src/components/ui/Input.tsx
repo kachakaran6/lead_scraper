@@ -11,31 +11,31 @@ export interface InputProps
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, icon, ...props }, ref) => {
     return (
-      <div className="w-full space-y-1.5">
+      <div className="w-full space-y-1">
         {label && (
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <label className="block text-[12px] font-medium text-[#9B9BA1] tracking-[0.02em]">
             {label}
           </label>
         )}
         <div className="relative flex items-center">
           {icon && (
-            <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute left-3 flex items-center pointer-events-none text-[#6B6B70]">
               {icon}
             </div>
           )}
           <input
             type={type}
             className={cn(
-              "w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-inner",
-              icon ? "pl-10" : "",
-              error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : "",
+              "w-full rounded-md border border-[#2E2E32] bg-[#0A0A0B] px-3 py-1.5 text-[13px] text-[#EDEDEF] placeholder:text-[#6B6B70] focus:border-[#4C7CF0] focus:outline-none focus:ring-1 focus:ring-[#4C7CF0] transition-colors duration-150",
+              icon ? "pl-9" : "",
+              error ? "border-[#D14D4D] focus:border-[#D14D4D] focus:ring-[#D14D4D]" : "",
               className
             )}
             ref={ref}
             {...props}
           />
         </div>
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        {error && <p className="text-[12px] text-[#D14D4D] mt-0.5">{error}</p>}
       </div>
     );
   }

@@ -40,31 +40,31 @@ export const Modal: React.FC<ModalProps> = ({
     md: "max-w-md",
     lg: "max-w-lg",
     xl: "max-w-xl",
-    "2xl": "max-w-3xl",
+    "2xl": "max-w-2xl",
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity">
       <div
         className={cn(
-          "w-full rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl p-6 relative overflow-hidden text-slate-100 animate-in zoom-in-95 duration-200",
+          "w-full rounded-lg bg-[#131315] border border-[#2E2E32] shadow-dropdown p-5 relative overflow-hidden text-[#EDEDEF]",
           maxWidthClass
         )}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3.5 border-b border-[#232326]">
           <div>
-            <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
-            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+            <h3 className="text-[15px] font-semibold text-[#EDEDEF] tracking-tight">{title}</h3>
+            {subtitle && <p className="text-[12px] text-[#9B9BA1] mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1 text-[#9B9BA1] hover:text-[#EDEDEF] rounded hover:bg-[#1B1B1E] transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="mt-4 max-h-[75vh] overflow-y-auto pr-1">{children}</div>
+        <div className="mt-4 max-h-[75vh] overflow-y-auto pr-0.5">{children}</div>
       </div>
     </div>
   );

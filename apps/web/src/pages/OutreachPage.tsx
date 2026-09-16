@@ -1,19 +1,12 @@
 import React, { useState } from "react";
 import {
-  Send,
-  Sparkles,
   Copy,
   Check,
-  FileText,
-  MessageSquare,
   Mail,
-  Zap,
-  CheckCircle2,
+  Info,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
-import { Badge } from "../components/ui/Badge";
 
 export const OutreachPage: React.FC = () => {
   const [businessName, setBusinessName] = useState("Shreeji Dental Clinic");
@@ -57,7 +50,7 @@ LeadEngine Technical Lead`,
     },
     whatsapp: {
       subject: `Automated WhatsApp Patient Consultation Flow for ${businessName}`,
-      body: `Hello Team ${businessName}! 👋 
+      body: `Hello Team ${businessName},
 
 Did you know that over 82% of local patients in ${city} prefer booking doctor appointments directly via WhatsApp rather than making a phone call during busy clinic hours?
 
@@ -81,125 +74,116 @@ Would you like to test our 1-minute live demo on your smartphone?`,
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">AI Outreach & Pitch Studio</h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" /> High-Conversion Templates
-          </span>
-        </div>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">AI Outreach & Pitch Studio</h1>
+        <p className="text-xs text-[#9B9BA1] mt-1">
           Generate bespoke, audit-backed cold emails and WhatsApp messages tailored to each lead's detected weaknesses.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Controls */}
-        <Card className="glass-panel border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-white">Target Lead Parameters</CardTitle>
-            <CardDescription className="text-xs text-slate-400">
-              Customize the dynamic pitch variables
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              label="Business Name"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="e.g. Shreeji Dental Clinic"
-            />
+        <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-[#EDEDEF]">Lead Parameters</h3>
+            <p className="text-xs text-[#9B9BA1] mt-0.5">
+              Customize dynamic pitch variables
+            </p>
+          </div>
 
-            <Input
-              label="City"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="e.g. Rajkot"
-            />
+          <Input
+            label="Business Name"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            placeholder="e.g. Shreeji Dental Clinic"
+          />
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Identified Angle
-              </label>
-              {[
-                { id: "no_website", label: "🚫 Missing Website (High ROI)", desc: "Pitch a complete modern web presence" },
-                { id: "redesign", label: "⚡ Speed & Redesign Audit", desc: "Focus on slow load time and poor mobile UX" },
-                { id: "whatsapp", label: "💬 WhatsApp Bot & CRM", desc: "Automate patient bookings on mobile" },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPitchType(p.id as any)}
-                  className={`w-full text-left p-3 rounded-xl border text-xs transition-all ${
-                    pitchType === p.id
-                      ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/10"
-                      : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <div className="font-bold text-slate-200">{p.label}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">{p.desc}</div>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          <Input
+            label="City"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="e.g. Rajkot"
+          />
+
+          <div className="space-y-2 pt-1">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B70]">
+              Identified Angle
+            </label>
+            {[
+              { id: "no_website", label: "Missing Website", desc: "Pitch a complete modern web presence" },
+              { id: "redesign", label: "Speed & Redesign Audit", desc: "Focus on slow load time and mobile UX" },
+              { id: "whatsapp", label: "WhatsApp Bot & CRM", desc: "Automate patient bookings on mobile" },
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPitchType(p.id as any)}
+                className={`w-full text-left p-3 rounded-md border text-xs transition-colors ${
+                  pitchType === p.id
+                    ? "bg-[#1B1B1E] border-[#4C7CF0] text-[#EDEDEF]"
+                    : "bg-[#0A0A0B] border-[#232326] text-[#9B9BA1] hover:border-[#2E2E32] hover:text-[#EDEDEF]"
+                }`}
+              >
+                <div className="font-medium text-[#EDEDEF]">{p.label}</div>
+                <div className="text-[11px] text-[#6B6B70] mt-0.5">{p.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Generated Pitch View */}
-        <Card className="glass-panel border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-indigo-400" />
-                  Generated Cold Pitch
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-400">
-                  Ready to copy and send via Gmail, Outlook, or LinkedIn
-                </CardDescription>
+        <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4 lg:col-span-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#9B9BA1]" />
+                <h3 className="text-sm font-semibold text-[#EDEDEF]">Generated Cold Pitch</h3>
               </div>
-
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  handleCopy(`${currentPitch.subject}\n\n${currentPitch.body}`, "full")
-                }
-                className="text-xs shadow-md shadow-indigo-600/25 flex items-center gap-1.5"
-              >
-                {copied === "full" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied === "full" ? "Copied All!" : "Copy Subject & Body"}</span>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Subject Line */}
-            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-xs">
-              <div>
-                <span className="text-slate-400 font-semibold mr-2 uppercase text-[10px]">Subject:</span>
-                <span className="text-white font-medium">{currentPitch.subject}</span>
-              </div>
-              <button
-                onClick={() => handleCopy(currentPitch.subject, "subj")}
-                className="text-slate-400 hover:text-white p-1"
-                title="Copy Subject"
-              >
-                {copied === "subj" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
+              <p className="text-xs text-[#9B9BA1] mt-0.5">
+                Ready to dispatch via Email, LinkedIn, or CRM outreach
+              </p>
             </div>
 
-            {/* Email Body */}
-            <div className="relative">
-              <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-sans whitespace-pre-wrap leading-relaxed">
-                {currentPitch.body}
-              </pre>
-            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                handleCopy(`${currentPitch.subject}\n\n${currentPitch.body}`, "full")
+              }
+              className="text-xs flex items-center gap-1.5"
+            >
+              {copied === "full" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied === "full" ? "Copied" : "Copy Subject & Body"}</span>
+            </Button>
+          </div>
 
-            <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/30 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>
-                Engineered with high-conversion agency copywriting: personalized compliment &rarr; specific problem &rarr; low friction call-to-action.
-              </span>
+          {/* Subject Line */}
+          <div className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex justify-between items-center text-xs">
+            <div className="truncate mr-3">
+              <span className="text-[#6B6B70] font-medium mr-2 uppercase text-[10px]">Subject:</span>
+              <span className="text-[#EDEDEF]">{currentPitch.subject}</span>
             </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={() => handleCopy(currentPitch.subject, "subj")}
+              className="text-[#9B9BA1] hover:text-[#EDEDEF] p-1 transition-colors shrink-0"
+              title="Copy Subject"
+            >
+              {copied === "subj" ? <Check className="w-3.5 h-3.5 text-[#34A874]" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Email Body */}
+          <div>
+            <pre className="p-4 rounded-md bg-[#0A0A0B] border border-[#232326] text-xs text-[#EDEDEF] font-mono whitespace-pre-wrap leading-relaxed">
+              {currentPitch.body}
+            </pre>
+          </div>
+
+          <div className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] text-xs text-[#9B9BA1] flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#6B6B70] shrink-0" />
+            <span>
+              Engineered with 3-part conversion structure: personalized compliment &rarr; specific weakness &rarr; low-friction CTA.
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

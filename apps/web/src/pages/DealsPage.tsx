@@ -1,16 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Kanban,
-  DollarSign,
   Building2,
   Plus,
-  ArrowRight,
-  CheckCircle2,
-  Calendar,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
@@ -60,6 +52,7 @@ export const DealsPage: React.FC = () => {
         stageId: defaultStage,
       });
       setIsNewDealOpen(false);
+      setNewDealTitle("");
       fetchData();
     } catch (err) {
       console.error("Failed to create deal", err);
@@ -81,12 +74,12 @@ export const DealsPage: React.FC = () => {
   const stagesToRender = stages.length > 0
     ? stages
     : [
-        { id: "s1", name: "NEW", color: "#8b5cf6" },
-        { id: "s2", name: "QUALIFIED", color: "#3b82f6" },
-        { id: "s3", name: "CONTACTED", color: "#06b6d4" },
-        { id: "s4", name: "MEETING", color: "#f59e0b" },
-        { id: "s5", name: "PROPOSAL", color: "#f97316" },
-        { id: "s6", name: "WON", color: "#22c55e" },
+        { id: "s1", name: "NEW", color: "#6B6B70" },
+        { id: "s2", name: "QUALIFIED", color: "#4C7CF0" },
+        { id: "s3", name: "CONTACTED", color: "#4C7CF0" },
+        { id: "s4", name: "MEETING", color: "#C98A2E" },
+        { id: "s5", name: "PROPOSAL", color: "#C98A2E" },
+        { id: "s6", name: "WON", color: "#34A874" },
       ];
 
   return (
@@ -94,13 +87,14 @@ export const DealsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Deals Pipeline</h1>
-            <Badge variant="success" className="font-mono font-bold text-xs">
-              ${totalPipeline.toLocaleString()} Active
-            </Badge>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Deals Pipeline</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
+              <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalPipeline.toLocaleString()}</span>
+              <span>Active Pipeline</span>
+            </span>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs text-[#9B9BA1] mt-1">
             Visual stage tracker from initial client contact to won retainer and web contract.
           </p>
         </div>
@@ -108,96 +102,103 @@ export const DealsPage: React.FC = () => {
         <Button
           variant="primary"
           onClick={() => setIsNewDealOpen(true)}
-          className="shadow-lg shadow-indigo-600/30 flex items-center gap-2 text-xs"
+          className="flex items-center gap-1.5 text-xs"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Add Custom Deal</span>
         </Button>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin">
-        {stagesToRender.map((stage) => {
-          const stageDeals = deals.filter(
-            (d) => d.stageId === stage.id || d.stage?.name === stage.name
-          );
-          const stageTotal = stageDeals.reduce((acc, d) => acc + (d.value || 0), 0);
+      {isLoading ? (
+        <div className="py-24 text-center text-[#9B9BA1]">
+          <div className="w-6 h-6 border-2 border-[#4C7CF0] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-xs">Loading pipeline...</p>
+        </div>
+      ) : (
+        /* Kanban Board */
+        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin">
+          {stagesToRender.map((stage) => {
+            const stageDeals = deals.filter(
+              (d) => d.stageId === stage.id || d.stage?.name === stage.name
+            );
+            const stageTotal = stageDeals.reduce((acc, d) => acc + (d.value || 0), 0);
 
-          return (
-            <div
-              key={stage.id}
-              className="w-80 shrink-0 bg-slate-950/60 rounded-2xl border border-slate-800/80 p-3.5 flex flex-col min-h-[500px]"
-            >
-              {/* Stage Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: stage.color || "#6366f1" }}
-                  ></span>
-                  <span className="text-xs font-extrabold text-white tracking-wide">
-                    {stage.name}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded">
-                    {stageDeals.length}
+            return (
+              <div
+                key={stage.id}
+                className="w-72 shrink-0 bg-[#0E0E10] rounded-lg border border-[#232326] p-3 flex flex-col min-h-[500px]"
+              >
+                {/* Stage Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-[#232326] mb-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: stage.color || "#4C7CF0" }}
+                    />
+                    <span className="text-xs font-semibold text-[#EDEDEF] tracking-wide">
+                      {stage.name}
+                    </span>
+                    <span className="text-[11px] font-mono text-[#6B6B70] bg-[#131315] px-1.5 py-0.5 rounded border border-[#232326]">
+                      {stageDeals.length}
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-medium tabular-nums text-[#EDEDEF]">
+                    ${stageTotal}
                   </span>
                 </div>
-                <span className="text-xs font-mono font-bold text-emerald-400">
-                  ${stageTotal}
-                </span>
-              </div>
 
-              {/* Deal Cards */}
-              <div className="space-y-3 flex-1 overflow-y-auto">
-                {stageDeals.map((deal) => (
-                  <div
-                    key={deal.id}
-                    className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md group"
-                  >
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-white text-xs leading-snug group-hover:text-indigo-400">
-                        {deal.title}
-                      </h4>
-                      <span className="text-xs font-mono font-bold text-emerald-400">
-                        ${deal.value}
-                      </span>
-                    </div>
-
-                    {deal.business && (
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-2">
-                        <Building2 className="w-3 h-3 text-slate-400" />
-                        <span className="truncate">{deal.business.name}</span>
+                {/* Deal Cards */}
+                <div className="space-y-2.5 flex-1 overflow-y-auto">
+                  {stageDeals.map((deal) => (
+                    <div
+                      key={deal.id}
+                      className="p-3.5 rounded-md bg-[#131315] border border-[#232326] hover:border-[#2E2E32] hover:bg-[#1B1B1E] transition-colors"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-medium text-[#EDEDEF] text-xs leading-snug">
+                          {deal.title}
+                        </h4>
+                        <span className="text-xs font-mono font-semibold tabular-nums text-[#EDEDEF] shrink-0">
+                          ${deal.value}
+                        </span>
                       </div>
-                    )}
 
-                    {/* Move stage selector */}
-                    <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">Move:</span>
-                      <select
-                        value={deal.stageId || stage.id}
-                        onChange={(e) => handleMoveStage(deal.id, e.target.value)}
-                        className="text-[10px] bg-slate-950 text-slate-300 rounded px-2 py-1 border border-slate-800 focus:outline-none"
-                      >
-                        {stagesToRender.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
+                      {deal.business && (
+                        <div className="text-[11px] text-[#9B9BA1] flex items-center gap-1.5 mt-2">
+                          <Building2 className="w-3.5 h-3.5 text-[#6B6B70] shrink-0" />
+                          <span className="truncate">{deal.business.name}</span>
+                        </div>
+                      )}
+
+                      {/* Move stage selector */}
+                      <div className="pt-2.5 mt-3 border-t border-[#232326] flex items-center justify-between">
+                        <span className="text-[10px] text-[#6B6B70]">Stage:</span>
+                        <select
+                          value={deal.stageId || stage.id}
+                          onChange={(e) => handleMoveStage(deal.id, e.target.value)}
+                          className="text-[11px] bg-[#0A0A0B] text-[#EDEDEF] rounded px-2 py-1 border border-[#2E2E32] focus:outline-none focus:border-[#4C7CF0] cursor-pointer"
+                        >
+                          {stagesToRender.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {stageDeals.length === 0 && (
-                  <div className="h-28 border border-dashed border-slate-800/80 rounded-xl flex items-center justify-center text-xs text-slate-400">
-                    No deals in {stage.name}
-                  </div>
-                )}
+                  {stageDeals.length === 0 && (
+                    <div className="h-28 border border-dashed border-[#232326] rounded-md flex items-center justify-center text-xs text-[#6B6B70]">
+                      No deals in {stage.name}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* New Deal Modal */}
       <Modal
@@ -224,14 +225,14 @@ export const DealsPage: React.FC = () => {
           />
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B70]">
               Select Client / Lead
             </label>
             <select
               value={newDealBusinessId}
               onChange={(e) => setNewDealBusinessId(e.target.value)}
               required
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 px-4 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-[#2E2E32] bg-[#0A0A0B] px-3 py-2 text-xs text-[#EDEDEF] focus:border-[#4C7CF0] focus:outline-none cursor-pointer"
             >
               <option value="">Select a business from CRM...</option>
               {businesses.map((b) => (
@@ -242,11 +243,11 @@ export const DealsPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-            <Button type="button" variant="outline" onClick={() => setIsNewDealOpen(false)}>
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsNewDealOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" size="sm">
               Create Deal
             </Button>
           </div>

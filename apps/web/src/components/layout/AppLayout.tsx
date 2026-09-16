@@ -5,7 +5,7 @@ import { Header } from "./Header";
 import { Modal } from "../ui/Modal";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
-import { Compass, Sparkles, MapPin, Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { leadEngineApi } from "../../lib/api";
 
 export const AppLayout: React.FC = () => {
@@ -29,7 +29,6 @@ export const AppLayout: React.FC = () => {
       setIsQuickScrapeOpen(false);
       navigate("/campaigns");
     } catch {
-      // Navigate to discover page as fallback
       setIsQuickScrapeOpen(false);
       navigate(`/discover?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`);
     } finally {
@@ -38,14 +37,14 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-100 flex">
+    <div className="min-h-screen bg-[#0A0A0B] text-[#EDEDEF] flex">
       {/* Fixed Sidebar */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen overflow-x-hidden">
+      <div className="flex-1 ml-60 flex flex-col min-h-screen overflow-x-hidden">
         <Header onOpenQuickScrape={() => setIsQuickScrapeOpen(true)} />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
+        <main className="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>
@@ -63,7 +62,7 @@ export const AppLayout: React.FC = () => {
             placeholder="e.g. Dental Clinic, Diagnostic Center, Orthopedic Hospital"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            icon={<Search className="w-4 h-4 text-slate-400" />}
+            icon={<Search className="w-3.5 h-3.5 text-[#6B6B70]" />}
             required
           />
 
@@ -72,21 +71,19 @@ export const AppLayout: React.FC = () => {
             placeholder="e.g. Rajkot, Gujarat, India"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            icon={<MapPin className="w-4 h-4 text-slate-400" />}
+            icon={<MapPin className="w-3.5 h-3.5 text-[#6B6B70]" />}
             required
           />
 
-          <div className="rounded-xl bg-indigo-950/30 border border-indigo-800/40 p-3 text-xs text-indigo-200 flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-            <div>
-              Auto-triggers real-time verification: website DNS checks, missing website flags, social links extraction, and instant lead scoring.
-            </div>
+          <div className="rounded-md bg-[#131315] border border-[#232326] p-3 text-[12px] text-[#9B9BA1] leading-relaxed">
+            Auto-triggers real-time verification: website DNS checks, missing website flags, social links extraction, and instant lead scoring.
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setIsQuickScrapeOpen(false)}
             >
               Cancel
@@ -94,8 +91,8 @@ export const AppLayout: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
+              size="sm"
               isLoading={isSearching}
-              className="shadow-lg shadow-indigo-600/30"
             >
               Start Pipeline Run
             </Button>

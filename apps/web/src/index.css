@@ -1,93 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --bg-base: #0A0A0B;
+    --bg-surface: #131315;
+    --bg-surface-hover: #1B1B1E;
+    --border-subtle: #232326;
+    --border-default: #2E2E32;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --text-primary: #EDEDEF;
+    --text-secondary: #9B9BA1;
+    --text-tertiary: #6B6B70;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --accent: #4C7CF0;
+    --accent-hover: #3B6BE0;
+    --accent-subtle: rgba(76, 124, 240, 0.1);
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
+    --success: #34A874;
+    --warning: #C98A2E;
+    --danger: #D14D4D;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --radius: 8px;
+  }
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 33% 18%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 239 84% 67%;
-
-    --radius: 0.75rem;
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0A0A0B;
+    color: #EDEDEF;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #080c14;
-  color: #f1f5f9;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Typographic scale utilities */
+.type-display {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #EDEDEF;
 }
 
-/* Custom glowing and glassmorphic styles */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.type-h1 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #EDEDEF;
 }
 
-.glass-panel-hover:hover {
-  background: rgba(22, 33, 58, 0.85);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
-  transform: translateY(-2px);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+.type-h2 {
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #EDEDEF;
 }
 
-.glow-indigo {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+.type-body {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #EDEDEF;
 }
 
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4);
+.type-body-secondary {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #9B9BA1;
 }
 
-.glow-amber {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
+.type-meta {
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6B6B70;
 }
 
-/* Custom scrollbar */
+/* Minimalist Dark Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #0A0A0B;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 9999px;
+  background: #232326;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #2E2E32;
 }

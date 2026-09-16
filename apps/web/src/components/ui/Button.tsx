@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   icon?: React.ReactNode;
@@ -18,20 +18,21 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]";
+  const baseStyles =
+    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4C7CF0]";
 
   const sizeStyles = {
-    sm: "text-xs px-3 py-1.5",
-    md: "text-sm px-4 py-2",
-    lg: "text-base px-6 py-2.5",
+    sm: "text-[12px] px-2.5 py-1 h-7",
+    md: "text-[13px] px-3 py-1.5 h-8",
+    lg: "text-[14px] px-4 py-2 h-9",
   };
 
   const variantStyles = {
-    primary: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 border border-indigo-500/30",
-    secondary: "bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700/60 shadow-sm",
-    outline: "bg-transparent hover:bg-slate-800/60 text-slate-300 border border-slate-700/80 hover:text-white",
-    ghost: "bg-transparent hover:bg-slate-800/40 text-slate-400 hover:text-slate-200",
-    danger: "bg-rose-600/90 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 border border-rose-500/30",
+    primary: "bg-[#4C7CF0] hover:bg-[#3B6BE0] text-white border border-transparent",
+    secondary: "bg-[#131315] hover:bg-[#1B1B1E] text-[#EDEDEF] border border-[#2E2E32]",
+    outline: "bg-transparent hover:bg-[#1B1B1E] text-[#EDEDEF] border border-[#2E2E32]",
+    ghost: "bg-transparent hover:bg-[#1B1B1E] text-[#9B9BA1] hover:text-[#EDEDEF] border border-transparent",
+    danger: "bg-[#D14D4D] hover:bg-[#B83E3E] text-white border border-transparent",
   };
 
   return (
@@ -41,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <svg className="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>

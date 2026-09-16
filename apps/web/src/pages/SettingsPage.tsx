@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {
   Sliders,
-  Shield,
   Key,
-  Database,
   CheckCircle2,
   Save,
-  Plus,
   RefreshCw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
-import { Badge } from "../components/ui/Badge";
 import { leadEngineApi } from "../lib/api";
 
 export const SettingsPage: React.FC = () => {
@@ -88,8 +83,8 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">System & Engine Settings</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">System & Engine Settings</h1>
+          <p className="text-xs text-[#9B9BA1] mt-1">
             Configure algorithmic lead scoring weights, scraper concurrency parameters, and developer API credentials.
           </p>
         </div>
@@ -97,42 +92,43 @@ export const SettingsPage: React.FC = () => {
         <Button
           variant="primary"
           onClick={handleSaveAll}
-          className="shadow-lg shadow-indigo-600/30 flex items-center gap-2 text-xs"
+          className="flex items-center gap-1.5 text-xs"
         >
-          {isSaved ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
-          <span>{isSaved ? "Settings Saved!" : "Save All Changes"}</span>
+          {isSaved ? <CheckCircle2 className="w-3.5 h-3.5 text-white" /> : <Save className="w-3.5 h-3.5" />}
+          <span>{isSaved ? "Saved" : "Save Changes"}</span>
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Scoring Rules Engine */}
-        <Card className="glass-panel border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-indigo-400" />
-              Lead Scoring Signals & Weights
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-400">
-              Customize how points are accumulated to compute the 0-100 Hot Lead score
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#9B9BA1]" />
+              <h3 className="text-sm font-semibold text-[#EDEDEF]">Lead Scoring Signals & Weights</h3>
+            </div>
+            <p className="text-xs text-[#9B9BA1] mt-0.5">
+              Customize how points are accumulated to compute the 0-100 score
+            </p>
+          </div>
+
+          <div className="space-y-2.5">
             {scoringRules.length > 0 ? (
               scoringRules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+                  className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <input
                       type="checkbox"
                       checked={rule.enabled}
                       onChange={() => handleRuleToggle(rule.id, rule.enabled)}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600"
+                      className="w-4 h-4 rounded border-[#2E2E32] bg-[#131315] accent-[#4C7CF0] cursor-pointer"
                     />
                     <div>
-                      <div className="font-bold text-white">{rule.name}</div>
-                      <div className="text-[10px] text-slate-400">
+                      <div className="font-medium text-[#EDEDEF]">{rule.name}</div>
+                      <div className="text-[11px] text-[#6B6B70]">
                         {rule.signal} {rule.operator} {rule.value}
                       </div>
                     </div>
@@ -143,14 +139,14 @@ export const SettingsPage: React.FC = () => {
                       type="number"
                       value={rule.weight}
                       onChange={(e) => handleRuleWeightChange(rule.id, Number(e.target.value))}
-                      className="w-16 px-2 py-1 rounded bg-slate-950 border border-slate-700 text-center font-mono font-bold text-indigo-400"
+                      className="w-14 px-2 py-1 rounded bg-[#131315] border border-[#2E2E32] text-center font-mono font-medium tabular-nums text-[#EDEDEF] text-xs focus:border-[#4C7CF0] focus:outline-none"
                     />
-                    <span className="text-slate-400 font-medium">pts</span>
+                    <span className="text-[#6B6B70] text-xs">pts</span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {[
                   { name: "No Website Detected", pts: 40 },
                   { name: "Mobile Unfriendly / Broken Viewport", pts: 25 },
@@ -158,33 +154,34 @@ export const SettingsPage: React.FC = () => {
                   { name: "Direct WhatsApp Line Found", pts: 20 },
                   { name: "Outdated WordPress CMS (< 5.5)", pts: 20 },
                 ].map((d, i) => (
-                  <div key={i} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                    <span className="font-bold text-white">{d.name}</span>
-                    <span className="font-mono font-bold text-emerald-400">+{d.pts} pts</span>
+                  <div key={i} className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex items-center justify-between text-xs">
+                    <span className="font-medium text-[#EDEDEF]">{d.name}</span>
+                    <span className="font-mono font-medium tabular-nums text-[#34A874]">+{d.pts} pts</span>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Crawler & Scraping Controls */}
         <div className="space-y-6">
-          <Card className="glass-panel border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-emerald-400" />
-                Scraper Worker Engine Settings
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-400">
-                Performance tuning and anti-bot protection
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
+          <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-[#9B9BA1]" />
+                <h3 className="text-sm font-semibold text-[#EDEDEF]">Scraper Worker Engine</h3>
+              </div>
+              <p className="text-xs text-[#9B9BA1] mt-0.5">
+                Worker concurrency and request throttling
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="font-medium text-slate-300">Worker Concurrency</span>
-                  <span className="font-mono font-bold text-indigo-400">{concurrency} threads</span>
+                  <span className="text-[#9B9BA1]">Worker Concurrency</span>
+                  <span className="font-mono font-medium tabular-nums text-[#EDEDEF]">{concurrency} threads</span>
                 </div>
                 <input
                   type="range"
@@ -192,14 +189,14 @@ export const SettingsPage: React.FC = () => {
                   max="20"
                   value={concurrency}
                   onChange={(e) => setConcurrency(Number(e.target.value))}
-                  className="w-full accent-indigo-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                  className="w-full accent-[#4C7CF0] h-1.5 bg-[#232326] rounded-lg cursor-pointer"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="font-medium text-slate-300">Politeness Request Delay</span>
-                  <span className="font-mono font-bold text-indigo-400">{delayMs} ms</span>
+                  <span className="text-[#9B9BA1]">Politeness Request Delay</span>
+                  <span className="font-mono font-medium tabular-nums text-[#EDEDEF]">{delayMs} ms</span>
                 </div>
                 <input
                   type="range"
@@ -208,65 +205,68 @@ export const SettingsPage: React.FC = () => {
                   step="250"
                   value={delayMs}
                   onChange={(e) => setDelayMs(Number(e.target.value))}
-                  className="w-full accent-indigo-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                  className="w-full accent-[#4C7CF0] h-1.5 bg-[#232326] rounded-lg cursor-pointer"
                 />
               </div>
 
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300">
+              <div className="pt-1">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-[#9B9BA1]">
                   <input
                     type="checkbox"
                     checked={rotateProxies}
                     onChange={(e) => setRotateProxies(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600"
+                    className="w-4 h-4 rounded border-[#2E2E32] bg-[#0A0A0B] accent-[#4C7CF0]"
                   />
                   <span>Rotate Residential User-Agent Headers & IP Pools</span>
                 </label>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* API Key Management */}
-          <Card className="glass-panel border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-400" />
-                Developer API Credentials
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleCreateApiKey} className="flex gap-2">
-                <Input
-                  placeholder="Key description, e.g. Production Webhook"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  className="text-xs"
-                />
-                <Button type="submit" size="sm" variant="primary" className="text-xs whitespace-nowrap">
-                  Generate Key
-                </Button>
-              </form>
-
-              <div className="space-y-2">
-                {apiKeys.map((k) => (
-                  <div
-                    key={k.id}
-                    className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-xs"
-                  >
-                    <div>
-                      <div className="font-bold text-white">{k.name}</div>
-                      <div className="font-mono text-slate-400 text-[10px] truncate max-w-[200px]">
-                        {k.key}
-                      </div>
-                    </div>
-                    <Badge variant="success" className="text-[10px]">
-                      ACTIVE
-                    </Badge>
-                  </div>
-                ))}
+          <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-[#9B9BA1]" />
+                <h3 className="text-sm font-semibold text-[#EDEDEF]">Developer API Credentials</h3>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-[#9B9BA1] mt-0.5">
+                Authentication keys for external programmatic access
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateApiKey} className="flex gap-2">
+              <Input
+                placeholder="Key description, e.g. Production Webhook"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                className="text-xs"
+              />
+              <Button type="submit" size="sm" variant="primary" className="text-xs whitespace-nowrap">
+                Generate Key
+              </Button>
+            </form>
+
+            <div className="space-y-2 pt-1">
+              {apiKeys.map((k) => (
+                <div
+                  key={k.id}
+                  className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex justify-between items-center text-xs"
+                >
+                  <div className="truncate mr-3">
+                    <div className="font-medium text-[#EDEDEF]">{k.name}</div>
+                    <div className="font-mono text-[#6B6B70] text-[11px] truncate">
+                      {k.key}
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#9B9BA1] shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34A874]" />
+                    Active
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

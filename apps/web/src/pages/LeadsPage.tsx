@@ -2,28 +2,19 @@ import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Search,
-  Filter,
   Download,
-  Building2,
-  Globe,
   Phone,
   Mail,
-  ExternalLink,
-  ChevronRight,
-  Flame,
-  CheckCircle2,
-  MessageSquare,
-  MapPin,
-  Sparkles,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { leadEngineApi } from "../lib/api";
-import { Business, LeadStatus } from "../types";
+import { Business } from "../types";
 
 export const LeadsPage: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
 
   const [leads, setLeads] = useState<Business[]>([]);
@@ -55,7 +46,6 @@ export const LeadsPage: React.FC = () => {
       setLeads(data?.items || []);
       setTotalCount(data?.meta?.total || data?.items?.length || 0);
 
-      // Extract distinct cities from stats
       const cities = statsData?.charts?.byCity?.map((c: any) => c.city).filter(Boolean) || [];
       if (cities.length > 0) {
         setAvailableCities(Array.from(new Set(cities)));
@@ -90,7 +80,7 @@ export const LeadsPage: React.FC = () => {
 
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `ultimate_leads_${Date.now()}.${format}`);
+    downloadAnchor.setAttribute("download", `leads_${Date.now()}.${format}`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -99,16 +89,16 @@ export const LeadsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#232326]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Leads Database</h1>
-            <Badge variant="info" className="font-mono font-bold text-xs">
-              {totalCount} Total Leads in CRM
-            </Badge>
+            <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">Leads Database</h1>
+            <span className="text-[12px] text-[#6B6B70] font-mono tabular-nums">
+              ({totalCount} records)
+            </span>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
-            Search and filter businesses across any city, phone, category, or website status.
+          <p className="text-[13px] text-[#9B9BA1] mt-0.5">
+            Search, filter, and manage prospect accounts across all locations.
           </p>
         </div>
 
@@ -118,55 +108,53 @@ export const LeadsPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => handleExport("csv")}
-            className="text-xs flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>CSV</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleExport("json")}
-            className="text-xs flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export JSON</span>
+            <span>JSON</span>
           </Button>
           <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs shadow-lg shadow-indigo-600/25 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Scrape New City</span>
+            <Button variant="primary" size="sm">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Scrape New</span>
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <Card className="glass-panel border-slate-800">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col md:flex-row items-center gap-4">
+      <Card>
+        <CardContent className="p-3.5 space-y-3">
+          <div className="flex flex-col md:flex-row items-center gap-3">
             <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-[#6B6B70] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search across city, state, niche, business name, or phone..."
+                placeholder="Filter by name, phone, niche, or city..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-all"
+                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[13px] text-[#EDEDEF] placeholder:text-[#6B6B70] focus:outline-none focus:border-[#4C7CF0] transition-colors"
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               {/* City Filter */}
               <select
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
               >
-                <option value="ALL">All Cities ({availableCities.length || "Worldwide"})</option>
+                <option value="ALL">All Cities</option>
                 {availableCities.map((c) => (
                   <option key={c} value={c}>
-                    📍 {c}
+                    {c}
                   </option>
                 ))}
               </select>
@@ -175,7 +163,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
               >
                 <option value="ALL">All Stages</option>
                 <option value="NEW">NEW</option>
@@ -190,23 +178,23 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={websiteFilter}
                 onChange={(e) => setWebsiteFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
               >
                 <option value="ALL">All Websites</option>
-                <option value="NO_WEBSITE">🚫 No Website Only (Goldmine)</option>
-                <option value="HAS_WEBSITE">🌐 Has Website (Redesign/SEO)</option>
+                <option value="NO_WEBSITE">No Website</option>
+                <option value="HAS_WEBSITE">Has Website</option>
               </select>
 
               {/* Grade Filter */}
               <select
                 value={gradeFilter}
                 onChange={(e) => setGradeFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
               >
                 <option value="ALL">All Grades</option>
-                <option value="A">Grade A (80+ Score)</option>
-                <option value="B">Grade B (60-79)</option>
-                <option value="C">Grade C (40-59)</option>
+                <option value="A">Grade A (≥80)</option>
+                <option value="B">Grade B (60–79)</option>
+                <option value="C">Grade C (&lt;60)</option>
               </select>
             </div>
           </div>
@@ -214,51 +202,49 @@ export const LeadsPage: React.FC = () => {
       </Card>
 
       {/* Leads Table */}
-      <Card className="glass-panel border-slate-800 overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+          <table className="w-full text-left text-[13px] text-[#EDEDEF]">
+            <thead className="border-b border-[#232326] text-[11px] uppercase tracking-[0.04em] text-[#6B6B70] font-medium bg-[#0E0E10]">
               <tr>
-                <th className="py-3.5 px-4 font-semibold">Business / Company</th>
-                <th className="py-3.5 px-4 font-semibold">City & Region</th>
-                <th className="py-3.5 px-4 font-semibold">Contact Intel</th>
-                <th className="py-3.5 px-4 font-semibold">Web Presence</th>
-                <th className="py-3.5 px-4 font-semibold">Lead Score</th>
-                <th className="py-3.5 px-4 font-semibold">Pipeline</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Details</th>
+                <th className="py-2.5 px-4 font-medium">Business</th>
+                <th className="py-2.5 px-4 font-medium">Location</th>
+                <th className="py-2.5 px-4 font-medium">Contact</th>
+                <th className="py-2.5 px-4 font-medium">Website</th>
+                <th className="py-2.5 px-4 font-medium text-right">Lead Score</th>
+                <th className="py-2.5 px-4 font-medium">Stage</th>
+                <th className="py-2.5 px-4 font-medium text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#232326]">
               {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-900/60 transition-colors group">
+                <tr key={lead.id} className="hover:bg-[#1B1B1E] transition-colors h-14">
                   {/* Name & Category */}
-                  <td className="py-4 px-4">
-                    <div className="font-bold text-white group-hover:text-indigo-400 transition-colors">
-                      <Link to={`/leads/${lead.id}`} className="hover:underline">
-                        {lead.name}
-                      </Link>
-                    </div>
-                    <div className="text-xs text-slate-400 mt-0.5">{lead.category || "Local Business"}</div>
+                  <td className="py-3 px-4">
+                    <Link to={`/leads/${lead.id}`} className="font-medium text-[#EDEDEF] hover:text-[#4C7CF0] transition-colors">
+                      {lead.name}
+                    </Link>
+                    <div className="text-[11px] text-[#6B6B70] mt-0.5">{lead.category || "Local Business"}</div>
                   </td>
 
                   {/* Location */}
-                  <td className="py-4 px-4 text-xs">
-                    <div className="text-slate-200 font-semibold">{lead.city || "Local"}</div>
-                    <div className="text-slate-400">{lead.state || lead.country || "India"}</div>
+                  <td className="py-3 px-4 text-[12px]">
+                    <div className="text-[#EDEDEF]">{lead.city || "Local"}</div>
+                    <div className="text-[#6B6B70]">{lead.state || lead.country || "India"}</div>
                   </td>
 
-                  {/* Contact Intel */}
-                  <td className="py-4 px-4">
-                    <div className="space-y-1">
+                  {/* Contact */}
+                  <td className="py-3 px-4">
+                    <div className="space-y-0.5 text-[12px]">
                       {lead.phone && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                        <div className="flex items-center gap-1 text-[#9B9BA1] tabular-nums">
+                          <Phone className="w-3 h-3 text-[#6B6B70] shrink-0" />
                           <span>{lead.phone}</span>
                         </div>
                       )}
                       {lead.emails && lead.emails.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                        <div className="flex items-center gap-1 text-[#6B6B70]">
+                          <Mail className="w-3 h-3 shrink-0" />
                           <span className="truncate max-w-[140px]">{lead.emails[0].value}</span>
                         </div>
                       )}
@@ -266,54 +252,45 @@ export const LeadsPage: React.FC = () => {
                   </td>
 
                   {/* Website */}
-                  <td className="py-4 px-4 text-xs">
+                  <td className="py-3 px-4 text-[12px]">
                     {lead.website ? (
-                      <div className="space-y-1">
-                        <a
-                          href={lead.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-indigo-400 hover:underline flex items-center gap-1 max-w-[160px] truncate"
-                        >
-                          <Globe className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{lead.website.replace(/^https?:\/\//, "")}</span>
-                        </a>
-                        <span className="text-[10px] text-slate-400">Audit Ready</span>
-                      </div>
+                      <a
+                        href={lead.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#4C7CF0] hover:underline truncate max-w-[150px] inline-block"
+                      >
+                        {lead.website.replace(/^https?:\/\//, "")}
+                      </a>
                     ) : (
-                      <Badge variant="destructive" className="text-[10px] font-bold">
-                        🚫 NO WEBSITE
-                      </Badge>
+                      <span className="text-[11px] text-[#D14D4D] font-medium">
+                        No website
+                      </span>
                     )}
                   </td>
 
                   {/* Lead Score */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="text-base font-extrabold text-white font-mono">
-                        {lead.leadScore}
-                      </div>
-                      <Badge
-                        variant={lead.leadScore >= 90 ? "danger" : lead.leadScore >= 75 ? "success" : "info"}
-                        className="text-[10px] font-bold"
-                      >
-                        Grade {lead.leadGrade || "A"}
-                      </Badge>
+                  <td className="py-3 px-4 text-right">
+                    <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold font-mono">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          lead.leadScore >= 90 ? "bg-[#34A874]" : lead.leadScore >= 75 ? "bg-[#C98A2E]" : "bg-[#6B6B70]"
+                        }`}
+                      />
+                      <span>{lead.leadScore}</span>
                     </div>
                   </td>
 
                   {/* Stage */}
-                  <td className="py-4 px-4 text-xs">
-                    <Badge variant="default" className="bg-slate-800 text-slate-200 border-slate-700">
-                      {lead.status}
-                    </Badge>
+                  <td className="py-3 px-4">
+                    <Badge size="sm">{lead.status}</Badge>
                   </td>
 
                   {/* Action */}
-                  <td className="py-4 px-4 text-right">
+                  <td className="py-3 px-4 text-right">
                     <Link to={`/leads/${lead.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                        View Lead &rarr;
+                      <Button variant="ghost" size="sm">
+                        View &rarr;
                       </Button>
                     </Link>
                   </td>
@@ -323,19 +300,8 @@ export const LeadsPage: React.FC = () => {
           </table>
 
           {leads.length === 0 && !isLoading && (
-            <div className="py-12 text-center text-slate-400">
-              <Building2 className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-              <p className="text-base font-semibold text-slate-300">No leads match your current filter</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Try resetting search or click below to discover businesses in any city or state.
-              </p>
-              <div className="mt-4">
-                <Link to="/discover">
-                  <Button variant="primary" size="sm" className="text-xs">
-                    Go to Universal Discovery
-                  </Button>
-                </Link>
-              </div>
+            <div className="py-12 text-center text-[#6B6B70] text-[13px]">
+              No leads match your current filter.
             </div>
           )}
         </div>

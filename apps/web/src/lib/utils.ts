@@ -38,35 +38,39 @@ export function formatRelativeTime(dateStr: string | Date | null | undefined): s
   return formatDate(dateStr);
 }
 
-export function scoreToColor(score: number): { text: string; bg: string; border: string; glow: string } {
+export function scoreToColor(score: number): { text: string; bg: string; border: string; glow: string; dot: string } {
   if (score >= 80) {
     return {
-      text: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      glow: "shadow-[0_0_12px_rgba(16,185,129,0.3)]",
+      text: "text-[#34A874]",
+      bg: "bg-[#34A874]/10",
+      border: "border-[#34A874]/20",
+      glow: "",
+      dot: "bg-[#34A874]",
     };
   }
   if (score >= 60) {
     return {
-      text: "text-indigo-400",
-      bg: "bg-indigo-500/10",
-      border: "border-indigo-500/30",
-      glow: "shadow-[0_0_12px_rgba(99,102,241,0.3)]",
+      text: "text-[#4C7CF0]",
+      bg: "bg-[#4C7CF0]/10",
+      border: "border-[#4C7CF0]/20",
+      glow: "",
+      dot: "bg-[#4C7CF0]",
     };
   }
   if (score >= 40) {
     return {
-      text: "text-amber-400",
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/30",
-      glow: "shadow-[0_0_12px_rgba(245,158,11,0.3)]",
+      text: "text-[#C98A2E]",
+      bg: "bg-[#C98A2E]/10",
+      border: "border-[#C98A2E]/20",
+      glow: "",
+      dot: "bg-[#C98A2E]",
     };
   }
   return {
-    text: "text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/30",
-    glow: "shadow-[0_0_12px_rgba(244,63,94,0.3)]",
+    text: "text-[#D14D4D]",
+    bg: "bg-[#D14D4D]/10",
+    border: "border-[#D14D4D]/20",
+    glow: "",
+    dot: "bg-[#D14D4D]",
   };
 }

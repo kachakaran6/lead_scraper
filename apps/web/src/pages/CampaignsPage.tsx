@@ -4,16 +4,9 @@ import {
   Play,
   Pause,
   Plus,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
   MapPin,
-  Building2,
-  Sparkles,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
@@ -83,8 +76,8 @@ export const CampaignsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Scraping Campaigns</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Scraping Campaigns</h1>
+          <p className="text-xs text-[#9B9BA1] mt-1">
             Automated multi-threaded worker queues extracting targets, audits, and contacts.
           </p>
         </div>
@@ -92,106 +85,112 @@ export const CampaignsPage: React.FC = () => {
         <Button
           variant="primary"
           onClick={() => setIsModalOpen(true)}
-          className="shadow-lg shadow-indigo-600/30 flex items-center gap-2 text-xs"
+          className="flex items-center gap-1.5 text-xs"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>New Scraping Campaign</span>
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {campaigns.map((camp) => (
-          <Card key={camp.id} className="glass-panel border-slate-800">
-            <CardContent className="p-5">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-white text-base">{camp.name}</h3>
-                    <Badge
-                      variant={
+      {isLoading ? (
+        <div className="py-24 text-center text-[#9B9BA1]">
+          <div className="w-6 h-6 border-2 border-[#4C7CF0] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-xs">Loading campaigns...</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {campaigns.map((camp) => (
+            <div
+              key={camp.id}
+              className="bg-[#131315] border border-[#232326] rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="font-medium text-[#EDEDEF] text-sm">{camp.name}</h3>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#9B9BA1]">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
                         camp.status === "COMPLETED"
-                          ? "success"
+                          ? "bg-[#34A874]"
                           : camp.status === "RUNNING"
-                          ? "warning"
-                          : "default"
-                      }
-                      className="text-[10px] font-bold"
-                    >
-                      {camp.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="font-medium text-slate-300">Target: {camp.query}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {camp.location || "Default Location"} ({camp.radiusKm || 15}km)
-                    </span>
-                  </div>
+                          ? "bg-[#C98A2E]"
+                          : "bg-[#6B6B70]"
+                      }`}
+                    />
+                    {camp.status}
+                  </span>
                 </div>
-
-                {/* Metrics */}
-                <div className="grid grid-cols-4 gap-4 text-center">
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase">Discovered</span>
-                    <div className="text-base font-extrabold font-mono text-white mt-0.5">
-                      {camp.discovered || 42}
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase">Unique</span>
-                    <div className="text-base font-extrabold font-mono text-indigo-400 mt-0.5">
-                      {camp.unique || 38}
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-amber-400 uppercase">No Website</span>
-                    <div className="text-base font-extrabold font-mono text-amber-300 mt-0.5">
-                      {camp.noWebsite || 14}
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-rose-400 uppercase">Score &gt; 80</span>
-                    <div className="text-base font-extrabold font-mono text-rose-300 mt-0.5">
-                      {camp.highOpportunity || 19}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2">
-                  {camp.status === "RUNNING" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handlePause(camp.id)}
-                      className="text-xs text-amber-400"
-                    >
-                      <Pause className="w-3.5 h-3.5 mr-1" /> Pause
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => handleStart(camp.id)}
-                      className="text-xs"
-                    >
-                      <Play className="w-3.5 h-3.5 mr-1" /> Start Run
-                    </Button>
-                  )}
+                <div className="flex items-center gap-3 text-xs text-[#9B9BA1]">
+                  <span>Target: <strong className="text-[#EDEDEF] font-normal">{camp.query}</strong></span>
+                  <span className="text-[#6B6B70]">•</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-[#6B6B70]" />
+                    {camp.location || "Default Location"} ({camp.radiusKm || 15}km)
+                  </span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
 
-        {campaigns.length === 0 && !isLoading && (
-          <div className="text-center py-12 text-slate-400">
-            <Megaphone className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p>No campaigns found. Create your first automated scraping run above.</p>
-          </div>
-        )}
-      </div>
+              {/* Metrics */}
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
+                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Discovered</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-[#EDEDEF] mt-0.5">
+                    {camp.discovered || 42}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
+                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Unique</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-[#EDEDEF] mt-0.5">
+                    {camp.unique || 38}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
+                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">No Website</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-[#C98A2E] mt-0.5">
+                    {camp.noWebsite || 14}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
+                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Score &gt; 80</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-[#34A874] mt-0.5">
+                    {camp.highOpportunity || 19}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                {camp.status === "RUNNING" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePause(camp.id)}
+                    className="text-xs"
+                  >
+                    <Pause className="w-3 h-3 mr-1 text-[#C98A2E]" /> Pause
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => handleStart(camp.id)}
+                    className="text-xs"
+                  >
+                    <Play className="w-3 h-3 mr-1" /> Start Run
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {campaigns.length === 0 && !isLoading && (
+            <div className="text-center py-16 text-[#9B9BA1] bg-[#131315] border border-[#232326] rounded-lg">
+              <Megaphone className="w-8 h-8 mx-auto text-[#6B6B70] mb-2" />
+              <p className="text-xs">No campaigns found. Create your first automated scraping run above.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* New Campaign Modal */}
       <Modal
@@ -232,11 +231,11 @@ export const CampaignsPage: React.FC = () => {
             onChange={(e) => setRadiusKm(e.target.value)}
           />
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" size="sm">
               Queue Campaign
             </Button>
           </div>

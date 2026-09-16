@@ -1,8 +1,17 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "primary" | "secondary" | "success" | "warning" | "danger" | "neutral";
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?:
+    | "default"
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "danger"
+    | "destructive"
+    | "info"
+    | "neutral";
   size?: "sm" | "md";
   dot?: boolean;
 }
@@ -10,45 +19,38 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export const Badge: React.FC<BadgeProps> = ({
   children,
   className,
-  variant = "primary",
-  size = "md",
+  variant = "default",
+  size = "sm",
   dot = false,
   ...props
 }) => {
-  const variantStyles = {
-    primary: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
-    secondary: "bg-purple-500/15 text-purple-300 border-purple-500/30",
-    success: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    warning: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-    danger: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-    neutral: "bg-slate-700/40 text-slate-300 border-slate-600/30",
-  };
-
-  const dotColors = {
-    primary: "bg-indigo-400",
-    secondary: "bg-purple-400",
-    success: "bg-emerald-400",
-    warning: "bg-amber-400",
-    danger: "bg-rose-400",
-    neutral: "bg-slate-400",
-  };
+  const dotColor = {
+    default: "bg-[#6B6B70]",
+    neutral: "bg-[#6B6B70]",
+    primary: "bg-[#4C7CF0]",
+    info: "bg-[#4C7CF0]",
+    secondary: "bg-[#9B9BA1]",
+    success: "bg-[#34A874]",
+    warning: "bg-[#C98A2E]",
+    danger: "bg-[#D14D4D]",
+    destructive: "bg-[#D14D4D]",
+  }[variant];
 
   const sizeStyles = {
-    sm: "text-[11px] px-2 py-0.5 font-medium",
-    md: "text-xs px-2.5 py-1 font-semibold",
+    sm: "text-[11px] px-2 py-0.5",
+    md: "text-[12px] px-2.5 py-1",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border tracking-wide uppercase font-mono",
-        variantStyles[variant],
+        "inline-flex items-center gap-1.5 rounded border border-[#232326] bg-[#131315] text-[#9B9BA1] font-medium tracking-[0.02em]",
         sizeStyles[size],
         className
       )}
       {...props}
     >
-      {dot && <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", dotColors[variant])} />}
+      {dot && <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />}
       {children}
     </span>
   );
