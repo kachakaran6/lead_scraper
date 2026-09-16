@@ -28,12 +28,6 @@ export const WebsitesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Website Audit Center</h1>
-        <p className="text-xs text-[#9B9BA1] mt-1">
-          Technical inspection, CMS stack fingerprinting, SSL verification, and mobile responsiveness audits.
-        </p>
-      </div>
 
       {isLoading ? (
         <div className="py-24 text-center text-[#9B9BA1]">

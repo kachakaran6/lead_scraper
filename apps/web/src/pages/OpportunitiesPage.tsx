@@ -35,19 +35,11 @@ export const OpportunitiesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Opportunity Radar</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
-              <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalValue.toLocaleString()}</span>
-              <span>Pipeline Value</span>
-            </span>
-          </div>
-          <p className="text-xs text-[#9B9BA1] mt-1">
-            Algorithmic detection of missing digital assets, low mobile scores, and revenue bottlenecks.
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
+          <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalValue.toLocaleString()}</span>
+          <span>Pipeline Value</span>
+        </span>
 
         {/* Filter */}
         <div className="flex items-center gap-3">

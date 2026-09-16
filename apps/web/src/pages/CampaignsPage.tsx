@@ -74,16 +74,11 @@ export const CampaignsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Scraping Campaigns</h1>
-          <p className="text-xs text-[#9B9BA1] mt-1">
-            Automated multi-threaded worker queues extracting targets, audits, and contacts.
-          </p>
-        </div>
-
+      {/* Toolbar */}
+      <div className="flex items-center justify-end">
         <Button
           variant="primary"
+          size="sm"
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-1.5 text-xs"
         >

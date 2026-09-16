@@ -99,14 +99,6 @@ export const DiscoverPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="pb-2 border-b border-[#232326]">
-        <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">Discovery Engine</h1>
-        <p className="text-[13px] text-[#9B9BA1] mt-0.5">
-          Scan and extract business listings across geographic regions and public directories.
-        </p>
-      </div>
-
       {/* Query Search Panel */}
       <Card>
         <CardContent className="p-5">

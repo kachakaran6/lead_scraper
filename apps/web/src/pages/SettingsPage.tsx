@@ -81,16 +81,11 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">System & Engine Settings</h1>
-          <p className="text-xs text-[#9B9BA1] mt-1">
-            Configure algorithmic lead scoring weights, scraper concurrency parameters, and developer API credentials.
-          </p>
-        </div>
-
+      {/* Toolbar */}
+      <div className="flex items-center justify-end">
         <Button
           variant="primary"
+          size="sm"
           onClick={handleSaveAll}
           className="flex items-center gap-1.5 text-xs"
         >

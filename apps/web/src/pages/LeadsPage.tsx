@@ -88,25 +88,18 @@ export const LeadsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#232326]">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">Leads Database</h1>
-            <span className="text-[12px] text-[#6B6B70] font-mono tabular-nums">
-              ({totalCount} records)
-            </span>
-          </div>
-          <p className="text-[13px] text-[#9B9BA1] mt-0.5">
-            Search, filter, and manage prospect accounts across all locations.
-          </p>
-        </div>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-xs font-mono tabular-nums text-[#6B6B70]">
+          {totalCount} Total Records
+        </span>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
+            className="text-xs"
             onClick={() => handleExport("csv")}
           >
             <Download className="w-3.5 h-3.5" />
@@ -115,13 +108,14 @@ export const LeadsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            className="text-xs"
             onClick={() => handleExport("json")}
           >
             <Download className="w-3.5 h-3.5" />
             <span>JSON</span>
           </Button>
           <Link to="/discover">
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" className="text-xs">
               <Plus className="w-3.5 h-3.5" />
               <span>Scrape New</span>
             </Button>

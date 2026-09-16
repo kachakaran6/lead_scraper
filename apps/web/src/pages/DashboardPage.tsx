@@ -61,27 +61,18 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#232326]">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[#EDEDEF] tracking-tight">Dashboard</h1>
-          <p className="text-[13px] text-[#9B9BA1] mt-0.5">
-            Real-time pipeline analytics, lead signals, and conversion metrics.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Link to="/discover">
-            <Button variant="primary" size="sm">
-              Launch Discovery
-            </Button>
-          </Link>
-          <Link to="/leads">
-            <Button variant="outline" size="sm">
-              View All Leads
-            </Button>
-          </Link>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-2.5">
+        <Link to="/discover">
+          <Button variant="primary" size="sm" className="text-xs">
+            Launch Discovery
+          </Button>
+        </Link>
+        <Link to="/leads">
+          <Button variant="outline" size="sm" className="text-xs">
+            View All Leads
+          </Button>
+        </Link>
       </div>
 
       {/* KPI Metrics Grid */}

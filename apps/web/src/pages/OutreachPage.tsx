@@ -73,13 +73,6 @@ Would you like to test our 1-minute live demo on your smartphone?`,
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">AI Outreach & Pitch Studio</h1>
-        <p className="text-xs text-[#9B9BA1] mt-1">
-          Generate bespoke, audit-backed cold emails and WhatsApp messages tailored to each lead's detected weaknesses.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Controls */}
         <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">

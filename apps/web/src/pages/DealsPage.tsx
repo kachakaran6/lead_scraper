@@ -84,23 +84,16 @@ export const DealsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-[#EDEDEF] tracking-tight">Deals Pipeline</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
-              <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalPipeline.toLocaleString()}</span>
-              <span>Active Pipeline</span>
-            </span>
-          </div>
-          <p className="text-xs text-[#9B9BA1] mt-1">
-            Visual stage tracker from initial client contact to won retainer and web contract.
-          </p>
-        </div>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-4">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
+          <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalPipeline.toLocaleString()}</span>
+          <span>Active Pipeline</span>
+        </span>
 
         <Button
           variant="primary"
+          size="sm"
           onClick={() => setIsNewDealOpen(true)}
           className="flex items-center gap-1.5 text-xs"
         >
