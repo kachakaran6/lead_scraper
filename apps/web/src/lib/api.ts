@@ -112,7 +112,15 @@ export const leadEngineApi = {
   },
 
   // Universal Discovery
-  async searchDiscovery(payload: { query: string; location?: string; radiusKm?: number; provider?: string }) {
+  async searchDiscovery(payload: {
+    query: string;
+    location?: string;
+    countryCode?: string;
+    stateCode?: string;
+    cityName?: string;
+    radiusKm?: number;
+    provider?: string;
+  }) {
     const res = await api.post("/discovery/search", payload);
     return res.data;
   },

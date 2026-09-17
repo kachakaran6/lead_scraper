@@ -9,6 +9,7 @@ import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
+import { LocationSelector, LocationSelection } from "../components/ui/LocationSelector";
 import { leadEngineApi } from "../lib/api";
 import { Link } from "react-router-dom";
 
@@ -32,6 +33,14 @@ interface DiscoveredLead {
 
 export const DiscoverPage: React.FC = () => {
   const [query, setQuery] = useState("Dentist");
+  const [locationDetails, setLocationDetails] = useState<LocationSelection>({
+    countryCode: "IN",
+    countryName: "India",
+    stateCode: "MH",
+    stateName: "Maharashtra",
+    cityName: "Mumbai",
+    formatted: "Mumbai, Maharashtra, India",
+  });
   const [location, setLocation] = useState("Mumbai, Maharashtra");
   const [radius, setRadius] = useState(25);
   const [provider, setProvider] = useState("all");
@@ -40,6 +49,11 @@ export const DiscoverPage: React.FC = () => {
   const [searchStatus, setSearchStatus] = useState<string>("");
   const [results, setResults] = useState<DiscoveredLead[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const handleLocationChange = (sel: LocationSelection) => {
+    setLocationDetails(sel);
+    setLocation(sel.formatted);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +67,9 @@ export const DiscoverPage: React.FC = () => {
       const apiRes = await leadEngineApi.searchDiscovery({
         query: query.trim(),
         location: location.trim(),
+        countryCode: locationDetails.countryCode,
+        stateCode: locationDetails.stateCode,
+        cityName: locationDetails.cityName,
         radiusKm: radius,
         provider,
       });
@@ -69,8 +86,8 @@ export const DiscoverPage: React.FC = () => {
           name: b.name,
           category: b.category || query,
           address: b.address || `${b.city || ""}, ${b.state || ""}`,
-          city: b.city || location.split(",")[0]?.trim() || "City",
-          state: b.state || location.split(",")[1]?.trim() || "",
+          city: b.city || locationDetails.cityName || location.split(",")[0]?.trim() || "City",
+          state: b.state || locationDetails.stateName || location.split(",")[1]?.trim() || "",
           rating: b.rating || Number((4.6 + Math.random() * 0.3).toFixed(1)),
           reviewCount: b.reviewCount || Math.floor(60 + Math.random() * 350),
           phone: phoneVal,
@@ -103,41 +120,42 @@ export const DiscoverPage: React.FC = () => {
       <Card>
         <CardContent className="p-5">
           <form onSubmit={handleSearch} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              <Input
-                label="Target Niche / Category"
-                placeholder="e.g. Dentist, Gym, Cafe"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                icon={<Search className="w-3.5 h-3.5 text-text-tertiary" />}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+              <div className="md:col-span-4">
+                <Input
+                  label="Target Niche / Category"
+                  placeholder="e.g. Dentist, Gym, Cafe"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  icon={<Search className="w-3.5 h-3.5 text-text-tertiary" />}
+                  required
+                />
+              </div>
 
-              <Input
-                label="City, State, or Country"
-                placeholder="e.g. Mumbai, Delhi, London"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                icon={<MapPin className="w-3.5 h-3.5 text-text-tertiary" />}
-                required
-              />
+              <div className="md:col-span-8">
+                <LocationSelector
+                  value={locationDetails}
+                  onChange={handleLocationChange}
+                  label="Geographic Location (Country → State → City)"
+                />
+              </div>
+            </div>
 
-              <div className="space-y-1">
-                <div className="flex justify-between text-[12px] font-medium text-text-secondary">
-                  <span>Radius</span>
-                  <span className="font-mono tabular-nums text-text-primary">{radius} km</span>
-                </div>
-                <div className="pt-2">
-                  <input
-                    type="range"
-                    min="5"
-                    max="100"
-                    step="5"
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value))}
-                    className="w-full accent-accent h-1.5 bg-bg-surface-hover rounded cursor-pointer"
-                  />
-                </div>
+            <div className="space-y-1 pt-1">
+              <div className="flex justify-between text-[12px] font-medium text-text-secondary">
+                <span>Discovery Search Radius</span>
+                <span className="font-mono tabular-nums text-text-primary">{radius} km around selected market</span>
+              </div>
+              <div>
+                <input
+                  type="range"
+                  min="5"
+                  max="100"
+                  step="5"
+                  value={radius}
+                  onChange={(e) => setRadius(Number(e.target.value))}
+                  className="w-full accent-accent h-1.5 bg-bg-surface-hover rounded cursor-pointer"
+                />
               </div>
             </div>
 

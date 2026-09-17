@@ -5,6 +5,9 @@ import { JobsService } from "../jobs/jobs.service";
 interface DiscoveryParams {
   query: string;
   location?: string;
+  countryCode?: string;
+  stateCode?: string;
+  cityName?: string;
   radiusKm?: number;
   limit?: number;
   source?: "MAPS" | "SEARCH" | "DIRECTORY";
@@ -40,12 +43,12 @@ export class DiscoveryService {
 
   async search(params: DiscoveryParams) {
     const query = (params.query || "Business").trim();
-    const location = (params.location || "").trim();
+    const locationParts = params.location ? params.location.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    const searchCity = (params.cityName && params.cityName !== "All Cities" ? params.cityName : "") || locationParts[0] || "";
+    const searchState = params.stateCode || locationParts[1] || "";
+    const searchCountry = params.countryCode || locationParts[2] || "";
+    const effectiveLocation = [searchCity, searchState, searchCountry].filter(Boolean).join(", ") || params.location || "";
     const limit = Math.min(params.limit || 20, 50);
-
-    const locationParts = location ? location.split(",").map((s) => s.trim()).filter(Boolean) : [];
-    const searchCity = locationParts[0] || "";
-    const searchState = locationParts[1] || "";
 
     // 1. Search existing DB records
     const where: any = {};
@@ -60,9 +63,16 @@ export class DiscoveryService {
         {
           OR: [
             { city: { contains: searchCity, mode: "insensitive" } },
-            { state: { contains: searchCity, mode: "insensitive" } },
-            { country: { contains: searchCity, mode: "insensitive" } },
             { address: { contains: searchCity, mode: "insensitive" } },
+          ],
+        },
+      ];
+    } else if (searchState) {
+      where.AND = [
+        {
+          OR: [
+            { state: { contains: searchState, mode: "insensitive" } },
+            { address: { contains: searchState, mode: "insensitive" } },
           ],
         },
       ];
@@ -83,7 +93,7 @@ export class DiscoveryService {
 
     // 2. If fewer than 4 matches in DB, run Live Geographic Scraping
     if (existing.length < 4) {
-      const scraped = await this.scrapeLiveGeographicData(query, location, searchCity, searchState);
+      const scraped = await this.scrapeLiveGeographicData(query, effectiveLocation, searchCity, searchState);
       if (scraped.length > 0) {
         // Re-query DB after saving live scraped businesses
         existing = await prisma.business.findMany({
@@ -106,7 +116,10 @@ export class DiscoveryService {
       meta: {
         total: existing.length,
         query,
-        location,
+        location: effectiveLocation,
+        countryCode: searchCountry,
+        stateCode: searchState,
+        cityName: searchCity,
         page: 1,
         limit,
       },
