@@ -12,25 +12,29 @@ import { CampaignsPage } from "./pages/CampaignsPage";
 import { OutreachPage } from "./pages/OutreachPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
+import { ThemeProvider } from "./lib/theme";
+
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="discover" element={<DiscoverPage />} />
-          <Route path="leads" element={<LeadsPage />} />
-          <Route path="leads/:id" element={<LeadDetailPage />} />
-          <Route path="opportunities" element={<OpportunitiesPage />} />
-          <Route path="deals" element={<DealsPage />} />
-          <Route path="websites" element={<WebsitesPage />} />
-          <Route path="campaigns" element={<CampaignsPage />} />
-          <Route path="outreach" element={<OutreachPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="discover" element={<DiscoverPage />} />
+            <Route path="leads" element={<LeadsPage />} />
+            <Route path="leads/:id" element={<LeadDetailPage />} />
+            <Route path="opportunities" element={<OpportunitiesPage />} />
+            <Route path="deals" element={<DealsPage />} />
+            <Route path="websites" element={<WebsitesPage />} />
+            <Route path="campaigns" element={<CampaignsPage />} />
+            <Route path="outreach" element={<OutreachPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 };
 

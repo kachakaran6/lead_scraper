@@ -34,21 +34,21 @@ const navItems: NavItem[] = [
 
 export const Sidebar: React.FC = () => {
   return (
-    <aside className="w-60 h-screen bg-[#0A0A0B] border-r border-[#232326] flex flex-col fixed left-0 top-0 z-40">
+    <aside className="w-60 h-screen bg-bg-base border-r border-border-subtle flex flex-col fixed left-0 top-0 z-40 transition-colors">
       {/* Brand Header */}
-      <div className="h-14 px-4 flex items-center gap-2.5 border-b border-[#232326]">
-        <div className="w-7 h-7 rounded-md bg-[#131315] border border-[#2E2E32] flex items-center justify-center">
-          <Layers className="w-4 h-4 text-[#EDEDEF]" />
+      <div className="h-14 px-4 flex items-center gap-2.5 border-b border-border-subtle">
+        <div className="w-7 h-7 rounded-md bg-bg-surface border border-border-default flex items-center justify-center">
+          <Layers className="w-4 h-4 text-text-primary" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-[14px] text-[#EDEDEF] tracking-tight">LeadEngine</span>
-          <span className="text-[11px] font-medium text-[#6B6B70] tracking-[0.02em]">B2B</span>
+          <span className="font-semibold text-[14px] text-text-primary tracking-tight">LeadEngine</span>
+          <span className="text-[11px] font-medium text-text-tertiary tracking-[0.02em]">B2B</span>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
-        <div className="px-2.5 pt-1.5 pb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+        <div className="px-2.5 pt-1.5 pb-2 text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
           Platform
         </div>
         {navItems.map((item) => {
@@ -61,8 +61,8 @@ export const Sidebar: React.FC = () => {
                 cn(
                   "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors relative",
                   isActive
-                    ? "text-[#EDEDEF] bg-[#1B1B1E] font-medium before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-[#4C7CF0] before:rounded-full"
-                    : "text-[#9B9BA1] hover:text-[#EDEDEF] hover:bg-[#1B1B1E] font-normal"
+                    ? "text-text-primary bg-bg-surface-hover font-medium before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-accent before:rounded-full"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-surface-hover font-normal"
                 )
               }
             >
@@ -71,7 +71,7 @@ export const Sidebar: React.FC = () => {
                   <Icon
                     className={cn(
                       "w-4 h-4 shrink-0 transition-colors",
-                      isActive ? "text-[#EDEDEF]" : "text-[#6B6B70]"
+                      isActive ? "text-text-primary" : "text-text-tertiary"
                     )}
                   />
                   <span className="truncate">{item.label}</span>
@@ -83,11 +83,11 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Subdued Footer info */}
-      <div className="p-3 border-t border-[#232326]">
-        <div className="flex items-center justify-between px-2 text-[11px] text-[#6B6B70]">
+      <div className="p-3 border-t border-border-subtle">
+        <div className="flex items-center justify-between px-2 text-[11px] text-text-tertiary">
           <span className="font-medium">System status</span>
-          <span className="inline-flex items-center gap-1 text-[#34A874] font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#34A874]"></span>
+          <span className="inline-flex items-center gap-1 text-semantic-success font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-semantic-success"></span>
             Operational
           </span>
         </div>

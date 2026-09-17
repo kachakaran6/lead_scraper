@@ -9,28 +9,28 @@ export default {
     extend: {
       colors: {
         bg: {
-          base: "#0A0A0B",
-          surface: "#131315",
-          "surface-hover": "#1B1B1E",
+          base: "var(--bg-base)",
+          surface: "var(--bg-surface)",
+          "surface-hover": "var(--bg-surface-hover)",
         },
         border: {
-          subtle: "#232326",
-          DEFAULT: "#2E2E32",
+          subtle: "var(--border-subtle)",
+          DEFAULT: "var(--border-default)",
         },
         text: {
-          primary: "#EDEDEF",
-          secondary: "#9B9BA1",
-          tertiary: "#6B6B70",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          tertiary: "var(--text-tertiary)",
         },
         accent: {
-          DEFAULT: "#4C7CF0",
-          hover: "#3B6BE0",
-          subtle: "rgba(76, 124, 240, 0.1)",
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          subtle: "var(--accent-subtle)",
         },
         semantic: {
-          success: "#34A874",
-          warning: "#C98A2E",
-          danger: "#D14D4D",
+          success: "var(--success)",
+          warning: "var(--warning)",
+          danger: "var(--danger)",
         },
       },
       fontFamily: {
@@ -49,8 +49,8 @@ export default {
         sm: "4px",
       },
       boxShadow: {
-        subtle: "0 1px 2px 0 rgba(0, 0, 0, 0.4)",
-        dropdown: "0 4px 12px 0 rgba(0, 0, 0, 0.5)",
+        subtle: "0 1px 2px 0 rgba(0, 0, 0, 0.15)",
+        dropdown: "0 4px 12px 0 rgba(0, 0, 0, 0.25)",
       },
     },
   },

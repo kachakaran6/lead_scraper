@@ -37,7 +37,7 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-[#EDEDEF] flex">
+    <div className="min-h-screen bg-bg-base text-text-primary flex transition-colors">
       {/* Fixed Sidebar */}
       <Sidebar />
 
@@ -62,7 +62,7 @@ export const AppLayout: React.FC = () => {
             placeholder="e.g. Dental Clinic, Diagnostic Center, Orthopedic Hospital"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            icon={<Search className="w-3.5 h-3.5 text-[#6B6B70]" />}
+            icon={<Search className="w-3.5 h-3.5 text-text-tertiary" />}
             required
           />
 
@@ -71,15 +71,15 @@ export const AppLayout: React.FC = () => {
             placeholder="e.g. Rajkot, Gujarat, India"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            icon={<MapPin className="w-3.5 h-3.5 text-[#6B6B70]" />}
+            icon={<MapPin className="w-3.5 h-3.5 text-text-tertiary" />}
             required
           />
 
-          <div className="rounded-md bg-[#131315] border border-[#232326] p-3 text-[12px] text-[#9B9BA1] leading-relaxed">
+          <div className="rounded-md bg-bg-surface border border-border-subtle p-3 text-[12px] text-text-secondary leading-relaxed">
             Auto-triggers real-time verification: website DNS checks, missing website flags, social links extraction, and instant lead scoring.
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
             <Button
               type="button"
               variant="outline"

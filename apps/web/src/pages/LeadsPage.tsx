@@ -90,7 +90,7 @@ export const LeadsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4">
-        <span className="text-xs font-mono tabular-nums text-[#6B6B70]">
+        <span className="text-xs font-mono tabular-nums text-text-tertiary">
           {totalCount} Total Records
         </span>
 
@@ -128,13 +128,13 @@ export const LeadsPage: React.FC = () => {
         <CardContent className="p-3.5 space-y-3">
           <div className="flex flex-col md:flex-row items-center gap-3">
             <div className="relative flex-1 w-full">
-              <Search className="w-3.5 h-3.5 text-[#6B6B70] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Filter by name, phone, niche, or city..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[13px] text-[#EDEDEF] placeholder:text-[#6B6B70] focus:outline-none focus:border-[#4C7CF0] transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-bg-base border border-border-default text-[13px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors"
               />
             </div>
 
@@ -143,7 +143,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
+                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Cities</option>
                 {availableCities.map((c) => (
@@ -157,7 +157,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
+                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Stages</option>
                 <option value="NEW">NEW</option>
@@ -172,7 +172,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={websiteFilter}
                 onChange={(e) => setWebsiteFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
+                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Websites</option>
                 <option value="NO_WEBSITE">No Website</option>
@@ -183,7 +183,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={gradeFilter}
                 onChange={(e) => setGradeFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-[#0A0A0B] border border-[#2E2E32] text-[12px] text-[#EDEDEF] focus:outline-none focus:border-[#4C7CF0]"
+                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Grades</option>
                 <option value="A">Grade A (≥80)</option>
@@ -198,8 +198,8 @@ export const LeadsPage: React.FC = () => {
       {/* Leads Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[13px] text-[#EDEDEF]">
-            <thead className="border-b border-[#232326] text-[11px] uppercase tracking-[0.04em] text-[#6B6B70] font-medium bg-[#0E0E10]">
+          <table className="w-full text-left text-[13px] text-text-primary">
+            <thead className="border-b border-border-subtle text-[11px] uppercase tracking-[0.04em] text-text-tertiary font-medium bg-bg-surface-hover">
               <tr>
                 <th className="py-2.5 px-4 font-medium">Business</th>
                 <th className="py-2.5 px-4 font-medium">Location</th>
@@ -210,34 +210,34 @@ export const LeadsPage: React.FC = () => {
                 <th className="py-2.5 px-4 font-medium text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#232326]">
+            <tbody className="divide-y divide-border-subtle">
               {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-[#1B1B1E] transition-colors h-14">
+                <tr key={lead.id} className="hover:bg-bg-surface-hover transition-colors h-14">
                   {/* Name & Category */}
                   <td className="py-3 px-4">
-                    <Link to={`/leads/${lead.id}`} className="font-medium text-[#EDEDEF] hover:text-[#4C7CF0] transition-colors">
+                    <Link to={`/leads/${lead.id}`} className="font-medium text-text-primary hover:text-accent transition-colors">
                       {lead.name}
                     </Link>
-                    <div className="text-[11px] text-[#6B6B70] mt-0.5">{lead.category || "Local Business"}</div>
+                    <div className="text-[11px] text-text-tertiary mt-0.5">{lead.category || "Local Business"}</div>
                   </td>
 
                   {/* Location */}
                   <td className="py-3 px-4 text-[12px]">
-                    <div className="text-[#EDEDEF]">{lead.city || "Local"}</div>
-                    <div className="text-[#6B6B70]">{lead.state || lead.country || "India"}</div>
+                    <div className="text-text-primary">{lead.city || "Local"}</div>
+                    <div className="text-text-tertiary">{lead.state || lead.country || "India"}</div>
                   </td>
 
                   {/* Contact */}
                   <td className="py-3 px-4">
                     <div className="space-y-0.5 text-[12px]">
                       {lead.phone && (
-                        <div className="flex items-center gap-1 text-[#9B9BA1] tabular-nums">
-                          <Phone className="w-3 h-3 text-[#6B6B70] shrink-0" />
+                        <div className="flex items-center gap-1 text-text-secondary tabular-nums">
+                          <Phone className="w-3 h-3 text-text-tertiary shrink-0" />
                           <span>{lead.phone}</span>
                         </div>
                       )}
                       {lead.emails && lead.emails.length > 0 && (
-                        <div className="flex items-center gap-1 text-[#6B6B70]">
+                        <div className="flex items-center gap-1 text-text-tertiary">
                           <Mail className="w-3 h-3 shrink-0" />
                           <span className="truncate max-w-[140px]">{lead.emails[0].value}</span>
                         </div>
@@ -252,12 +252,12 @@ export const LeadsPage: React.FC = () => {
                         href={lead.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[#4C7CF0] hover:underline truncate max-w-[150px] inline-block"
+                        className="text-accent hover:underline truncate max-w-[150px] inline-block"
                       >
                         {lead.website.replace(/^https?:\/\//, "")}
                       </a>
                     ) : (
-                      <span className="text-[11px] text-[#D14D4D] font-medium">
+                      <span className="text-[11px] text-semantic-danger font-medium">
                         No website
                       </span>
                     )}
@@ -268,7 +268,7 @@ export const LeadsPage: React.FC = () => {
                     <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold font-mono">
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          lead.leadScore >= 90 ? "bg-[#34A874]" : lead.leadScore >= 75 ? "bg-[#C98A2E]" : "bg-[#6B6B70]"
+                          lead.leadScore >= 90 ? "bg-semantic-success" : lead.leadScore >= 75 ? "bg-semantic-warning" : "bg-text-tertiary"
                         }`}
                       />
                       <span>{lead.leadScore}</span>
@@ -294,7 +294,7 @@ export const LeadsPage: React.FC = () => {
           </table>
 
           {leads.length === 0 && !isLoading && (
-            <div className="py-12 text-center text-[#6B6B70] text-[13px]">
+            <div className="py-12 text-center text-text-tertiary text-[13px]">
               No leads match your current filter.
             </div>
           )}

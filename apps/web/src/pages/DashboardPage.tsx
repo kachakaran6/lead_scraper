@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Building2,
-  Globe,
-  Calendar,
-  ChevronRight,
-  ArrowRight,
-} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -37,26 +30,29 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   const kpis = stats?.kpis || {
-    total: 3,
-    newToday: 3,
-    newWeek: 3,
-    newMonth: 3,
-    withoutWebsite: 1,
-    withWebsite: 2,
-    highOpportunity: 3,
-    contacted: 0,
+    total: 38,
+    newToday: 35,
+    newWeek: 38,
+    newMonth: 38,
+    withoutWebsite: 18,
+    withWebsite: 20,
+    highOpportunity: 38,
+    contacted: 1,
     replied: 0,
     meetings: 1,
     proposals: 0,
-    wonDeals: 0,
+    wonDeals: 1,
   };
 
   const opportunitiesBreakdown = stats?.charts?.opportunities || [
-    { type: "WHATSAPP_INTEGRATION", count: 2 },
-    { type: "NO_WEBSITE", count: 1 },
-    { type: "WEBSITE_REDESIGN", count: 1 },
-    { type: "LOCAL_SEO", count: 1 },
-    { type: "MOBILE_OPTIMIZATION", count: 1 },
+    { type: "WHATSAPP_INTEGRATION", count: 37 },
+    { type: "WEBSITE_REDESIGN", count: 19 },
+    { type: "MOBILE_OPTIMIZATION", count: 19 },
+    { type: "NO_WEBSITE", count: 18 },
+    { type: "LOCAL_SEO", count: 18 },
+    { type: "BOOKING_SYSTEM", count: 1 },
+    { type: "SOCIAL_MEDIA", count: 1 },
+    { type: "CRM", count: 1 },
   ];
 
   return (
@@ -80,13 +76,13 @@ export const DashboardPage: React.FC = () => {
         {/* Total Businesses */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               Total Leads
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               {kpis.total}
             </div>
-            <div className="text-[11px] text-[#34A874] mt-1 font-medium">
+            <div className="text-[11px] text-semantic-success mt-1 font-medium">
               +{kpis.newToday} today
             </div>
           </CardContent>
@@ -95,65 +91,65 @@ export const DashboardPage: React.FC = () => {
         {/* Without Website */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               No Website
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               {kpis.withoutWebsite}
             </div>
-            <div className="text-[11px] text-[#9B9BA1] mt-1">Prime targets</div>
+            <div className="text-[11px] text-text-secondary mt-1">Prime targets</div>
           </CardContent>
         </Card>
 
         {/* With Website */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               With Website
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               {kpis.withWebsite}
             </div>
-            <div className="text-[11px] text-[#9B9BA1] mt-1">Audit ready</div>
+            <div className="text-[11px] text-text-secondary mt-1">Audit ready</div>
           </CardContent>
         </Card>
 
         {/* High Opportunity */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               High Opportunity
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               {kpis.highOpportunity}
             </div>
-            <div className="text-[11px] text-[#9B9BA1] mt-1">Score ≥ 80</div>
+            <div className="text-[11px] text-text-secondary mt-1">Score ≥ 80</div>
           </CardContent>
         </Card>
 
         {/* Meetings */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               Meetings
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               {kpis.meetings}
             </div>
-            <div className="text-[11px] text-[#9B9BA1] mt-1">Demos booked</div>
+            <div className="text-[11px] text-text-secondary mt-1">Demos booked</div>
           </CardContent>
         </Card>
 
         {/* Closed Won */}
         <Card>
           <CardContent className="p-4">
-            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#6B6B70]">
+            <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
               Won Deals
             </div>
-            <div className="text-[24px] font-semibold tabular-nums text-[#EDEDEF] mt-1.5">
+            <div className="text-[24px] font-semibold tabular-nums text-text-primary mt-1.5">
               ${(kpis.wonDeals * 2500).toLocaleString()}
             </div>
-            <div className="text-[11px] text-[#9B9BA1] mt-1">
+            <div className="text-[11px] text-text-secondary mt-1">
               {kpis.wonDeals} closed
             </div>
           </CardContent>
@@ -173,7 +169,7 @@ export const DashboardPage: React.FC = () => {
                 </CardDescription>
               </div>
               <Link to="/deals">
-                <Button variant="ghost" size="sm" className="text-[12px] text-[#9B9BA1] hover:text-[#EDEDEF]">
+                <Button variant="ghost" size="sm" className="text-[12px] text-text-secondary hover:text-text-primary">
                   Pipeline view &rarr;
                 </Button>
               </Link>
@@ -189,14 +185,14 @@ export const DashboardPage: React.FC = () => {
             ].map((f) => (
               <div key={f.stage} className="space-y-1">
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-[#9B9BA1]">{f.stage}</span>
-                  <span className="text-[#EDEDEF] font-medium tabular-nums">
-                    {f.count} <span className="text-[#6B6B70]">({f.percent}%)</span>
+                  <span className="text-text-secondary">{f.stage}</span>
+                  <span className="text-text-primary font-medium tabular-nums">
+                    {f.count} <span className="text-text-tertiary">({f.percent}%)</span>
                   </span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-[#1B1B1E] overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-bg-surface-hover overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#4C7CF0]"
+                    className="h-full rounded-full bg-accent"
                     style={{ width: `${Math.max(f.percent, 4)}%` }}
                   ></div>
                 </div>
@@ -214,7 +210,7 @@ export const DashboardPage: React.FC = () => {
                 <CardDescription>Identified service requirements</CardDescription>
               </div>
               <Link to="/opportunities">
-                <Button variant="ghost" size="sm" className="text-[12px] text-[#9B9BA1] hover:text-[#EDEDEF]">
+                <Button variant="ghost" size="sm" className="text-[12px] text-text-secondary hover:text-text-primary">
                   All &rarr;
                 </Button>
               </Link>
@@ -224,12 +220,12 @@ export const DashboardPage: React.FC = () => {
             {opportunitiesBreakdown.map((opp: any) => (
               <div
                 key={opp.type}
-                className="p-2.5 rounded-md border border-[#232326] bg-[#0A0A0B] flex items-center justify-between"
+                className="p-2.5 rounded-md border border-border-subtle bg-bg-base flex items-center justify-between"
               >
-                <div className="text-[13px] text-[#EDEDEF] font-medium">
+                <div className="text-[13px] text-text-primary font-medium">
                   {opp.type.replace(/_/g, " ")}
                 </div>
-                <span className="text-[12px] font-semibold tabular-nums text-[#9B9BA1] font-mono">
+                <span className="text-[12px] font-semibold tabular-nums text-text-secondary font-mono">
                   {opp.count} leads
                 </span>
               </div>
@@ -249,7 +245,7 @@ export const DashboardPage: React.FC = () => {
               </CardDescription>
             </div>
             <Link to="/leads">
-              <Button variant="ghost" size="sm" className="text-[12px] text-[#9B9BA1] hover:text-[#EDEDEF]">
+              <Button variant="ghost" size="sm" className="text-[12px] text-text-secondary hover:text-text-primary">
                 View all {kpis.total} leads &rarr;
               </Button>
             </Link>
@@ -257,8 +253,8 @@ export const DashboardPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[13px] text-[#EDEDEF]">
-              <thead className="border-b border-[#232326] text-[11px] uppercase tracking-[0.04em] text-[#6B6B70] font-medium">
+            <table className="w-full text-left text-[13px] text-text-primary">
+              <thead className="border-b border-border-subtle text-[11px] uppercase tracking-[0.04em] text-text-tertiary font-medium">
                 <tr>
                   <th className="py-2.5 px-3 font-medium">Business</th>
                   <th className="py-2.5 px-3 font-medium">Location</th>
@@ -268,14 +264,14 @@ export const DashboardPage: React.FC = () => {
                   <th className="py-2.5 px-3 font-medium text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#232326]">
+              <tbody className="divide-y divide-border-subtle">
                 {topLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-[#1B1B1E] transition-colors h-14">
+                  <tr key={lead.id} className="hover:bg-bg-surface-hover transition-colors h-14">
                     <td className="py-3 px-3">
-                      <div className="font-medium text-[#EDEDEF]">{lead.name}</div>
-                      <div className="text-[11px] text-[#6B6B70]">{lead.category || "General"}</div>
+                      <div className="font-medium text-text-primary">{lead.name}</div>
+                      <div className="text-[11px] text-text-tertiary">{lead.category || "General"}</div>
                     </td>
-                    <td className="py-3 px-3 text-[#9B9BA1] text-[12px]">
+                    <td className="py-3 px-3 text-text-secondary text-[12px]">
                       {lead.city}, {lead.state || lead.country}
                     </td>
                     <td className="py-3 px-3">
@@ -284,12 +280,12 @@ export const DashboardPage: React.FC = () => {
                           href={lead.website}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[#4C7CF0] hover:underline text-[12px]"
+                          className="text-accent hover:underline text-[12px]"
                         >
                           {lead.website.replace(/^https?:\/\//, "").slice(0, 24)}
                         </a>
                       ) : (
-                        <span className="text-[11px] text-[#D14D4D] font-medium">
+                        <span className="text-[11px] text-semantic-danger font-medium">
                           No website
                         </span>
                       )}
@@ -298,7 +294,7 @@ export const DashboardPage: React.FC = () => {
                       <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold font-mono">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            lead.leadScore >= 90 ? "bg-[#34A874]" : lead.leadScore >= 75 ? "bg-[#C98A2E]" : "bg-[#6B6B70]"
+                            lead.leadScore >= 90 ? "bg-semantic-success" : lead.leadScore >= 75 ? "bg-semantic-warning" : "bg-text-tertiary"
                           }`}
                         />
                         <span>{lead.leadScore}</span>

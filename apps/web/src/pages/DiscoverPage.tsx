@@ -109,7 +109,7 @@ export const DiscoverPage: React.FC = () => {
                 placeholder="e.g. Dentist, Gym, Cafe"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                icon={<Search className="w-3.5 h-3.5 text-[#6B6B70]" />}
+                icon={<Search className="w-3.5 h-3.5 text-text-tertiary" />}
                 required
               />
 
@@ -118,14 +118,14 @@ export const DiscoverPage: React.FC = () => {
                 placeholder="e.g. Mumbai, Delhi, London"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                icon={<MapPin className="w-3.5 h-3.5 text-[#6B6B70]" />}
+                icon={<MapPin className="w-3.5 h-3.5 text-text-tertiary" />}
                 required
               />
 
               <div className="space-y-1">
-                <div className="flex justify-between text-[12px] font-medium text-[#9B9BA1]">
+                <div className="flex justify-between text-[12px] font-medium text-text-secondary">
                   <span>Radius</span>
-                  <span className="font-mono tabular-nums text-[#EDEDEF]">{radius} km</span>
+                  <span className="font-mono tabular-nums text-text-primary">{radius} km</span>
                 </div>
                 <div className="pt-2">
                   <input
@@ -135,16 +135,16 @@ export const DiscoverPage: React.FC = () => {
                     step="5"
                     value={radius}
                     onChange={(e) => setRadius(Number(e.target.value))}
-                    className="w-full accent-[#4C7CF0] h-1.5 bg-[#1B1B1E] rounded cursor-pointer"
+                    className="w-full accent-accent h-1.5 bg-bg-surface-hover rounded cursor-pointer"
                   />
                 </div>
               </div>
             </div>
 
             {/* Provider & Filter Row */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#232326]">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border-subtle">
               <div className="flex items-center gap-1.5">
-                <span className="text-[12px] font-medium text-[#6B6B70] mr-1">Sources:</span>
+                <span className="text-[12px] font-medium text-text-tertiary mr-1">Sources:</span>
                 {[
                   { id: "all", label: "OpenStreetMap" },
                   { id: "maps", label: "Google Maps" },
@@ -157,8 +157,8 @@ export const DiscoverPage: React.FC = () => {
                     onClick={() => setProvider(p.id)}
                     className={`px-2.5 py-1 rounded text-[12px] font-medium transition-colors ${
                       provider === p.id
-                        ? "bg-[#1B1B1E] text-[#EDEDEF] border border-[#2E2E32]"
-                        : "text-[#9B9BA1] hover:text-[#EDEDEF] hover:bg-[#1B1B1E] border border-transparent"
+                        ? "bg-bg-surface-hover text-text-primary border border-border-default"
+                        : "text-text-secondary hover:text-text-primary hover:bg-bg-surface-hover border border-transparent"
                     }`}
                   >
                     {p.label}
@@ -167,12 +167,12 @@ export const DiscoverPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer text-[12px] text-[#9B9BA1]">
+                <label className="flex items-center gap-2 cursor-pointer text-[12px] text-text-secondary">
                   <input
                     type="checkbox"
                     checked={onlyNoWebsite}
                     onChange={(e) => setOnlyNoWebsite(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-[#2E2E32] bg-[#0A0A0B] text-[#4C7CF0] accent-[#4C7CF0]"
+                    className="w-3.5 h-3.5 rounded border-border-default bg-bg-base text-accent accent-accent"
                   />
                   <span>No website only</span>
                 </label>
@@ -190,8 +190,8 @@ export const DiscoverPage: React.FC = () => {
 
             {/* Dynamic Search Status Banner */}
             {isSearching && (
-              <div className="p-2.5 rounded-md bg-[#131315] border border-[#232326] text-[12px] text-[#9B9BA1] flex items-center gap-2">
-                <RefreshCw className="w-3.5 h-3.5 text-[#4C7CF0] animate-spin shrink-0" />
+              <div className="p-2.5 rounded-md bg-bg-surface border border-border-subtle text-[12px] text-text-secondary flex items-center gap-2">
+                <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin shrink-0" />
                 <span>{searchStatus}</span>
               </div>
             )}
@@ -204,12 +204,12 @@ export const DiscoverPage: React.FC = () => {
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-[16px] font-semibold text-[#EDEDEF]">
+              <h2 className="text-[16px] font-semibold text-text-primary">
                 Results in {location} ({filteredResults.length})
               </h2>
             </div>
             <Link to={`/leads?search=${encodeURIComponent(location.split(",")[0] || query)}`}>
-              <Button variant="ghost" size="sm" className="text-[12px] text-[#9B9BA1] hover:text-[#EDEDEF]">
+              <Button variant="ghost" size="sm" className="text-[12px] text-text-secondary hover:text-text-primary">
                 View in CRM table &rarr;
               </Button>
             </Link>
@@ -221,19 +221,19 @@ export const DiscoverPage: React.FC = () => {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-semibold text-[#EDEDEF] text-[14px]">
+                      <div className="font-semibold text-text-primary text-[14px]">
                         {lead.name}
                       </div>
-                      <p className="text-[12px] text-[#6B6B70] mt-0.5">
+                      <p className="text-[12px] text-text-tertiary mt-0.5">
                         {lead.address}, {lead.city}
                       </p>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-[14px] text-[#EDEDEF] font-mono">
+                      <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-[14px] text-text-primary font-mono">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            lead.score >= 90 ? "bg-[#34A874]" : lead.score >= 75 ? "bg-[#C98A2E]" : "bg-[#6B6B70]"
+                            lead.score >= 90 ? "bg-success" : lead.score >= 75 ? "bg-warning" : "bg-text-tertiary"
                           }`}
                         />
                         <span>{lead.score}</span>
@@ -242,26 +242,26 @@ export const DiscoverPage: React.FC = () => {
                   </div>
 
                   {/* Value Proposition Box */}
-                  <div className="rounded-md bg-[#0A0A0B] border border-[#232326] p-2.5 text-[12px] space-y-0.5">
-                    <div className="flex justify-between text-[#6B6B70]">
+                  <div className="rounded-md bg-bg-base border border-border-subtle p-2.5 text-[12px] space-y-0.5">
+                    <div className="flex justify-between text-text-tertiary">
                       <span>Requirement:</span>
-                      <span className="text-[#34A874] font-medium font-mono">
+                      <span className="text-success font-medium font-mono">
                         Est: {lead.dealPotential}
                       </span>
                     </div>
-                    <div className="text-[#EDEDEF] font-medium">{lead.opportunity}</div>
+                    <div className="text-text-primary font-medium">{lead.opportunity}</div>
                   </div>
 
                   {/* Bottom Row */}
-                  <div className="flex items-center justify-between pt-2 border-t border-[#232326]">
+                  <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                     <div className="flex items-center gap-2 text-[12px]">
                       {lead.hasWebsite ? (
-                        <span className="text-[#9B9BA1]">Website verified</span>
+                        <span className="text-text-secondary">Website verified</span>
                       ) : (
-                        <span className="text-[#D14D4D] font-medium">No website</span>
+                        <span className="text-danger font-medium">No website</span>
                       )}
-                      <span className="text-[#6B6B70]">•</span>
-                      <span className="text-[#9B9BA1] tabular-nums">
+                      <span className="text-text-tertiary">•</span>
+                      <span className="text-text-secondary tabular-nums">
                         {lead.rating} ({lead.reviewCount})
                       </span>
                     </div>
@@ -277,7 +277,7 @@ export const DiscoverPage: React.FC = () => {
             ))}
 
             {filteredResults.length === 0 && (
-              <div className="col-span-2 text-center py-10 text-[#6B6B70] text-[13px]">
+              <div className="col-span-2 text-center py-10 text-text-tertiary text-[13px]">
                 No listings matching your filter.
               </div>
             )}

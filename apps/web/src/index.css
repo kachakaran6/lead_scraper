@@ -5,7 +5,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  [data-theme="dark"] {
     --bg-base: #0A0A0B;
     --bg-surface: #131315;
     --bg-surface-hover: #1B1B1E;
@@ -16,24 +17,57 @@
     --text-secondary: #9B9BA1;
     --text-tertiary: #6B6B70;
 
-    --accent: #4C7CF0;
-    --accent-hover: #3B6BE0;
-    --accent-subtle: rgba(76, 124, 240, 0.1);
+    --accent: #7C7FE0;
+    --accent-hover: #686BD1;
+    --accent-subtle: rgba(124, 127, 224, 0.12);
 
     --success: #34A874;
     --warning: #C98A2E;
     --danger: #D14D4D;
 
     --radius: 8px;
+    --scrollbar-track: #0A0A0B;
+    --scrollbar-thumb: #232326;
+    --scrollbar-thumb-hover: #2E2E32;
+  }
+
+  [data-theme="light"] {
+    --bg-base: #FAFAFA;
+    --bg-surface: #FFFFFF;
+    --bg-surface-hover: #F2F2F3;
+    --border-subtle: #E5E5E7;
+    --border-default: #D4D4D6;
+
+    --text-primary: #18181B;
+    --text-secondary: #52525B;
+    --text-tertiary: #8A8A8F;
+
+    --accent: #5457C7;
+    --accent-hover: #4346B0;
+    --accent-subtle: rgba(84, 87, 199, 0.1);
+
+    --success: #1F8A5A;
+    --warning: #A66A1B;
+    --danger: #B23B3B;
+
+    --radius: 8px;
+    --scrollbar-track: #FAFAFA;
+    --scrollbar-thumb: #E5E5E7;
+    --scrollbar-thumb-hover: #D4D4D6;
+  }
+
+  * {
+    border-color: var(--border-subtle);
   }
 
   body {
     margin: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #0A0A0B;
-    color: #EDEDEF;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 150ms ease, color 150ms ease;
   }
 }
 
@@ -43,7 +77,7 @@
   line-height: 1.2;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #EDEDEF;
+  color: var(--text-primary);
 }
 
 .type-h1 {
@@ -51,7 +85,7 @@
   line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.015em;
-  color: #EDEDEF;
+  color: var(--text-primary);
 }
 
 .type-h2 {
@@ -59,21 +93,21 @@
   line-height: 1.35;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #EDEDEF;
+  color: var(--text-primary);
 }
 
 .type-body {
   font-size: 14px;
   line-height: 1.5;
   font-weight: 400;
-  color: #EDEDEF;
+  color: var(--text-primary);
 }
 
 .type-body-secondary {
   font-size: 14px;
   line-height: 1.5;
   font-weight: 400;
-  color: #9B9BA1;
+  color: var(--text-secondary);
 }
 
 .type-meta {
@@ -82,24 +116,24 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #6B6B70;
+  color: var(--text-tertiary);
 }
 
-/* Minimalist Dark Scrollbar */
+/* Minimalist Scrollbars (Themed) */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0B;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #232326;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2E2E32;
+  background: var(--scrollbar-thumb-hover);
 }

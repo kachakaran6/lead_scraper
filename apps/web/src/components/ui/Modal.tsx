@@ -47,18 +47,18 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 transition-opacity">
       <div
         className={cn(
-          "w-full rounded-lg bg-[#131315] border border-[#2E2E32] shadow-dropdown p-5 relative overflow-hidden text-[#EDEDEF]",
+          "w-full rounded-lg bg-bg-surface border border-border-default shadow-dropdown p-5 relative overflow-hidden text-text-primary",
           maxWidthClass
         )}
       >
-        <div className="flex items-center justify-between pb-3.5 border-b border-[#232326]">
+        <div className="flex items-center justify-between pb-3.5 border-b border-border-subtle">
           <div>
-            <h3 className="text-[15px] font-semibold text-[#EDEDEF] tracking-tight">{title}</h3>
-            {subtitle && <p className="text-[12px] text-[#9B9BA1] mt-0.5">{subtitle}</p>}
+            <h3 className="text-[15px] font-semibold text-text-primary tracking-tight">{title}</h3>
+            {subtitle && <p className="text-[12px] text-text-secondary mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-[#9B9BA1] hover:text-[#EDEDEF] rounded hover:bg-[#1B1B1E] transition-colors"
+            className="p-1 text-text-secondary hover:text-text-primary rounded hover:bg-bg-surface-hover transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

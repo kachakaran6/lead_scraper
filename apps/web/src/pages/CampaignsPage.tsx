@@ -88,8 +88,8 @@ export const CampaignsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="py-24 text-center text-[#9B9BA1]">
-          <div className="w-6 h-6 border-2 border-[#4C7CF0] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <div className="py-24 text-center text-text-secondary">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-xs">Loading campaigns...</p>
         </div>
       ) : (
@@ -97,29 +97,29 @@ export const CampaignsPage: React.FC = () => {
           {campaigns.map((camp) => (
             <div
               key={camp.id}
-              className="bg-[#131315] border border-[#232326] rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+              className="bg-bg-surface border border-border-subtle rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5"
             >
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2.5">
-                  <h3 className="font-medium text-[#EDEDEF] text-sm">{camp.name}</h3>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#9B9BA1]">
+                  <h3 className="font-medium text-text-primary text-sm">{camp.name}</h3>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary">
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
                         camp.status === "COMPLETED"
-                          ? "bg-[#34A874]"
+                          ? "bg-success"
                           : camp.status === "RUNNING"
-                          ? "bg-[#C98A2E]"
-                          : "bg-[#6B6B70]"
+                          ? "bg-warning"
+                          : "bg-text-tertiary"
                       }`}
                     />
                     {camp.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#9B9BA1]">
-                  <span>Target: <strong className="text-[#EDEDEF] font-normal">{camp.query}</strong></span>
-                  <span className="text-[#6B6B70]">•</span>
+                <div className="flex items-center gap-3 text-xs text-text-secondary">
+                  <span>Target: <strong className="text-text-primary font-normal">{camp.query}</strong></span>
+                  <span className="text-text-tertiary">•</span>
                   <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#6B6B70]" />
+                    <MapPin className="w-3 h-3 text-text-tertiary" />
                     {camp.location || "Default Location"} ({camp.radiusKm || 15}km)
                   </span>
                 </div>
@@ -127,27 +127,27 @@ export const CampaignsPage: React.FC = () => {
 
               {/* Metrics */}
               <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
-                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Discovered</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-[#EDEDEF] mt-0.5">
+                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
+                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Discovered</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-0.5">
                     {camp.discovered || 42}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
-                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Unique</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-[#EDEDEF] mt-0.5">
+                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
+                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Unique</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-0.5">
                     {camp.unique || 38}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
-                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">No Website</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-[#C98A2E] mt-0.5">
+                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
+                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">No Website</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-warning mt-0.5">
                     {camp.noWebsite || 14}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-[#0A0A0B] border border-[#232326] min-w-[70px]">
-                  <span className="text-[10px] text-[#6B6B70] uppercase tracking-wider">Score &gt; 80</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-[#34A874] mt-0.5">
+                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
+                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Score &gt; 80</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-success mt-0.5">
                     {camp.highOpportunity || 19}
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export const CampaignsPage: React.FC = () => {
                     onClick={() => handlePause(camp.id)}
                     className="text-xs"
                   >
-                    <Pause className="w-3 h-3 mr-1 text-[#C98A2E]" /> Pause
+                    <Pause className="w-3 h-3 mr-1 text-warning" /> Pause
                   </Button>
                 ) : (
                   <Button
@@ -179,8 +179,8 @@ export const CampaignsPage: React.FC = () => {
           ))}
 
           {campaigns.length === 0 && !isLoading && (
-            <div className="text-center py-16 text-[#9B9BA1] bg-[#131315] border border-[#232326] rounded-lg">
-              <Megaphone className="w-8 h-8 mx-auto text-[#6B6B70] mb-2" />
+            <div className="text-center py-16 text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
+              <Megaphone className="w-8 h-8 mx-auto text-text-tertiary mb-2" />
               <p className="text-xs">No campaigns found. Create your first automated scraping run above.</p>
             </div>
           )}
@@ -226,7 +226,7 @@ export const CampaignsPage: React.FC = () => {
             onChange={(e) => setRadiusKm(e.target.value)}
           />
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>

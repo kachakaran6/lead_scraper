@@ -25,15 +25,15 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const dotColor = {
-    default: "bg-[#6B6B70]",
-    neutral: "bg-[#6B6B70]",
-    primary: "bg-[#4C7CF0]",
-    info: "bg-[#4C7CF0]",
-    secondary: "bg-[#9B9BA1]",
-    success: "bg-[#34A874]",
-    warning: "bg-[#C98A2E]",
-    danger: "bg-[#D14D4D]",
-    destructive: "bg-[#D14D4D]",
+    default: "bg-text-tertiary",
+    neutral: "bg-text-tertiary",
+    primary: "bg-accent",
+    info: "bg-accent",
+    secondary: "bg-text-secondary",
+    success: "bg-semantic-success",
+    warning: "bg-semantic-warning",
+    danger: "bg-semantic-danger",
+    destructive: "bg-semantic-danger",
   }[variant];
 
   const sizeStyles = {
@@ -44,7 +44,7 @@ export const Badge: React.FC<BadgeProps> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded border border-[#232326] bg-[#131315] text-[#9B9BA1] font-medium tracking-[0.02em]",
+        "inline-flex items-center gap-1.5 rounded border border-border-subtle bg-bg-surface text-text-secondary font-medium tracking-[0.02em]",
         sizeStyles[size],
         className
       )}

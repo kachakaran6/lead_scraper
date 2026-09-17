@@ -13,29 +13,29 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1">
         {label && (
-          <label className="block text-[12px] font-medium text-[#9B9BA1] tracking-[0.02em]">
+          <label className="block text-[12px] font-medium text-text-secondary tracking-[0.02em]">
             {label}
           </label>
         )}
         <div className="relative flex items-center">
           {icon && (
-            <div className="absolute left-3 flex items-center pointer-events-none text-[#6B6B70]">
+            <div className="absolute left-3 flex items-center pointer-events-none text-text-tertiary">
               {icon}
             </div>
           )}
           <input
             type={type}
             className={cn(
-              "w-full rounded-md border border-[#2E2E32] bg-[#0A0A0B] px-3 py-1.5 text-[13px] text-[#EDEDEF] placeholder:text-[#6B6B70] focus:border-[#4C7CF0] focus:outline-none focus:ring-1 focus:ring-[#4C7CF0] transition-colors duration-150",
+              "w-full rounded-md border border-border-default bg-bg-base px-3 py-1.5 text-[13px] text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors duration-150",
               icon ? "pl-9" : "",
-              error ? "border-[#D14D4D] focus:border-[#D14D4D] focus:ring-[#D14D4D]" : "",
+              error ? "border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger" : "",
               className
             )}
             ref={ref}
             {...props}
           />
         </div>
-        {error && <p className="text-[12px] text-[#D14D4D] mt-0.5">{error}</p>}
+        {error && <p className="text-[12px] text-semantic-danger mt-0.5">{error}</p>}
       </div>
     );
   }

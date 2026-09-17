@@ -96,13 +96,13 @@ export const SettingsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Scoring Rules Engine */}
-        <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">
+        <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4">
           <div>
             <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#9B9BA1]" />
-              <h3 className="text-sm font-semibold text-[#EDEDEF]">Lead Scoring Signals & Weights</h3>
+              <Sliders className="w-4 h-4 text-text-secondary" />
+              <h3 className="text-sm font-semibold text-text-primary">Lead Scoring Signals & Weights</h3>
             </div>
-            <p className="text-xs text-[#9B9BA1] mt-0.5">
+            <p className="text-xs text-text-secondary mt-0.5">
               Customize how points are accumulated to compute the 0-100 score
             </p>
           </div>
@@ -112,18 +112,18 @@ export const SettingsPage: React.FC = () => {
               scoringRules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex items-center justify-between gap-3 text-xs"
+                  className="p-3 rounded-md bg-bg-base border border-border-subtle flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <input
                       type="checkbox"
                       checked={rule.enabled}
                       onChange={() => handleRuleToggle(rule.id, rule.enabled)}
-                      className="w-4 h-4 rounded border-[#2E2E32] bg-[#131315] accent-[#4C7CF0] cursor-pointer"
+                      className="w-4 h-4 rounded border-border-default bg-bg-surface accent-accent cursor-pointer"
                     />
                     <div>
-                      <div className="font-medium text-[#EDEDEF]">{rule.name}</div>
-                      <div className="text-[11px] text-[#6B6B70]">
+                      <div className="font-medium text-text-primary">{rule.name}</div>
+                      <div className="text-[11px] text-text-tertiary">
                         {rule.signal} {rule.operator} {rule.value}
                       </div>
                     </div>
@@ -134,9 +134,9 @@ export const SettingsPage: React.FC = () => {
                       type="number"
                       value={rule.weight}
                       onChange={(e) => handleRuleWeightChange(rule.id, Number(e.target.value))}
-                      className="w-14 px-2 py-1 rounded bg-[#131315] border border-[#2E2E32] text-center font-mono font-medium tabular-nums text-[#EDEDEF] text-xs focus:border-[#4C7CF0] focus:outline-none"
+                      className="w-14 px-2 py-1 rounded bg-bg-surface border border-border-default text-center font-mono font-medium tabular-nums text-text-primary text-xs focus:border-accent focus:outline-none"
                     />
-                    <span className="text-[#6B6B70] text-xs">pts</span>
+                    <span className="text-text-tertiary text-xs">pts</span>
                   </div>
                 </div>
               ))
@@ -149,9 +149,9 @@ export const SettingsPage: React.FC = () => {
                   { name: "Direct WhatsApp Line Found", pts: 20 },
                   { name: "Outdated WordPress CMS (< 5.5)", pts: 20 },
                 ].map((d, i) => (
-                  <div key={i} className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex items-center justify-between text-xs">
-                    <span className="font-medium text-[#EDEDEF]">{d.name}</span>
-                    <span className="font-mono font-medium tabular-nums text-[#34A874]">+{d.pts} pts</span>
+                  <div key={i} className="p-3 rounded-md bg-bg-base border border-border-subtle flex items-center justify-between text-xs">
+                    <span className="font-medium text-text-primary">{d.name}</span>
+                    <span className="font-mono font-medium tabular-nums text-success">+{d.pts} pts</span>
                   </div>
                 ))}
               </div>
@@ -161,13 +161,13 @@ export const SettingsPage: React.FC = () => {
 
         {/* Crawler & Scraping Controls */}
         <div className="space-y-6">
-          <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-5">
+          <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-5">
             <div>
               <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-[#9B9BA1]" />
-                <h3 className="text-sm font-semibold text-[#EDEDEF]">Scraper Worker Engine</h3>
+                <RefreshCw className="w-4 h-4 text-text-secondary" />
+                <h3 className="text-sm font-semibold text-text-primary">Scraper Worker Engine</h3>
               </div>
-              <p className="text-xs text-[#9B9BA1] mt-0.5">
+              <p className="text-xs text-text-secondary mt-0.5">
                 Worker concurrency and request throttling
               </p>
             </div>
@@ -175,8 +175,8 @@ export const SettingsPage: React.FC = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#9B9BA1]">Worker Concurrency</span>
-                  <span className="font-mono font-medium tabular-nums text-[#EDEDEF]">{concurrency} threads</span>
+                  <span className="text-text-secondary">Worker Concurrency</span>
+                  <span className="font-mono font-medium tabular-nums text-text-primary">{concurrency} threads</span>
                 </div>
                 <input
                   type="range"
@@ -184,14 +184,14 @@ export const SettingsPage: React.FC = () => {
                   max="20"
                   value={concurrency}
                   onChange={(e) => setConcurrency(Number(e.target.value))}
-                  className="w-full accent-[#4C7CF0] h-1.5 bg-[#232326] rounded-lg cursor-pointer"
+                  className="w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#9B9BA1]">Politeness Request Delay</span>
-                  <span className="font-mono font-medium tabular-nums text-[#EDEDEF]">{delayMs} ms</span>
+                  <span className="text-text-secondary">Politeness Request Delay</span>
+                  <span className="font-mono font-medium tabular-nums text-text-primary">{delayMs} ms</span>
                 </div>
                 <input
                   type="range"
@@ -200,17 +200,17 @@ export const SettingsPage: React.FC = () => {
                   step="250"
                   value={delayMs}
                   onChange={(e) => setDelayMs(Number(e.target.value))}
-                  className="w-full accent-[#4C7CF0] h-1.5 bg-[#232326] rounded-lg cursor-pointer"
+                  className="w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer"
                 />
               </div>
 
               <div className="pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-[#9B9BA1]">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs text-text-secondary">
                   <input
                     type="checkbox"
                     checked={rotateProxies}
                     onChange={(e) => setRotateProxies(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#2E2E32] bg-[#0A0A0B] accent-[#4C7CF0]"
+                    className="w-4 h-4 rounded border-border-default bg-bg-base accent-accent"
                   />
                   <span>Rotate Residential User-Agent Headers & IP Pools</span>
                 </label>
@@ -219,13 +219,13 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           {/* API Key Management */}
-          <div className="bg-[#131315] border border-[#232326] rounded-lg p-6 space-y-4">
+          <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4">
             <div>
               <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-[#9B9BA1]" />
-                <h3 className="text-sm font-semibold text-[#EDEDEF]">Developer API Credentials</h3>
+                <Key className="w-4 h-4 text-text-secondary" />
+                <h3 className="text-sm font-semibold text-text-primary">Developer API Credentials</h3>
               </div>
-              <p className="text-xs text-[#9B9BA1] mt-0.5">
+              <p className="text-xs text-text-secondary mt-0.5">
                 Authentication keys for external programmatic access
               </p>
             </div>
@@ -246,16 +246,16 @@ export const SettingsPage: React.FC = () => {
               {apiKeys.map((k) => (
                 <div
                   key={k.id}
-                  className="p-3 rounded-md bg-[#0A0A0B] border border-[#232326] flex justify-between items-center text-xs"
+                  className="p-3 rounded-md bg-bg-base border border-border-subtle flex justify-between items-center text-xs"
                 >
                   <div className="truncate mr-3">
-                    <div className="font-medium text-[#EDEDEF]">{k.name}</div>
-                    <div className="font-mono text-[#6B6B70] text-[11px] truncate">
+                    <div className="font-medium text-text-primary">{k.name}</div>
+                    <div className="font-mono text-text-tertiary text-[11px] truncate">
                       {k.key}
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#9B9BA1] shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#34A874]" />
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
                     Active
                   </span>
                 </div>

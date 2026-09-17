@@ -74,20 +74,20 @@ export const DealsPage: React.FC = () => {
   const stagesToRender = stages.length > 0
     ? stages
     : [
-        { id: "s1", name: "NEW", color: "#6B6B70" },
-        { id: "s2", name: "QUALIFIED", color: "#4C7CF0" },
-        { id: "s3", name: "CONTACTED", color: "#4C7CF0" },
-        { id: "s4", name: "MEETING", color: "#C98A2E" },
-        { id: "s5", name: "PROPOSAL", color: "#C98A2E" },
-        { id: "s6", name: "WON", color: "#34A874" },
+        { id: "s1", name: "NEW", color: "var(--text-tertiary)" },
+        { id: "s2", name: "QUALIFIED", color: "var(--accent)" },
+        { id: "s3", name: "CONTACTED", color: "var(--accent)" },
+        { id: "s4", name: "MEETING", color: "var(--warning)" },
+        { id: "s5", name: "PROPOSAL", color: "var(--warning)" },
+        { id: "s6", name: "WON", color: "var(--success)" },
       ];
 
   return (
     <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232326] bg-[#131315] text-xs font-mono text-[#9B9BA1]">
-          <span className="text-[#EDEDEF] font-semibold tabular-nums">${totalPipeline.toLocaleString()}</span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border-subtle bg-bg-surface text-xs font-mono text-text-secondary">
+          <span className="text-text-primary font-semibold tabular-nums">${totalPipeline.toLocaleString()}</span>
           <span>Active Pipeline</span>
         </span>
 
@@ -103,8 +103,8 @@ export const DealsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="py-24 text-center text-[#9B9BA1]">
-          <div className="w-6 h-6 border-2 border-[#4C7CF0] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <div className="py-24 text-center text-text-secondary">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-xs">Loading pipeline...</p>
         </div>
       ) : (
@@ -119,23 +119,23 @@ export const DealsPage: React.FC = () => {
             return (
               <div
                 key={stage.id}
-                className="w-72 shrink-0 bg-[#0E0E10] rounded-lg border border-[#232326] p-3 flex flex-col min-h-[500px]"
+                className="w-72 shrink-0 bg-bg-base rounded-lg border border-border-subtle p-3 flex flex-col min-h-[500px]"
               >
                 {/* Stage Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-[#232326] mb-3">
+                <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-3">
                   <div className="flex items-center gap-2">
                     <span
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: stage.color || "#4C7CF0" }}
+                      style={{ backgroundColor: stage.color || "var(--accent)" }}
                     />
-                    <span className="text-xs font-semibold text-[#EDEDEF] tracking-wide">
+                    <span className="text-xs font-semibold text-text-primary tracking-wide">
                       {stage.name}
                     </span>
-                    <span className="text-[11px] font-mono text-[#6B6B70] bg-[#131315] px-1.5 py-0.5 rounded border border-[#232326]">
+                    <span className="text-[11px] font-mono text-text-tertiary bg-bg-surface px-1.5 py-0.5 rounded border border-border-subtle">
                       {stageDeals.length}
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-medium tabular-nums text-[#EDEDEF]">
+                  <span className="text-xs font-mono font-medium tabular-nums text-text-primary">
                     ${stageTotal}
                   </span>
                 </div>
@@ -145,31 +145,31 @@ export const DealsPage: React.FC = () => {
                   {stageDeals.map((deal) => (
                     <div
                       key={deal.id}
-                      className="p-3.5 rounded-md bg-[#131315] border border-[#232326] hover:border-[#2E2E32] hover:bg-[#1B1B1E] transition-colors"
+                      className="p-3.5 rounded-md bg-bg-surface border border-border-subtle hover:border-border-default hover:bg-bg-surface-hover transition-colors"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <h4 className="font-medium text-[#EDEDEF] text-xs leading-snug">
+                        <h4 className="font-medium text-text-primary text-xs leading-snug">
                           {deal.title}
                         </h4>
-                        <span className="text-xs font-mono font-semibold tabular-nums text-[#EDEDEF] shrink-0">
+                        <span className="text-xs font-mono font-semibold tabular-nums text-text-primary shrink-0">
                           ${deal.value}
                         </span>
                       </div>
 
                       {deal.business && (
-                        <div className="text-[11px] text-[#9B9BA1] flex items-center gap-1.5 mt-2">
-                          <Building2 className="w-3.5 h-3.5 text-[#6B6B70] shrink-0" />
+                        <div className="text-[11px] text-text-secondary flex items-center gap-1.5 mt-2">
+                          <Building2 className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
                           <span className="truncate">{deal.business.name}</span>
                         </div>
                       )}
 
                       {/* Move stage selector */}
-                      <div className="pt-2.5 mt-3 border-t border-[#232326] flex items-center justify-between">
-                        <span className="text-[10px] text-[#6B6B70]">Stage:</span>
+                      <div className="pt-2.5 mt-3 border-t border-border-subtle flex items-center justify-between">
+                        <span className="text-[10px] text-text-tertiary">Stage:</span>
                         <select
                           value={deal.stageId || stage.id}
                           onChange={(e) => handleMoveStage(deal.id, e.target.value)}
-                          className="text-[11px] bg-[#0A0A0B] text-[#EDEDEF] rounded px-2 py-1 border border-[#2E2E32] focus:outline-none focus:border-[#4C7CF0] cursor-pointer"
+                          className="text-[11px] bg-bg-base text-text-primary rounded px-2 py-1 border border-border-default focus:outline-none focus:border-accent cursor-pointer"
                         >
                           {stagesToRender.map((s) => (
                             <option key={s.id} value={s.id}>
@@ -182,7 +182,7 @@ export const DealsPage: React.FC = () => {
                   ))}
 
                   {stageDeals.length === 0 && (
-                    <div className="h-28 border border-dashed border-[#232326] rounded-md flex items-center justify-center text-xs text-[#6B6B70]">
+                    <div className="h-28 border border-dashed border-border-subtle rounded-md flex items-center justify-center text-xs text-text-tertiary">
                       No deals in {stage.name}
                     </div>
                   )}
@@ -218,14 +218,14 @@ export const DealsPage: React.FC = () => {
           />
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-wider text-[#6B6B70]">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
               Select Client / Lead
             </label>
             <select
               value={newDealBusinessId}
               onChange={(e) => setNewDealBusinessId(e.target.value)}
               required
-              className="w-full rounded-md border border-[#2E2E32] bg-[#0A0A0B] px-3 py-2 text-xs text-[#EDEDEF] focus:border-[#4C7CF0] focus:outline-none cursor-pointer"
+              className="w-full rounded-md border border-border-default bg-bg-base px-3 py-2 text-xs text-text-primary focus:border-accent focus:outline-none cursor-pointer"
             >
               <option value="">Select a business from CRM...</option>
               {businesses.map((b) => (
@@ -236,7 +236,7 @@ export const DealsPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#232326]">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsNewDealOpen(false)}>
               Cancel
             </Button>

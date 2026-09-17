@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search, Plus, ChevronRight } from "lucide-react";
 import { Button } from "../ui/Button";
+import { ThemeToggle } from "../ui/ThemeToggle";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
 interface HeaderProps {
@@ -56,24 +57,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
   const crumb = getBreadcrumb(location.pathname);
 
   return (
-    <header className="h-14 border-b border-[#232326] bg-[#0A0A0B] sticky top-0 z-30 px-6 flex items-center justify-between gap-4">
+    <header className="h-14 border-b border-border-subtle bg-bg-base sticky top-0 z-30 px-6 flex items-center justify-between gap-4 transition-colors">
       {/* Professional Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs shrink-0">
-        <span className="text-[#6B6B70] font-medium">{crumb.section}</span>
-        <ChevronRight className="w-3.5 h-3.5 text-[#3E3E44]" />
+        <span className="text-text-tertiary font-medium">{crumb.section}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />
         {crumb.sub ? (
           <>
             <Link
               to={crumb.path || "/"}
-              className="text-[#9B9BA1] hover:text-[#EDEDEF] transition-colors font-medium"
+              className="text-text-secondary hover:text-text-primary transition-colors font-medium"
             >
               {crumb.title}
             </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-[#3E3E44]" />
-            <span className="text-[#EDEDEF] font-medium">{crumb.sub}</span>
+            <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />
+            <span className="text-text-primary font-medium">{crumb.sub}</span>
           </>
         ) : (
-          <span className="text-[#EDEDEF] font-medium">{crumb.title}</span>
+          <span className="text-text-primary font-medium">{crumb.title}</span>
         )}
       </nav>
 
@@ -81,21 +82,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
       <div className="flex items-center gap-3 ml-auto">
         <form onSubmit={handleSearchSubmit} className="w-64 lg:w-80">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#6B6B70] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search leads, cities, niches..."
-              className="w-full pl-8 pr-10 py-1.5 rounded-md bg-[#131315] border border-[#2E2E32] text-xs text-[#EDEDEF] placeholder:text-[#6B6B70] focus:outline-none focus:border-[#4C7CF0] focus:ring-1 focus:ring-[#4C7CF0] transition-colors"
+              className="w-full pl-8 pr-10 py-1.5 rounded-md bg-bg-surface border border-border-default text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
             />
             <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono text-[#6B6B70] bg-[#1B1B1E] rounded border border-[#2E2E32]">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary bg-bg-surface-hover rounded border border-border-default">
                 ⌘K
               </kbd>
             </div>
           </div>
         </form>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
         {/* Clean Primary Scrape Button */}
         <Button
@@ -109,13 +113,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
         </Button>
 
         {/* User profile */}
-        <div className="flex items-center gap-2.5 pl-3 border-l border-[#232326]">
-          <div className="w-7 h-7 rounded-md bg-[#18181B] border border-[#2E2E32] flex items-center justify-center text-[11px] font-semibold text-[#EDEDEF]">
+        <div className="flex items-center gap-2.5 pl-3 border-l border-border-subtle">
+          <div className="w-7 h-7 rounded-md bg-bg-surface-hover border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-primary">
             AD
           </div>
           <div className="hidden xl:block text-left">
-            <div className="text-[12px] font-medium text-[#EDEDEF] leading-none">Admin</div>
-            <div className="text-[11px] text-[#6B6B70] leading-none mt-1">admin@ultimate-leads.com</div>
+            <div className="text-[12px] font-medium text-text-primary leading-none">Admin</div>
+            <div className="text-[11px] text-text-tertiary leading-none mt-1">admin@ultimate-leads.com</div>
           </div>
         </div>
       </div>
