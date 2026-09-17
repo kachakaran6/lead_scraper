@@ -1,4 +1,12 @@
 import "reflect-metadata";
+import * as dotenv from "dotenv";
+import * as path from "path";
+
+// Load root and local .env files
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config();
+
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";

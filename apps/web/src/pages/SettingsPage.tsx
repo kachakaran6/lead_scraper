@@ -5,10 +5,12 @@ import {
   CheckCircle2,
   Save,
   RefreshCw,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 export const SettingsPage: React.FC = () => {
   const [scoringRules, setScoringRules] = useState<any[]>([]);
@@ -16,6 +18,12 @@ export const SettingsPage: React.FC = () => {
   const [newKeyName, setNewKeyName] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Auth & RBAC
+  const { role, can } = useAuth();
+  const canEditScoring = can("SCORING_RULES_EDIT");
+  const canGenerateKeys = can("API_KEYS_GENERATE");
+  const canEditSystem = can("SYSTEM_SETTINGS_EDIT");
 
   // Crawler settings state
   const [concurrency, setConcurrency] = useState(5);
@@ -82,10 +90,19 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Toolbar */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div>
+          {(!canEditScoring || !canEditSystem) && (
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
+              <ShieldAlert className="w-3.5 h-3.5 text-warning" />
+              <span>Role <strong>{role}</strong> has restricted settings access. Some controls are read-only.</span>
+            </div>
+          )}
+        </div>
         <Button
           variant="primary"
           size="sm"
+          disabled={!canEditScoring && !canEditSystem}
           onClick={handleSaveAll}
           className="flex items-center gap-1.5 text-xs"
         >
@@ -97,14 +114,21 @@ export const SettingsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Scoring Rules Engine */}
         <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-text-secondary" />
-              <h3 className="text-sm font-semibold text-text-primary">Lead Scoring Signals & Weights</h3>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-text-secondary" />
+                <h3 className="text-sm font-semibold text-text-primary">Lead Scoring Signals & Weights</h3>
+              </div>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Customize how points are accumulated to compute the 0-100 score
+              </p>
             </div>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Customize how points are accumulated to compute the 0-100 score
-            </p>
+            {!canEditScoring && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-bg-surface-hover text-text-tertiary border border-border-default">
+                Read-Only
+              </span>
+            )}
           </div>
 
           <div className="space-y-2.5">
@@ -118,8 +142,11 @@ export const SettingsPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={rule.enabled}
+                      disabled={!canEditScoring}
                       onChange={() => handleRuleToggle(rule.id, rule.enabled)}
-                      className="w-4 h-4 rounded border-border-default bg-bg-surface accent-accent cursor-pointer"
+                      className={`w-4 h-4 rounded border-border-default bg-bg-surface accent-accent ${
+                        !canEditScoring ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                      }`}
                     />
                     <div>
                       <div className="font-medium text-text-primary">{rule.name}</div>
@@ -133,8 +160,11 @@ export const SettingsPage: React.FC = () => {
                     <input
                       type="number"
                       value={rule.weight}
+                      disabled={!canEditScoring}
                       onChange={(e) => handleRuleWeightChange(rule.id, Number(e.target.value))}
-                      className="w-14 px-2 py-1 rounded bg-bg-surface border border-border-default text-center font-mono font-medium tabular-nums text-text-primary text-xs focus:border-accent focus:outline-none"
+                      className={`w-14 px-2 py-1 rounded bg-bg-surface border border-border-default text-center font-mono font-medium tabular-nums text-text-primary text-xs focus:border-accent focus:outline-none ${
+                        !canEditScoring ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                     />
                     <span className="text-text-tertiary text-xs">pts</span>
                   </div>
@@ -182,9 +212,12 @@ export const SettingsPage: React.FC = () => {
                   type="range"
                   min="1"
                   max="20"
+                  disabled={!canEditSystem}
                   value={concurrency}
                   onChange={(e) => setConcurrency(Number(e.target.value))}
-                  className="w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer"
+                  className={`w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer ${
+                    !canEditSystem ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -198,9 +231,12 @@ export const SettingsPage: React.FC = () => {
                   min="500"
                   max="5000"
                   step="250"
+                  disabled={!canEditSystem}
                   value={delayMs}
                   onChange={(e) => setDelayMs(Number(e.target.value))}
-                  className="w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer"
+                  className={`w-full accent-accent h-1.5 bg-border-subtle rounded-lg cursor-pointer ${
+                    !canEditSystem ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
 
@@ -208,9 +244,12 @@ export const SettingsPage: React.FC = () => {
                 <label className="flex items-center gap-2.5 cursor-pointer text-xs text-text-secondary">
                   <input
                     type="checkbox"
+                    disabled={!canEditSystem}
                     checked={rotateProxies}
                     onChange={(e) => setRotateProxies(e.target.checked)}
-                    className="w-4 h-4 rounded border-border-default bg-bg-base accent-accent"
+                    className={`w-4 h-4 rounded border-border-default bg-bg-base accent-accent ${
+                      !canEditSystem ? "cursor-not-allowed opacity-60" : ""
+                    }`}
                   />
                   <span>Rotate Residential User-Agent Headers & IP Pools</span>
                 </label>
@@ -220,27 +259,41 @@ export const SettingsPage: React.FC = () => {
 
           {/* API Key Management */}
           <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-text-secondary" />
-                <h3 className="text-sm font-semibold text-text-primary">Developer API Credentials</h3>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-text-secondary" />
+                  <h3 className="text-sm font-semibold text-text-primary">Developer API Credentials</h3>
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Authentication keys for external programmatic access
+                </p>
               </div>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Authentication keys for external programmatic access
-              </p>
+              {!canGenerateKeys && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-bg-surface-hover text-text-tertiary border border-border-default">
+                  Restricted
+                </span>
+              )}
             </div>
 
-            <form onSubmit={handleCreateApiKey} className="flex gap-2">
-              <Input
-                placeholder="Key description, e.g. Production Webhook"
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                className="text-xs"
-              />
-              <Button type="submit" size="sm" variant="primary" className="text-xs whitespace-nowrap">
-                Generate Key
-              </Button>
-            </form>
+            {canGenerateKeys ? (
+              <form onSubmit={handleCreateApiKey} className="flex gap-2">
+                <Input
+                  placeholder="Key description, e.g. Production Webhook"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  className="text-xs"
+                />
+                <Button type="submit" size="sm" variant="primary" className="text-xs whitespace-nowrap">
+                  Generate Key
+                </Button>
+              </form>
+            ) : (
+              <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle text-[11px] text-text-tertiary flex items-center gap-2">
+                <ShieldAlert className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                <span>API key generation requires <strong>Admin</strong> or <strong>Owner</strong> role.</span>
+              </div>
+            )}
 
             <div className="space-y-2 pt-1">
               {apiKeys.map((k) => (

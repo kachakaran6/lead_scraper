@@ -11,8 +11,9 @@
     <script>
       (function() {
         try {
-          var stored = localStorage.getItem('theme-preference') || 'system';
-          var isDark = stored === 'dark' || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var stored = localStorage.getItem('theme-preference');
+          // Default to dark if nothing stored or if legacy "system" value
+          var isDark = stored === 'dark' || !stored || stored === 'system';
           document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
           if (isDark) {
             document.documentElement.classList.add('dark');

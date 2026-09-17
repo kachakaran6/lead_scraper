@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Search, Plus, ChevronRight } from "lucide-react";
 import { Button } from "../ui/Button";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { RoleSwitcher } from "../ui/RoleSwitcher";
+import { useAuth } from "../../lib/auth";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
 interface HeaderProps {
@@ -56,6 +58,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
 
   const crumb = getBreadcrumb(location.pathname);
 
+  const { role, user, can } = useAuth();
+  const canScrape = can("DISCOVERY_RUN");
+
+  const getInitials = (name?: string) => {
+    if (!name) return "US";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  };
+
   return (
     <header className="h-14 border-b border-border-subtle bg-bg-base sticky top-0 z-30 px-6 flex items-center justify-between gap-4 transition-colors">
       {/* Professional Breadcrumbs */}
@@ -98,15 +113,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
           </div>
         </form>
 
+        {/* Role Switcher (RBAC) */}
+        <RoleSwitcher />
+
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Clean Primary Scrape Button */}
+        {/* Clean Primary Scrape Button - Gated by RBAC */}
         <Button
           variant="primary"
           size="sm"
-          onClick={onOpenQuickScrape || (() => navigate("/discover"))}
-          className="text-xs"
+          disabled={!canScrape}
+          onClick={canScrape ? (onOpenQuickScrape || (() => navigate("/discover"))) : undefined}
+          className={`text-xs ${!canScrape ? "opacity-40 cursor-not-allowed" : ""}`}
+          title={!canScrape ? `Role '${role}' cannot initiate discovery runs` : undefined}
         >
           <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">New Scrape Run</span>
@@ -115,11 +135,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenQuickScrape }) => {
         {/* User profile */}
         <div className="flex items-center gap-2.5 pl-3 border-l border-border-subtle">
           <div className="w-7 h-7 rounded-md bg-bg-surface-hover border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-primary">
-            AD
+            {getInitials(user?.name)}
           </div>
           <div className="hidden xl:block text-left">
-            <div className="text-[12px] font-medium text-text-primary leading-none">Admin</div>
-            <div className="text-[11px] text-text-tertiary leading-none mt-1">admin@ultimate-leads.com</div>
+            <div className="text-[12px] font-medium text-text-primary leading-none capitalize">{user?.name || role}</div>
+            <div className="text-[11px] text-text-tertiary leading-none mt-1">{user?.email || `${role}@leadengine.io`}</div>
           </div>
         </div>
       </div>

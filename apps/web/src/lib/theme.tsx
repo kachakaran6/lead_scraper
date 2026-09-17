@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemePreference = "system" | "light" | "dark";
+export type ThemePreference = "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextType {
@@ -15,46 +15,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
     try {
       const stored = localStorage.getItem("theme-preference");
-      if (stored === "light" || stored === "dark" || stored === "system") {
+      if (stored === "light" || stored === "dark") {
         return stored;
       }
+      // Legacy: if stored was "system", keep dark as the app's intended default
     } catch {}
-    return "system";
+    return "dark";
   });
 
-  const getSystemTheme = (): ResolvedTheme => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
-    return "light";
-  };
-
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    if (preference === "system") return getSystemTheme();
-    return preference;
-  });
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(preference);
 
   useEffect(() => {
-    const updateTheme = () => {
-      const resolved = preference === "system" ? getSystemTheme() : preference;
-      setResolvedTheme(resolved);
+    const resolved = preference;
+    setResolvedTheme(resolved);
 
-      const root = document.documentElement;
-      root.setAttribute("data-theme", resolved);
-      if (resolved === "dark") {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
-    };
-
-    updateTheme();
-
-    if (preference === "system") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => updateTheme();
-      mediaQuery.addEventListener("change", handler);
-      return () => mediaQuery.removeEventListener("change", handler);
+    const root = document.documentElement;
+    root.setAttribute("data-theme", resolved);
+    if (resolved === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
     }
   }, [preference]);
 

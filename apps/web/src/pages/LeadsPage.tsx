@@ -134,7 +134,7 @@ export const LeadsPage: React.FC = () => {
                 placeholder="Filter by name, phone, niche, or city..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-bg-base border border-border-default text-[13px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-bg-surface border border-border-default text-[13px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors"
               />
             </div>
 
@@ -143,7 +143,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                className="px-2.5 py-1.5 rounded-md bg-bg-surface border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Cities</option>
                 {availableCities.map((c) => (
@@ -157,7 +157,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                className="px-2.5 py-1.5 rounded-md bg-bg-surface border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Stages</option>
                 <option value="NEW">NEW</option>
@@ -172,7 +172,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={websiteFilter}
                 onChange={(e) => setWebsiteFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                className="px-2.5 py-1.5 rounded-md bg-bg-surface border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Websites</option>
                 <option value="NO_WEBSITE">No Website</option>
@@ -183,7 +183,7 @@ export const LeadsPage: React.FC = () => {
               <select
                 value={gradeFilter}
                 onChange={(e) => setGradeFilter(e.target.value)}
-                className="px-2.5 py-1.5 rounded-md bg-bg-base border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+                className="px-2.5 py-1.5 rounded-md bg-bg-surface border border-border-default text-[12px] text-text-primary focus:outline-none focus:border-accent cursor-pointer"
               >
                 <option value="ALL">All Grades</option>
                 <option value="A">Grade A (≥80)</option>

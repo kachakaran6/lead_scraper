@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { ScoringService } from "./scoring.service";
+import { RolesGuard, RequireAction } from "../auth/roles.guard";
 
 @Controller("scoring")
+@UseGuards(RolesGuard)
 export class ScoringController {
   private readonly scoringService: ScoringService;
   constructor(scoringService?: ScoringService) {
@@ -15,16 +16,19 @@ export class ScoringController {
   }
 
   @Post("rules")
+  @RequireAction("SCORING_RULES_EDIT")
   async createRule(@Body() dto: Record<string, unknown>) {
     return this.scoringService.createRule(dto);
   }
 
   @Patch("rules/:id")
+  @RequireAction("SCORING_RULES_EDIT")
   async updateRule(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
     return this.scoringService.updateRule(id, dto);
   }
 
   @Delete("rules/:id")
+  @RequireAction("SCORING_RULES_EDIT")
   async removeRule(@Param("id") id: string) {
     return this.scoringService.removeRule(id);
   }

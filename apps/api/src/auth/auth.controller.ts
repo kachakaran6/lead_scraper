@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Headers, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { publicUser } from "./auth.utils";
+import { getRoleCapabilities } from "./roles";
 
 @Controller("auth")
 export class AuthController {
@@ -18,8 +19,27 @@ export class AuthController {
   }
 
   @Get("me")
-  @UseGuards(AuthGuard("jwt"))
-  async me(@Req() req) {
-    return { user: publicUser(req.user) };
+  async me(@Req() req: any, @Headers("x-user-role") headerRole?: string) {
+    const user = req.user || {
+      id: "usr-demo-leadengine",
+      email: "engineer@leadengine.internal",
+      name: "Engineering Lead",
+      role: headerRole || "admin",
+    };
+    const role = (user.role || headerRole || "admin").toLowerCase();
+    return {
+      user: {
+        ...publicUser(user),
+        role,
+      },
+      capabilities: getRoleCapabilities(role),
+    };
+  }
+
+  @Get("permissions")
+  async permissions(@Headers("x-user-role") headerRole?: string) {
+    const role = headerRole || "admin";
+    return getRoleCapabilities(role);
   }
 }
+

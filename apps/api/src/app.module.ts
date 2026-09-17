@@ -1,9 +1,11 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
 import { BullModule } from "@nestjs/bullmq";
 import { getEnv } from "@ultimate-leads/config";
 
 import { AuthModule } from "./auth/auth.module";
+import { RolesGuard } from "./auth/roles.guard";
 import { UsersModule } from "./users/users.module";
 import { BusinessesModule } from "./businesses/businesses.module";
 import { ContactsModule } from "./contacts/contacts.module";
@@ -101,6 +103,12 @@ import { ActivitiesModule } from "./activities/activities.module";
     DealsModule,
     NotesModule,
     ActivitiesModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule {}

@@ -4,6 +4,7 @@ import {
   MapPin,
   ArrowRight,
   RefreshCw,
+  ShieldAlert,
 } from "lucide-react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -11,6 +12,7 @@ import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { LocationSelector, LocationSelection } from "../components/ui/LocationSelector";
 import { leadEngineApi } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { Link } from "react-router-dom";
 
 interface DiscoveredLead {
@@ -49,6 +51,9 @@ export const DiscoverPage: React.FC = () => {
   const [searchStatus, setSearchStatus] = useState<string>("");
   const [results, setResults] = useState<DiscoveredLead[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const { role, can } = useAuth();
+  const canRunDiscovery = can("DISCOVERY_RUN");
 
   const handleLocationChange = (sel: LocationSelection) => {
     setLocationDetails(sel);
@@ -200,11 +205,24 @@ export const DiscoverPage: React.FC = () => {
                   variant="primary"
                   size="sm"
                   isLoading={isSearching}
+                  disabled={!canRunDiscovery || isSearching}
+                  title={!canRunDiscovery ? `Role '${role}' cannot run discovery scans` : undefined}
+                  className={!canRunDiscovery ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   Run Discovery
                 </Button>
               </div>
             </div>
+
+            {/* RBAC Notice for Viewer */}
+            {!canRunDiscovery && (
+              <div className="p-2.5 rounded-md bg-warning/10 border border-warning/30 text-[12px] text-warning flex items-center gap-2">
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  Your active role is <strong>{role}</strong> (Read-Only). Running discovery scans and triggering crawlers is disabled per RBAC policy.
+                </span>
+              </div>
+            )}
 
             {/* Dynamic Search Status Banner */}
             {isSearching && (

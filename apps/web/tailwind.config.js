@@ -27,6 +27,9 @@ export default {
           hover: "var(--accent-hover)",
           subtle: "var(--accent-subtle)",
         },
+        success: "var(--success)",
+        warning: "var(--warning)",
+        danger: "var(--danger)",
         semantic: {
           success: "var(--success)",
           warning: "var(--warning)",
