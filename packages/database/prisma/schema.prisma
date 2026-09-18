@@ -1,0 +1,588 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum BusinessSource {
+  SEARCH
+  MAPS
+  DIRECTORY
+  MANUAL
+  IMPORT
+  API
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  REPLIED
+  MEETING
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum WebsiteStatus {
+  NO_WEBSITE
+  WEBSITE_FOUND
+  WEBSITE_DOWN
+  WEBSITE_BROKEN
+  REDIRECT
+  PARKED_DOMAIN
+  SOCIAL_ONLY
+  DIRECTORY_ONLY
+}
+
+enum EmailStatus {
+  PUBLIC
+  VERIFIED
+  UNVERIFIED
+  GENERIC
+  PERSONAL
+  INVALID
+}
+
+enum PhoneType {
+  MOBILE
+  LANDLINE
+  UNKNOWN
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  LINKEDIN
+  YOUTUBE
+  TIKTOK
+  THREADS
+  PINTEREST
+  OTHER
+}
+
+enum OpportunityType {
+  NO_WEBSITE
+  WEBSITE_REDESIGN
+  SEO
+  PERFORMANCE
+  MOBILE_OPTIMIZATION
+  ECOMMERCE
+  BOOKING_SYSTEM
+  CRM
+  WHATSAPP_INTEGRATION
+  AUTOMATION
+  LANDING_PAGE
+  SOCIAL_MEDIA
+  LOCAL_SEO
+}
+
+enum JobType {
+  DISCOVER_BUSINESSES
+  NORMALIZE_LEAD
+  DEDUPLICATE
+  FIND_WEBSITE
+  CRAWL_WEBSITE
+  EXTRACT_EMAIL
+  EXTRACT_PHONE
+  DISCOVER_SOCIAL
+  AUDIT_WEBSITE
+  CALCULATE_SCORE
+  AI_ANALYSIS
+  EXPORT_DATA
+  CHANGE_DETECTION
+}
+
+enum JobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  FAILED
+  RETRYING
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model User {
+  id                   String      @id @default(uuid())
+  email                String      @unique
+  passwordHash         String
+  name                 String?
+  role                 UserRole    @default(MEMBER)
+  emailVerified        Boolean     @default(false)
+  passwordResetToken   String?     @unique
+  passwordResetExpires DateTime?
+  failedLoginAttempts  Int         @default(0)
+  lockedUntil          DateTime?
+  lastLoginAt          DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  apiKeys              ApiKey[]
+  notes                Note[]
+  activities           Activity[]
+  exports              Export[]
+  auditLogs            AuditLog[]
+  businesses           Business[]
+
+  @@index([email])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  name        String
+  keyHash     String    @unique
+  prefix      String
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  permissions Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([keyHash])
+}
+
+model Business {
+  id               String          @id @default(uuid())
+  userId           String?
+  name             String
+  category         String?
+  address          String?
+  city             String?
+  state            String?
+  country          String?
+  postalCode       String?
+  phone            String?
+  website          String?
+  latitude         Float?
+  longitude        Float?
+  rating           Float?
+  reviewCount      Int?
+  source           BusinessSource  @default(SEARCH)
+  sourceProvider   String?
+  sourcePlaceId    String?
+  sourceUrl        String?
+  sourceId         String?
+  googlePlaceId    String?
+  googleMapsUrl    String?
+  status           LeadStatus      @default(NEW)
+  leadScore        Int             @default(0)
+  leadGrade        String          @default("C")
+  opportunityScore Int             @default(0)
+  websiteQuality   String?
+  hasWebsite       Boolean?
+  hasPhone         Boolean?
+  hasEmail         Boolean?
+  verificationStatus String        @default("UNVERIFIED")
+  retrievedAt      DateTime        @default(now())
+  lastVerifiedAt   DateTime?
+  firstSeen        DateTime        @default(now())
+  lastSeen         DateTime        @default(now())
+  lastCrawled      DateTime?
+  nextCrawl        DateTime?
+  changeDetectedAt DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emails           Email[]
+  phones           Phone[]
+  websites         Website[]
+  websiteAudits    WebsiteAudit[]
+  socialProfiles   SocialProfile[]
+  contacts         Contact[]
+  opportunities    Opportunity[]
+  deals            Deal[]
+  jobs             Job[]
+  notes            Note[]
+  activities       Activity[]
+  tags             Tag[]
+  proposals        Proposal[]
+
+  @@index([userId])
+  @@index([name])
+  @@index([city, state])
+  @@index([category])
+  @@index([website])
+  @@index([phone])
+  @@index([status])
+  @@index([leadScore])
+  @@index([googlePlaceId])
+  @@index([verificationStatus])
+  @@index([source, sourceId])
+}
+
+model Website {
+  id               String        @id @default(uuid())
+  businessId       String        @unique
+  url              String
+  status           WebsiteStatus @default(NO_WEBSITE)
+  httpStatus       Int?
+  responseTimeMs   Int?
+  pageSizeBytes    Int?
+  hasSsl           Boolean       @default(false)
+  isMobileFriendly Boolean       @default(false)
+  hasContactForm   Boolean       @default(false)
+  hasWhatsApp      Boolean       @default(false)
+  hasBooking       Boolean       @default(false)
+  metaTitle        String?
+  metaDescription  String?
+  h1               String?
+  h2               String?
+  ogTags           Json?
+  structuredData   Json?
+  sitemapUrl       String?
+  robotsTxtUrl     String?
+  cms              String?
+  technologies     Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([url])
+}
+
+model WebsiteAudit {
+  id                  String    @id @default(uuid())
+  businessId          String
+  performanceScore    Int       @default(0)
+  accessibilityScore  Int       @default(0)
+  bestPracticesScore  Int       @default(0)
+  seoScore            Int       @default(0)
+  mobileScore         Int       @default(0)
+  issues              Json?
+  technologies        Json?
+  auditData           Json?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  business            Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model Email {
+  id         String      @id @default(uuid())
+  businessId String
+  value      String
+  status     EmailStatus @default(UNVERIFIED)
+  isGeneric  Boolean     @default(false)
+  sourcePage String?
+  verifiedAt DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, value])
+  @@index([value])
+  @@index([status])
+}
+
+model Phone {
+  id             String    @id @default(uuid())
+  businessId     String
+  value          String
+  formatted      String?
+  countryCode    String?
+  nationalNumber String?
+  type           PhoneType @default(UNKNOWN)
+  hasWhatsApp    Boolean   @default(false)
+  sourcePage     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, value])
+  @@index([value])
+}
+
+model SocialProfile {
+  id         String         @id @default(uuid())
+  businessId String
+  platform   SocialPlatform
+  url        String
+  username   String?
+  followers  Int?
+  bio        String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  business   Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, platform])
+  @@index([platform])
+}
+
+model Contact {
+  id          String    @id @default(uuid())
+  businessId  String
+  firstName   String
+  lastName    String?
+  title       String?
+  email       String?
+  phone       String?
+  linkedinUrl String?
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([email])
+}
+
+model Opportunity {
+  id          String          @id @default(uuid())
+  businessId  String
+  type        OpportunityType
+  title       String
+  description String?
+  value       Float?
+  status      String          @default("OPEN")
+  priority    String          @default("MEDIUM")
+  detectedAt  DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([type])
+  @@index([status])
+}
+
+model PipelineStage {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  position  Int      @default(0)
+  color     String   @default("#3b82f6")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deals     Deal[]
+
+  @@index([position])
+}
+
+model Deal {
+  id         String        @id @default(uuid())
+  businessId String
+  title      String
+  value      Float         @default(0)
+  stageId    String
+  priority   String        @default("MEDIUM")
+  closeDate  DateTime?
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  stage      PipelineStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  proposals  Proposal[]
+
+  @@index([businessId])
+  @@index([stageId])
+}
+
+model Campaign {
+  id              String         @id @default(uuid())
+  name            String
+  query           String
+  location        String?
+  radiusKm        Float?
+  targetFilters   Json?
+  status          CampaignStatus @default(DRAFT)
+  discovered      Int            @default(0)
+  unique          Int            @default(0)
+  noWebsite       Int            @default(0)
+  highOpportunity Int            @default(0)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  jobs            Job[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Job {
+  id          String     @id @default(uuid())
+  campaignId  String?
+  businessId  String?
+  type        JobType
+  status      JobStatus  @default(PENDING)
+  progress    Int        @default(0)
+  attempts    Int        @default(0)
+  result      Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  campaign    Campaign?  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  business    Business?  @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([type, status])
+  @@index([campaignId])
+  @@index([businessId])
+}
+
+model Note {
+  id         String   @id @default(uuid())
+  businessId String
+  userId     String?
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  businessId  String
+  userId      String?
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id         String     @id @default(uuid())
+  name       String     @unique
+  color      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  businesses Business[]
+
+  @@index([name])
+}
+
+model ScoringRule {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  signal    String
+  operator  String
+  value     String
+  weight    Int
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CrawlerSetting {
+  id             String   @id @default(uuid())
+  maxDepth       Int      @default(3)
+  maxPages       Int      @default(50)
+  concurrent     Int      @default(5)
+  delayMs        Int      @default(1000)
+  allowedDomains Json?
+  blockedDomains Json?
+  userAgent      String?
+  respectRobots  Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Webhook {
+  id              String    @id @default(uuid())
+  name            String
+  url             String
+  secret          String?
+  events          Json?
+  enabled         Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([enabled])
+}
+
+model OutreachTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  subject   String
+  body      String
+  variables Json?
+  channel   String   @default("EMAIL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Proposal {
+  id         String   @id @default(uuid())
+  businessId String
+  dealId     String?
+  title      String
+  type       String
+  content    String
+  status     String   @default("DRAFT")
+  value      Float    @default(0)
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  deal       Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([dealId])
+}
+
+model Export {
+  id           String    @id @default(uuid())
+  userId       String
+  format       String    // CSV, JSON, EXCEL
+  status       String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  fileUrl      String?
+  filters      Json?
+  totalRecords Int       @default(0)
+  error        String?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // LOGIN, LOGOUT, SEARCH, EXPORT, LEAD_VIEW, API_CONFIG_UPDATE, PASSWORD_CHANGE
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

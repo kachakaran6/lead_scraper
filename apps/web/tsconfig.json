@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "jsx": "react-jsx",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@ultimate-leads/shared": ["packages/shared/src"],
+      "@ultimate-leads/shared/*": ["packages/shared/src/*"],
+      "@ultimate-leads/config": ["packages/config/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}

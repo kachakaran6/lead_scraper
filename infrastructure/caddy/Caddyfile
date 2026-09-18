@@ -1,0 +1,14 @@
+# Caddy configuration for Ultimate Lead Engine
+{
+  email {env:CADDY_EMAIL}
+}
+
+{$DOMAIN:-localhost}:443 {
+  reverse_proxy /api/* api:4000
+  reverse_proxy /metrics api:4000
+  reverse_proxy * web:80
+}
+
+http://{$DOMAIN:-localhost} {
+  redir https://{$DOMAIN:-localhost}{uri}
+}

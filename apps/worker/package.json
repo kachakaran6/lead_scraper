@@ -1,0 +1,30 @@
+{
+  "name": "@ultimate-leads/worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "discover": "tsx src/jobs/discover.ts",
+    "crawl": "tsx src/jobs/crawl.ts",
+    "enrich": "tsx src/jobs/enrich.ts",
+    "analyze": "tsx src/jobs/analyze.ts"
+  },
+  "dependencies": {
+    "bullmq": "^5.12.0",
+    "ioredis": "^5.4.0",
+    "playwright": "^1.49.0",
+    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.8.0",
+    "libphonenumber-js": "^1.11.0",
+    "rss-parser": "^3.2.0",
+    "p-limit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/cheerio": "^0.22.32",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0"
+  }
+}
