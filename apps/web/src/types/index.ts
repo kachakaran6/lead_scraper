@@ -51,6 +51,16 @@ export interface Business {
   reviewCount?: number | null;
   source: string;
   sourceUrl?: string | null;
+  sourceProvider?: string | null;
+  sourcePlaceId?: string | null;
+  googlePlaceId?: string | null;
+  googleMapsUrl?: string | null;
+  hasWebsite?: boolean | null;
+  hasPhone?: boolean | null;
+  hasEmail?: boolean | null;
+  verificationStatus?: string | null;
+  retrievedAt?: string | null;
+  lastVerifiedAt?: string | null;
   status: LeadStatus;
   leadScore: number;
   leadGrade: string;
@@ -58,6 +68,8 @@ export interface Business {
   websiteQuality?: string | null;
   firstSeen: string;
   lastSeen: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   emails?: Email[];
   phones?: Phone[];
   websites?: Website[];
