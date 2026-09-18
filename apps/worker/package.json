@@ -12,9 +12,11 @@
     "analyze": "tsx src/jobs/analyze.ts"
   },
   "dependencies": {
+    "@ultimate-leads/config": "workspace:*",
+    "@ultimate-leads/database": "workspace:*",
+    "@ultimate-leads/shared": "workspace:*",
     "bullmq": "^5.12.0",
     "ioredis": "^5.4.0",
-    "playwright": "^1.49.0",
     "cheerio": "^1.0.0-rc.12",
     "axios": "^1.8.0",
     "libphonenumber-js": "^1.11.0",
