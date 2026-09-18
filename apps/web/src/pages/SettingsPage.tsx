@@ -290,7 +290,7 @@ export const SettingsPage: React.FC = () => {
 
             <div className="pt-2 border-t border-border-subtle">
               <Button
-                variant="destructive"
+                variant="danger"
                 size="sm"
                 onClick={logout}
                 className="w-full flex items-center justify-center gap-1.5 text-xs font-medium"
