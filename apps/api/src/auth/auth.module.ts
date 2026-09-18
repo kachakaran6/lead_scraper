@@ -13,7 +13,7 @@ import { JwtAuthGuard } from "./jwt.strategy";
     UsersModule,
     JwtModule.register({
       secret: getEnv().JWT_SECRET,
-      signOptions: { expiresIn: getEnv().JWT_EXPIRY },
+      signOptions: { expiresIn: (getEnv().JWT_EXPIRY || "7d") as any },
     }),
   ],
   controllers: [AuthController],

@@ -11,7 +11,7 @@ export class ActivitiesController {
   @Post()
   async create(@Body() dto: Record<string, unknown>, @Req() req) {
     const user = requireAuth(req);
-    return this.activitiesService.create({ ...dto, userId: user.id });
+    return this.activitiesService.create({ ...dto, userId: user.id } as any);
   }
 
   @Get("business/:businessId")

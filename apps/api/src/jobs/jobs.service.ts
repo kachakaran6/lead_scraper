@@ -5,7 +5,7 @@ import { handlePrismaError, parsePagination } from "../auth/auth.utils";
 
 @Injectable()
 export class JobsService {
-  async create(dto: Prisma.JobCreateInput) {
+  async create(dto: Prisma.JobCreateInput | Prisma.JobUncheckedCreateInput | any) {
     try {
       return await prisma.job.create({ data: dto });
     } catch (error) {

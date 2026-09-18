@@ -21,12 +21,12 @@ export class DealsController {
 
   @Post()
   async create(@Body() dto: Record<string, unknown>) {
-    return this.dealsService.create(dto);
+    return this.dealsService.create(dto as any);
   }
 
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
-    return this.dealsService.update(id, dto);
+    return this.dealsService.update(id, dto as any);
   }
 
   @Post(":id/move/:stageId")

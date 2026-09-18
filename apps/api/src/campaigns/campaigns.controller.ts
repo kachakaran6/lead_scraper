@@ -21,12 +21,12 @@ export class CampaignsController {
 
   @Post()
   async create(@Body() dto: Record<string, unknown>) {
-    return this.campaignsService.create(dto);
+    return this.campaignsService.create(dto as any);
   }
 
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
-    return this.campaignsService.update(id, dto);
+    return this.campaignsService.update(id, dto as any);
   }
 
   @Post(":id/start")
@@ -41,7 +41,7 @@ export class CampaignsController {
 
   @Post(":id/complete")
   async complete(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
-    return this.campaignsService.complete(id, dto);
+    return this.campaignsService.complete(id, dto as any);
   }
 
   @Delete(":id")

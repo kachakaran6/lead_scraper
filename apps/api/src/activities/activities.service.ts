@@ -5,7 +5,7 @@ import { handlePrismaError } from "../auth/auth.utils";
 
 @Injectable()
 export class ActivitiesService {
-  async create(dto: Prisma.ActivityCreateInput) {
+  async create(dto: Prisma.ActivityUncheckedCreateInput) {
     try {
       return await prisma.activity.create({ data: dto });
     } catch (error) {

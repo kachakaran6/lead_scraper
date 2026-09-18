@@ -24,6 +24,8 @@ interface AuthenticatedUser {
 
 export interface AuthenticatedRequest {
   user?: AuthenticatedUser;
+  headers?: Record<string, any>;
+  [key: string]: any;
 }
 
 export function requireAuth(req: AuthenticatedRequest): AuthenticatedUser {

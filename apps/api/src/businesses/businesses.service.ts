@@ -20,6 +20,7 @@ interface CreateBusinessDto {
   website?: string;
   phone?: string;
   email?: string;
+  userId?: string;
 }
 
 interface UpdateBusinessDto {
@@ -59,6 +60,7 @@ export class BusinessesService {
           source: dto.source ?? "MANUAL",
           sourceId: dto.sourceId,
           sourceUrl: dto.sourceUrl,
+          userId: dto.userId,
           websites: dto.website
             ? { create: { url: this.normalizeUrl(dto.website) } }
             : undefined,

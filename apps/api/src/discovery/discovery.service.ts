@@ -38,7 +38,7 @@ export class DiscoveryService {
         status: "PENDING",
         campaignId: params.campaignId,
         progress: 0,
-        result: params,
+        result: params as any,
       });
 
       return {

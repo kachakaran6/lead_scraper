@@ -49,7 +49,7 @@ export class BusinessesController {
   @Post()
   @RequireAction("LEADS_CREATE")
   async create(@Body() dto: Record<string, unknown>, @Req() req: any) {
-    return this.businessesService.create({ ...dto, userId: req.user?.id });
+    return this.businessesService.create({ ...dto, userId: req.user?.id } as any);
   }
 
   @Patch(":id")
@@ -59,13 +59,13 @@ export class BusinessesController {
     @Body() dto: Record<string, unknown>,
     @Req() req: any
   ) {
-    return this.businessesService.update(id, dto, req.user);
+    return this.businessesService.update(id, dto as any);
   }
 
   @Delete(":id")
   @RequireAction("LEADS_DELETE")
   async remove(@Param("id") id: string, @Req() req: any) {
-    return this.businessesService.remove(id, req.user);
+    return this.businessesService.remove(id);
   }
 
   @Post(":id/tags/:tag")

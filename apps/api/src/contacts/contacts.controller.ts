@@ -21,12 +21,12 @@ export class ContactsController {
 
   @Post()
   async create(@Body() dto: Record<string, unknown>) {
-    return this.contactsService.create(dto);
+    return this.contactsService.create(dto as any);
   }
 
   @Patch(":id")
   async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
-    return this.contactsService.update(id, dto);
+    return this.contactsService.update(id, dto as any);
   }
 
   @Delete(":id")

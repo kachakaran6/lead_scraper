@@ -18,7 +18,7 @@ export class ApiKeysService {
     const key = generateApiKey();
     try {
       const item = await prisma.apiKey.create({
-        data: { name, keyHash: hashApiKey(key), userId, permissions },
+        data: { name, keyHash: hashApiKey(key), prefix: key.slice(0, 8), userId, permissions },
       });
       return { id: item.id, name: item.name, key, createdAt: item.createdAt };
     } catch (error) {
