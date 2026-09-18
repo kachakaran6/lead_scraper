@@ -27,6 +27,7 @@ import { ScrapeModule } from "./scrape/scrape.module";
 import { DealsModule } from "./deals/deals.module";
 import { NotesModule } from "./notes/notes.module";
 import { ActivitiesModule } from "./activities/activities.module";
+import { AIModule } from "./ai/ai.module";
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { ActivitiesModule } from "./activities/activities.module";
     DealsModule,
     NotesModule,
     ActivitiesModule,
+    AIModule,
   ],
   providers: [
     {

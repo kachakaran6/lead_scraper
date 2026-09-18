@@ -24,7 +24,8 @@ export const CampaignsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await leadEngineApi.getCampaigns();
-      setCampaigns(data || []);
+      const items = Array.isArray(data) ? data : (data as any)?.items || [];
+      setCampaigns(items);
     } catch (err) {
       console.error("Failed to load campaigns", err);
     } finally {
@@ -38,7 +39,7 @@ export const CampaignsPage: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !query) return;
+    if (!name.trim() || !query.trim()) return;
     try {
       await leadEngineApi.createCampaign({
         name,
@@ -74,13 +75,20 @@ export const CampaignsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toolbar */}
-      <div className="flex items-center justify-end">
+      {/* Header & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+        <div>
+          <h1 className="text-h1 font-semibold text-text-primary tracking-tight">Scraping Campaigns</h1>
+          <p className="text-body text-text-secondary mt-1">
+            Autonomous geo-targeted crawlers, real-time worker bot queues, and lead extraction schedules.
+          </p>
+        </div>
+
         <Button
           variant="primary"
           size="sm"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 text-xs"
+          className="flex items-center gap-1.5 text-xs font-medium self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Scraping Campaign</span>
@@ -90,33 +98,36 @@ export const CampaignsPage: React.FC = () => {
       {isLoading ? (
         <div className="py-24 text-center text-text-secondary">
           <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs">Loading campaigns...</p>
+          <p className="text-xs text-text-tertiary">Loading campaigns...</p>
         </div>
       ) : (
         <div className="space-y-3">
           {campaigns.map((camp) => (
             <div
               key={camp.id}
-              className="bg-bg-surface border border-border-subtle rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+              className="bg-bg-surface border border-border-subtle hover:border-border-default rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 transition-colors duration-150"
             >
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2.5">
-                  <h3 className="font-medium text-text-primary text-sm">{camp.name}</h3>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        camp.status === "COMPLETED"
-                          ? "bg-success"
-                          : camp.status === "RUNNING"
-                          ? "bg-warning"
-                          : "bg-text-tertiary"
-                      }`}
-                    />
-                    {camp.status}
-                  </span>
+                  <h3 className="font-semibold text-text-primary text-sm">{camp.name}</h3>
+                  {camp.status === "COMPLETED" ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-semantic-success font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" />
+                      <span>Completed</span>
+                    </span>
+                  ) : camp.status === "RUNNING" ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-semantic-warning font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-semantic-warning" />
+                      <span>Running</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border-default text-[11px] font-mono text-text-tertiary uppercase">
+                      {camp.status || "Draft"}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-text-secondary">
-                  <span>Target: <strong className="text-text-primary font-normal">{camp.query}</strong></span>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                  <span>Target: <strong className="text-text-primary font-medium">{camp.query}</strong></span>
                   <span className="text-text-tertiary">•</span>
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-text-tertiary" />
@@ -127,34 +138,34 @@ export const CampaignsPage: React.FC = () => {
 
               {/* Metrics */}
               <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
-                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Discovered</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-0.5">
+                <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
+                  <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Discovered</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-1">
                     {camp.discovered || 42}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
-                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Unique</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-0.5">
+                <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
+                  <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Unique</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-1">
                     {camp.unique || 38}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
-                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">No Website</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-warning mt-0.5">
+                <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
+                  <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">No Site</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-semantic-warning mt-1">
                     {camp.noWebsite || 14}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-md bg-bg-base border border-border-subtle min-w-[70px]">
-                  <span className="text-[10px] text-text-tertiary uppercase tracking-wider">Score &gt; 80</span>
-                  <div className="text-xs font-semibold font-mono tabular-nums text-success mt-0.5">
+                <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
+                  <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Score &gt; 80</span>
+                  <div className="text-xs font-semibold font-mono tabular-nums text-semantic-success mt-1">
                     {camp.highOpportunity || 19}
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {camp.status === "RUNNING" ? (
                   <Button
                     size="sm"
@@ -162,7 +173,7 @@ export const CampaignsPage: React.FC = () => {
                     onClick={() => handlePause(camp.id)}
                     className="text-xs"
                   >
-                    <Pause className="w-3 h-3 mr-1 text-warning" /> Pause
+                    <Pause className="w-3 h-3 mr-1 text-semantic-warning" /> Pause
                   </Button>
                 ) : (
                   <Button
@@ -179,9 +190,9 @@ export const CampaignsPage: React.FC = () => {
           ))}
 
           {campaigns.length === 0 && !isLoading && (
-            <div className="text-center py-16 text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
+            <div className="text-center py-20 text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
               <Megaphone className="w-8 h-8 mx-auto text-text-tertiary mb-2" />
-              <p className="text-xs">No campaigns found. Create your first automated scraping run above.</p>
+              <p className="text-xs text-text-tertiary">No campaigns found. Launch your first automated scraping run above.</p>
             </div>
           )}
         </div>

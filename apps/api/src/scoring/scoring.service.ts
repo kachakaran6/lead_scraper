@@ -35,7 +35,7 @@ export class ScoringService {
       where: { id: businessId },
       include: {
         websites: true,
-        socials: true,
+        socialProfiles: true,
         emails: true,
         phones: true,
         opportunities: true,
@@ -54,10 +54,10 @@ export class ScoringService {
       "website.mobile": website ? "good" : "poor",
       "website.hasContactForm": String(website ? false : false),
       "website.hasWhatsApp": String(website ? false : false),
-      "social.count": String(business.socials.length),
-      "reviews.count": "0",
-      "email.count": String(business.emails.length),
-      "phone.count": String(business.phones.length),
+      "social.count": String(business.socialProfiles?.length || 0),
+      "reviews.count": String(business.reviewCount || 0),
+      "email.count": String(business.emails?.length || 0),
+      "phone.count": String(business.phones?.length || 0),
     };
 
     for (const rule of rules) {
@@ -86,10 +86,9 @@ export class ScoringService {
       }
     }
 
-    await prisma.leadScore.upsert({
-      where: { businessId },
-      update: { total, breakdown, calculatedAt: new Date() },
-      create: { businessId, total, breakdown },
+    await prisma.business.update({
+      where: { id: businessId },
+      data: { leadScore: total },
     });
 
     return { total, breakdown };

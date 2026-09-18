@@ -38,10 +38,16 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    // Resolve user role: from JWT user, query, or x-user-role header (for dev/qa simulation)
     const user = request.user;
-    const headerRole = request.headers["x-user-role"] as string;
-    const role = (user?.role || headerRole || "member").toLowerCase();
+    if (!user || !user.role) {
+      throw new ForbiddenException({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required to access this resource",
+        },
+      });
+    }
+    const role = user.role.toLowerCase();
 
     // Check specific action requirement
     if (requiredAction) {

@@ -1,32 +1,27 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { Shield, ChevronDown, Check } from "lucide-react";
 import { useAuth, AppRole } from "../../lib/auth";
 
-const ROLES_INFO: Record<AppRole, { label: string; desc: string; color: string }> = {
+const ROLES_INFO: Record<AppRole, { label: string; desc: string }> = {
   owner: {
     label: "Owner",
     desc: "Full workspace control & billing",
-    color: "bg-accent/15 text-accent border-accent/30",
   },
   admin: {
     label: "Admin",
     desc: "Operational control, settings, all data",
-    color: "bg-accent/10 text-accent border-border-default",
   },
   manager: {
     label: "Manager",
     desc: "Manage leads, campaigns, stats",
-    color: "bg-success/15 text-success border-success/30",
   },
   member: {
     label: "Member",
     desc: "Standard rep: view/work leads, run discovery",
-    color: "bg-bg-surface-hover text-text-secondary border-border-default",
   },
   viewer: {
     label: "Viewer",
     desc: "Read-only across assigned resources",
-    color: "bg-warning/15 text-warning border-warning/30",
   },
 };
 
@@ -52,19 +47,23 @@ export const RoleSwitcher: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition-colors bg-bg-surface border-border-default hover:bg-bg-surface-hover"
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-accent-subtle border-accent/30 hover:bg-accent/10 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
         title="Simulate Role (RBAC)"
       >
         <Shield className="w-3.5 h-3.5 text-accent" />
-        <span className={`px-1.5 py-0.2 rounded text-[11px] font-mono uppercase tracking-wider border ${current.color}`}>
+        <span className="text-[11px] font-medium text-accent uppercase tracking-wider">
           {current.label}
         </span>
-        <ChevronDown className="w-3 h-3 text-text-tertiary" />
+        <ChevronDown
+          className={`w-3 h-3 text-text-tertiary transition-transform duration-150 ${
+            isOpen ? "rotate-180 text-text-primary" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-64 rounded-md bg-bg-surface border border-border-default shadow-xl py-1 z-50 divide-y divide-border-subtle">
-          <div className="px-3 py-2 text-[11px] font-medium text-text-tertiary uppercase tracking-wider bg-bg-base">
+        <div className="absolute right-0 mt-1.5 w-64 rounded-lg bg-bg-surface border border-border-subtle shadow-dropdown py-1 z-50 divide-y divide-border-subtle">
+          <div className="px-3 py-2 text-meta text-text-tertiary">
             Active Role Simulation (RBAC)
           </div>
 
@@ -80,17 +79,17 @@ export const RoleSwitcher: React.FC = () => {
                   setRole(r);
                   setIsOpen(false);
                 }}
-                className={`w-full px-3 py-2 text-left flex items-start justify-between text-xs hover:bg-bg-surface-hover transition-colors ${
-                  isSelected ? "bg-bg-surface-hover" : ""
+                className={`w-full px-3 py-2 text-left flex items-start justify-between text-xs hover:bg-bg-surface-hover transition-colors duration-100 ${
+                  isSelected ? "bg-bg-surface-hover/80 font-medium" : ""
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-1.5 font-medium text-text-primary">
-                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono uppercase border ${info.color}`}>
+                  <div className="flex items-center gap-1.5 text-text-primary">
+                    <span className="text-xs font-medium uppercase tracking-wider">
                       {info.label}
                     </span>
                   </div>
-                  <div className="text-[11px] text-text-secondary mt-0.5">
+                  <div className="text-xs text-text-secondary mt-0.5">
                     {info.desc}
                   </div>
                 </div>

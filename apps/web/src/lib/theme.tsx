@@ -1,52 +1,119 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemePreference = "light" | "dark";
-export type ResolvedTheme = "light" | "dark";
+export type ThemePalette = "default" | "ocean" | "emerald" | "violet" | "amber";
+export type ThemeMode = "dark" | "light";
+
+export interface ThemeConfig {
+  id: ThemePalette;
+  name: string;
+  description: string;
+  primaryColor: string;
+  accentColor: string;
+}
+
+export const THEME_PALETTES: ThemeConfig[] = [
+  {
+    id: "default",
+    name: "Default Slate",
+    description: "Classic enterprise indigo & slate",
+    primaryColor: "#6366F1",
+    accentColor: "#EC4899",
+  },
+  {
+    id: "ocean",
+    name: "Ocean Navy",
+    description: "Deep naval blue & vibrant cyan",
+    primaryColor: "#0284C7",
+    accentColor: "#06B6D4",
+  },
+  {
+    id: "emerald",
+    name: "Emerald Forest",
+    description: "Deep evergreen & crisp mint",
+    primaryColor: "#10B981",
+    accentColor: "#34D399",
+  },
+  {
+    id: "violet",
+    name: "Violet Mauve",
+    description: "Regal violet & soft lavender",
+    primaryColor: "#8B5CF6",
+    accentColor: "#C084FC",
+  },
+  {
+    id: "amber",
+    name: "Obsidian Amber",
+    description: "Warm bronze, obsidian & gold",
+    primaryColor: "#D97706",
+    accentColor: "#FBBF24",
+  },
+];
 
 interface ThemeContextType {
-  preference: ThemePreference;
-  resolvedTheme: ResolvedTheme;
-  setPreference: (preference: ThemePreference) => void;
+  palette: ThemePalette;
+  mode: ThemeMode;
+  setPalette: (palette: ThemePalette) => void;
+  setMode: (mode: ThemeMode) => void;
+  toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
+  const [palette, setPaletteState] = useState<ThemePalette>(() => {
     try {
-      const stored = localStorage.getItem("theme-preference");
+      const stored = localStorage.getItem("leadengine-theme-palette") as ThemePalette;
+      if (["default", "ocean", "emerald", "violet", "amber"].includes(stored)) {
+        return stored;
+      }
+    } catch {}
+    return "default";
+  });
+
+  const [mode, setModeState] = useState<ThemeMode>(() => {
+    try {
+      const stored = localStorage.getItem("leadengine-theme-mode") as ThemeMode;
       if (stored === "light" || stored === "dark") {
         return stored;
       }
-      // Legacy: if stored was "system", keep dark as the app's intended default
     } catch {}
     return "dark";
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(preference);
-
   useEffect(() => {
-    const resolved = preference;
-    setResolvedTheme(resolved);
-
     const root = document.documentElement;
-    root.setAttribute("data-theme", resolved);
-    if (resolved === "dark") {
+    root.setAttribute("data-theme", palette);
+    root.setAttribute("data-mode", mode);
+
+    if (mode === "dark") {
       root.classList.add("dark");
+      root.classList.remove("light");
     } else {
+      root.classList.add("light");
       root.classList.remove("dark");
     }
-  }, [preference]);
+  }, [palette, mode]);
 
-  const setPreference = (newPref: ThemePreference) => {
-    setPreferenceState(newPref);
+  const setPalette = (newPalette: ThemePalette) => {
+    setPaletteState(newPalette);
     try {
-      localStorage.setItem("theme-preference", newPref);
+      localStorage.setItem("leadengine-theme-palette", newPalette);
     } catch {}
   };
 
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
+    try {
+      localStorage.setItem("leadengine-theme-mode", newMode);
+    } catch {}
+  };
+
+  const toggleMode = () => {
+    setMode(mode === "dark" ? "light" : "dark");
+  };
+
   return (
-    <ThemeContext.Provider value={{ preference, resolvedTheme, setPreference }}>
+    <ThemeContext.Provider value={{ palette, mode, setPalette, setMode, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   );

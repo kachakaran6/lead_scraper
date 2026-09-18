@@ -22,8 +22,7 @@ export class ScrapeService {
   async scrape(params: ScrapeParams) {
     const job = await this.jobsService.create({
       type: "CRAWL_WEBSITE",
-      status: "PENDING",
-      businessId: params.businessId,
+      business: params.businessId ? { connect: { id: params.businessId } } : undefined,
       progress: 0,
       result: { url: params.url, extract: params.extract },
     });

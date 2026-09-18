@@ -1,10 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { api } from "./api";
 
-export type AppRole = "owner" | "admin" | "manager" | "member" | "viewer";
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  role: string;
+  emailVerified?: boolean;
+}
 
 export interface RoleCapabilities {
-  role: AppRole;
+  role: string;
   permissions: string[];
   canViewLeads: boolean;
   canRunDiscovery: boolean;
@@ -17,172 +23,109 @@ export interface RoleCapabilities {
 }
 
 interface AuthContextType {
-  role: AppRole;
-  setRole: (role: AppRole) => void;
-  capabilities: RoleCapabilities;
+  user: AuthUser | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  capabilities: RoleCapabilities | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
   can: (action: string) => boolean;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
 }
-
-const DEFAULT_CAPABILITIES: Record<AppRole, RoleCapabilities> = {
-  owner: {
-    role: "owner",
-    permissions: [
-      "LEADS_VIEW",
-      "LEADS_CREATE",
-      "LEADS_EDIT",
-      "LEADS_DELETE",
-      "DISCOVERY_RUN",
-      "DEALS_MANAGE",
-      "CAMPAIGNS_MANAGE",
-      "SCORING_RULES_EDIT",
-      "USERS_MANAGE",
-      "ROLES_MANAGE",
-      "ADMIN_STATS_VIEW",
-      "API_KEYS_MANAGE",
-      "SYSTEM_SETTINGS_EDIT",
-      "BILLING_MANAGE",
-      "WORKSPACE_DELETE",
-    ],
-    canViewLeads: true,
-    canRunDiscovery: true,
-    canEditScoring: true,
-    canManageUsers: true,
-    canViewAdminStats: true,
-    canManageApiKeys: true,
-    canManageBilling: true,
-    canEditSystemSettings: true,
-  },
-  admin: {
-    role: "admin",
-    permissions: [
-      "LEADS_VIEW",
-      "LEADS_CREATE",
-      "LEADS_EDIT",
-      "LEADS_DELETE",
-      "DISCOVERY_RUN",
-      "DEALS_MANAGE",
-      "CAMPAIGNS_MANAGE",
-      "SCORING_RULES_EDIT",
-      "USERS_MANAGE",
-      "ROLES_MANAGE",
-      "ADMIN_STATS_VIEW",
-      "API_KEYS_MANAGE",
-      "SYSTEM_SETTINGS_EDIT",
-    ],
-    canViewLeads: true,
-    canRunDiscovery: true,
-    canEditScoring: true,
-    canManageUsers: true,
-    canViewAdminStats: true,
-    canManageApiKeys: true,
-    canManageBilling: false,
-    canEditSystemSettings: true,
-  },
-  manager: {
-    role: "manager",
-    permissions: [
-      "LEADS_VIEW",
-      "LEADS_CREATE",
-      "LEADS_EDIT",
-      "DISCOVERY_RUN",
-      "DEALS_MANAGE",
-      "CAMPAIGNS_MANAGE",
-      "ADMIN_STATS_VIEW",
-    ],
-    canViewLeads: true,
-    canRunDiscovery: true,
-    canEditScoring: false,
-    canManageUsers: false,
-    canViewAdminStats: true,
-    canManageApiKeys: false,
-    canManageBilling: false,
-    canEditSystemSettings: false,
-  },
-  member: {
-    role: "member",
-    permissions: [
-      "LEADS_VIEW",
-      "LEADS_CREATE",
-      "LEADS_EDIT",
-      "DISCOVERY_RUN",
-      "DEALS_MANAGE",
-    ],
-    canViewLeads: true,
-    canRunDiscovery: true,
-    canEditScoring: false,
-    canManageUsers: false,
-    canViewAdminStats: false,
-    canManageApiKeys: false,
-    canManageBilling: false,
-    canEditSystemSettings: false,
-  },
-  viewer: {
-    role: "viewer",
-    permissions: [
-      "LEADS_VIEW",
-    ],
-    canViewLeads: true,
-    canRunDiscovery: false,
-    canEditScoring: false,
-    canManageUsers: false,
-    canViewAdminStats: false,
-    canManageApiKeys: false,
-    canManageBilling: false,
-    canEditSystemSettings: false,
-  },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRoleState] = useState<AppRole>(() => {
-    return (localStorage.getItem("leadengine-active-role") as AppRole) || "admin";
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("leadengine-jwt");
+    } catch {
+      return null;
+    }
   });
+  const [capabilities, setCapabilities] = useState<RoleCapabilities | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const [capabilities, setCapabilities] = useState<RoleCapabilities>(
-    () => DEFAULT_CAPABILITIES[role] || DEFAULT_CAPABILITIES.admin
-  );
+  // Set auth bearer token header whenever token changes
+  useEffect(() => {
+    if (token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      localStorage.setItem("leadengine-jwt", token);
 
-  const setRole = (newRole: AppRole) => {
-    setRoleState(newRole);
-    localStorage.setItem("leadengine-active-role", newRole);
-    setCapabilities(DEFAULT_CAPABILITIES[newRole]);
-    // Configure axios header dynamically
-    api.defaults.headers.common["x-user-role"] = newRole;
+      // Verify token and fetch profile
+      api
+        .get("/auth/me")
+        .then((res) => {
+          setUser(res.data.user);
+          setCapabilities(res.data.capabilities || null);
+        })
+        .catch(() => {
+          // Token expired or invalid
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem("leadengine-jwt");
+          delete api.defaults.headers.common["Authorization"];
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      delete api.defaults.headers.common["Authorization"];
+      setUser(null);
+      setCapabilities(null);
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  const login = async (email: string, password: string) => {
+    const res = await api.post("/auth/login", { email, password });
+    if (res.data?.token) {
+      setToken(res.data.token);
+      setUser(res.data.user);
+      api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+    }
   };
 
-  useEffect(() => {
-    api.defaults.headers.common["x-user-role"] = role;
-    
-    // Fetch live capabilities from backend
-    api.get("/auth/permissions", { headers: { "x-user-role": role } })
-      .then((res) => {
-        if (res.data) {
-          setCapabilities(res.data);
-        }
-      })
-      .catch(() => {
-        setCapabilities(DEFAULT_CAPABILITIES[role]);
-      });
-  }, [role]);
+  const register = async (name: string, email: string, password: string) => {
+    const res = await api.post("/auth/register", { name, email, password });
+    if (res.data?.token) {
+      setToken(res.data.token);
+      setUser(res.data.user);
+      api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+    }
+  };
+
+  const logout = () => {
+    try {
+      api.post("/auth/logout").catch(() => {});
+    } catch {}
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("leadengine-jwt");
+    delete api.defaults.headers.common["Authorization"];
+  };
 
   const can = (action: string) => {
+    if (!capabilities?.permissions) return true; // Default permissive for authenticated users
     return capabilities.permissions.includes(action);
   };
 
-  const user = {
-    id: "usr-active",
-    email: "lead.engineer@leadengine.io",
-    name: "Vishal Chavda",
-  };
-
   return (
-    <AuthContext.Provider value={{ role, setRole, capabilities, can, user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: Boolean(token && user),
+        isLoading,
+        capabilities,
+        login,
+        register,
+        logout,
+        can,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

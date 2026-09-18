@@ -28,7 +28,6 @@ export class UsersService {
         name: true,
         role: true,
         emailVerified: true,
-        avatarUrl: true,
         lastLoginAt: true,
         createdAt: true,
       },
@@ -47,7 +46,6 @@ export class UsersService {
         name: true,
         role: true,
         emailVerified: true,
-        avatarUrl: true,
         lastLoginAt: true,
       },
     });
@@ -61,5 +59,15 @@ export class UsersService {
 
   async count() {
     return prisma.user.count();
+  }
+
+  async getAuditLogs() {
+    return prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        user: { select: { id: true, email: true, name: true, role: true } },
+      },
+    });
   }
 }

@@ -12,8 +12,14 @@ import { CampaignsPage } from "./pages/CampaignsPage";
 import { OutreachPage } from "./pages/OutreachPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+
 import { ThemeProvider } from "./lib/theme";
 import { AuthProvider } from "./lib/auth";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 export const App: React.FC = () => {
   return (
@@ -21,7 +27,21 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<AppLayout />}>
+            {/* Public Authentication Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            {/* Protected Platform Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<DashboardPage />} />
               <Route path="discover" element={<DiscoverPage />} />
               <Route path="leads" element={<LeadsPage />} />

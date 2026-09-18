@@ -24,42 +24,28 @@ export const leadEngineApi = {
       const res = await api.get("/stats");
       return res.data;
     } catch {
-      // Return rich defaults if backend is initializing
       return {
-        totalBusinesses: 124,
-        newToday: 18,
-        withoutWebsite: 48,
-        withWebsite: 76,
-        poorWebsite: 32,
-        withEmail: 64,
-        withPhone: 118,
-        withSocial: 82,
-        highOpportunity: 37,
-        contacted: 24,
-        replied: 14,
-        meetings: 6,
-        proposals: 4,
-        wonDeals: 2,
-        byCategory: [
-          { category: "Dental Clinic", count: 48 },
-          { category: "Medical Diagnostic", count: 26 },
-          { category: "Orthopedic", count: 18 },
-          { category: "Dermatology", count: 16 },
-          { category: "Ayurvedic", count: 16 },
-        ],
-        byCity: [
-          { city: "Rajkot", count: 82 },
-          { city: "Ahmedabad", count: 24 },
-          { city: "Surat", count: 18 },
-        ],
-        conversionFunnel: {
-          discovered: 124,
-          qualified: 88,
-          contacted: 24,
-          replied: 14,
-          meeting: 6,
-          proposal: 4,
-          won: 2,
+        kpis: {
+          total: 0,
+          newToday: 0,
+          newWeek: 0,
+          newMonth: 0,
+          withoutWebsite: 0,
+          withWebsite: 0,
+          highOpportunity: 0,
+          contacted: 0,
+          replied: 0,
+          meetings: 0,
+          proposals: 0,
+          wonDeals: 0,
+        },
+        charts: {
+          byCity: [],
+          byCategory: [],
+          byCountry: [],
+          byState: [],
+          opportunities: [],
+          pipeline: [],
         },
       };
     }
@@ -87,8 +73,12 @@ export const leadEngineApi = {
 
   // Campaigns
   async getCampaigns(params?: Record<string, any>) {
-    const res = await api.get("/campaigns", { params });
-    return res.data;
+    try {
+      const res = await api.get("/campaigns", { params });
+      return res.data?.items || res.data || [];
+    } catch {
+      return [];
+    }
   },
 
   async getCampaign(id: string) {
@@ -112,6 +102,10 @@ export const leadEngineApi = {
   },
 
   // Universal Discovery
+  async discoverLeads(payload: any) {
+    return this.searchDiscovery(payload);
+  },
+
   async searchDiscovery(payload: {
     query: string;
     location?: string;
@@ -143,14 +137,22 @@ export const leadEngineApi = {
 
   // Opportunities
   async getOpportunities(params?: Record<string, any>) {
-    const res = await api.get("/opportunities", { params });
-    return res.data;
+    try {
+      const res = await api.get("/opportunities", { params });
+      return res.data?.items || res.data || [];
+    } catch {
+      return [];
+    }
   },
 
   // Websites & Audits
   async getWebsites(params?: Record<string, any>) {
-    const res = await api.get("/websites", { params });
-    return res.data;
+    try {
+      const res = await api.get("/websites", { params });
+      return res.data?.items || res.data || [];
+    } catch {
+      return [];
+    }
   },
 
   async getWebsiteAudit(id: string) {
@@ -186,6 +188,48 @@ export const leadEngineApi = {
     return res.data;
   },
 
+  // AI Services (OpenRouter server-side abstraction)
+  async getAiStatus() {
+    const res = await api.get("/ai/status");
+    return res.data;
+  },
+
+  async analyzeLead(lead: Record<string, unknown>) {
+    const res = await api.post("/ai/analyze-lead", { lead });
+    return res.data;
+  },
+
+  async summarizeLead(lead: Record<string, unknown>) {
+    const res = await api.post("/ai/summarize-lead", { lead });
+    return res.data;
+  },
+
+  async researchAssistant(lead: Record<string, unknown>, question: string) {
+    const res = await api.post("/ai/research-assistant", { lead, question });
+    return res.data;
+  },
+
+  async enhanceSearchQuery(query: string) {
+    const res = await api.post("/ai/enhance-query", { query });
+    return res.data;
+  },
+
+  // Providers & Diagnostics
+  async getProviderStatus() {
+    const res = await api.get("/discovery/status");
+    return res.data;
+  },
+
+  async getAuditLogs() {
+    const res = await api.get("/users/audit/logs");
+    return res.data;
+  },
+
+  async changePassword(dto: { currentPassword?: string; newPassword?: string }) {
+    const res = await api.post("/auth/change-password", dto);
+    return res.data;
+  },
+
   // API Keys
   async getApiKeys() {
     const res = await api.get("/api-keys");
@@ -197,3 +241,4 @@ export const leadEngineApi = {
     return res.data;
   },
 };
+

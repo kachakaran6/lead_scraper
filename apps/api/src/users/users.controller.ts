@@ -13,6 +13,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get("audit/logs")
+  async getAuditLogs() {
+    return this.usersService.getAuditLogs();
+  }
+
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.usersService.findOne(id);

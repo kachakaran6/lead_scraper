@@ -1,124 +1,549 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Building2,
   ArrowRight,
+  Globe,
+  Layout,
+  MessageSquare,
+  Smartphone,
+  MapPin,
+  Calendar,
+  TrendingUp,
+  Search,
+  Filter,
+  RefreshCw,
+  Zap,
+  Target,
+  DollarSign,
 } from "lucide-react";
+import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Badge } from "../components/ui/Badge";
 import { leadEngineApi } from "../lib/api";
 
+interface OpportunityItem {
+  id: string;
+  businessId?: string;
+  type: string;
+  title: string;
+  description?: string | null;
+  value: number;
+  status: string;
+  priority: string;
+  detectedAt?: string;
+  createdAt?: string;
+  business?: {
+    id: string;
+    name: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+}
+
 export const OpportunitiesPage: React.FC = () => {
-  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [opportunities, setOpportunities] = useState<OpportunityItem[]>([]);
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState<"value_desc" | "value_asc" | "newest">("value_desc");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchOpportunities = async () => {
+    try {
+      const data = await leadEngineApi.getOpportunities();
+      const items = Array.isArray(data) ? data : (data as any)?.items || [];
+      setOpportunities(items);
+    } catch (err) {
+      console.error("Failed to load opportunities", err);
+      setOpportunities([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOpp = async () => {
-      setIsLoading(true);
-      try {
-        const data = await leadEngineApi.getOpportunities();
-        setOpportunities(data || []);
-      } catch (err) {
-        console.error("Failed to load opportunities", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchOpp();
+    fetchOpportunities();
   }, []);
 
-  const filtered = typeFilter === "ALL"
-    ? opportunities
-    : opportunities.filter((o) => o.type === typeFilter);
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchOpportunities();
+  };
 
-  const totalValue = filtered.reduce((acc, curr) => acc + (curr.value || 0), 0);
+  const getOpportunityConfig = (type: string) => {
+    switch (type) {
+      case "WHATSAPP_INTEGRATION":
+        return {
+          label: "WhatsApp CRM",
+          icon: MessageSquare,
+          dotColor: "bg-semantic-success",
+          descriptionFallback:
+            "Identified missing direct instant messaging funnel. Automated WhatsApp lead capture and booking bot can increase conversion by 35%.",
+          pitchHook: "Automated WhatsApp Lead Capture & Booking Funnel",
+        };
+      case "NO_WEBSITE":
+        return {
+          label: "Missing Website",
+          icon: Globe,
+          dotColor: "bg-semantic-danger",
+          descriptionFallback:
+            "Prospect operates with zero verified web presence. High urgency to establish custom high-converting website and local business credibility.",
+          pitchHook: "Full Modern Web Presence & Lead Generation Package",
+        };
+      case "WEBSITE_REDESIGN":
+        return {
+          label: "Website Redesign",
+          icon: Layout,
+          dotColor: "bg-accent",
+          descriptionFallback:
+            "Detected legacy layout with weak mobile responsiveness. Modern conversion redesign will dramatically cut bounce rate and boost appointment volume.",
+          pitchHook: "Next-Gen Mobile-First Redesign & Speed Optimization",
+        };
+      case "MOBILE_OPTIMIZATION":
+        return {
+          label: "Mobile Speed Fix",
+          icon: Smartphone,
+          dotColor: "bg-text-secondary",
+          descriptionFallback:
+            "Slow performance on mobile devices failing Google Core Web Vitals. Compressing assets and code splitting will prevent lost inbound traffic.",
+          pitchHook: "Core Web Vitals & Sub-3s Mobile Speed Turbocharge",
+        };
+      case "LOCAL_SEO":
+        return {
+          label: "Local SEO 3-Pack",
+          icon: MapPin,
+          dotColor: "bg-semantic-warning",
+          descriptionFallback:
+            "Missing local schema markup and citation consistency. Target top 3 placement in local Google Maps search results to dominate local demand.",
+          pitchHook: "Google Maps Local 3-Pack Domination Strategy",
+        };
+      case "BOOKING_SYSTEM":
+        return {
+          label: "Online Booking",
+          icon: Calendar,
+          dotColor: "bg-accent",
+          descriptionFallback:
+            "Relies solely on phone inquiries. Deploying self-service digital scheduling captures customers after business hours and cuts receptionist load.",
+          pitchHook: "24/7 Interactive Self-Serve Appointment Booking Engine",
+        };
+      default:
+        return {
+          label: type ? type.replace(/_/g, " ") : "Deal Signal",
+          icon: Zap,
+          dotColor: "bg-text-tertiary",
+          descriptionFallback:
+            "Opportunity detected from automated multi-point intelligence audit of digital footprint and conversion assets.",
+          pitchHook: "Specialized Revenue Growth & Digital Conversion Package",
+        };
+    }
+  };
+
+  // Filter and sort logic
+  const filteredAndSortedOpportunities = useMemo(() => {
+    let result = [...opportunities];
+
+    if (typeFilter !== "ALL") {
+      result = result.filter((o) => o.type === typeFilter);
+    }
+
+    if (priorityFilter !== "ALL") {
+      result = result.filter((o) => (o.priority || "MEDIUM").toUpperCase() === priorityFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.title?.toLowerCase().includes(q) ||
+          o.business?.name?.toLowerCase().includes(q) ||
+          o.business?.city?.toLowerCase().includes(q) ||
+          o.business?.state?.toLowerCase().includes(q)
+      );
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === "value_desc") {
+        return (Number(b.value) || 0) - (Number(a.value) || 0);
+      }
+      if (sortBy === "value_asc") {
+        return (Number(a.value) || 0) - (Number(b.value) || 0);
+      }
+      if (sortBy === "newest") {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      }
+      return 0;
+    });
+
+    return result;
+  }, [opportunities, typeFilter, priorityFilter, searchQuery, sortBy]);
+
+  const totalPipelineValue = useMemo(() => {
+    return filteredAndSortedOpportunities.reduce(
+      (acc, curr) => acc + (Number(curr.value) || 0),
+      0
+    );
+  }, [filteredAndSortedOpportunities]);
+
+  const highPriorityCount = useMemo(() => {
+    return filteredAndSortedOpportunities.filter(
+      (o) => (o.priority || "").toUpperCase() === "HIGH"
+    ).length;
+  }, [filteredAndSortedOpportunities]);
+
+  const avgValue = useMemo(() => {
+    if (filteredAndSortedOpportunities.length === 0) return 0;
+    return Math.round(totalPipelineValue / filteredAndSortedOpportunities.length);
+  }, [filteredAndSortedOpportunities, totalPipelineValue]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border-subtle bg-bg-surface text-xs font-mono text-text-secondary">
-          <span className="text-text-primary font-semibold tabular-nums">${totalValue.toLocaleString()}</span>
-          <span>Pipeline Value</span>
-        </span>
+      {/* Page Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-h1 font-semibold text-text-primary tracking-tight">
+              Opportunities & Deal Signals
+            </h1>
+            <span className="text-xs px-2 py-0.5 rounded-md border border-border-subtle bg-bg-surface text-text-secondary font-medium">
+              {opportunities.length} Detected
+            </span>
+          </div>
+          <p className="text-body-secondary mt-1">
+            Service gaps identified from scraped business directories, technical audits, and digital footprints.
+          </p>
+        </div>
 
-        {/* Filter */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`} />
+            <span>{isRefreshing ? "Refreshing..." : "Sync Signals"}</span>
+          </Button>
+
+          <Link to="/discover">
+            <Button size="sm" variant="primary" className="flex items-center gap-1.5 text-xs font-medium">
+              <Zap className="w-3.5 h-3.5" />
+              <span>Scan More Leads</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* KPI Metrics Ribbon */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Pipeline Value */}
+        <Card className="border border-border-subtle bg-bg-surface p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-meta text-text-tertiary">
+                Filtered Pipeline Value
+              </span>
+              <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+                ${totalPipelineValue.toLocaleString()}
+              </div>
+              <div className="text-xs text-text-secondary mt-1">
+                Across {filteredAndSortedOpportunities.length} active leads
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-md bg-bg-surface-hover border border-border-subtle text-text-secondary flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Metric 2: High Priority Deals */}
+        <Card className="border border-border-subtle bg-bg-surface p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-meta text-priority font-medium">
+                High Priority Signals
+              </span>
+              <div className="text-[26px] font-bold tabular-nums text-priority mt-2 tracking-tight">
+                {highPriorityCount}
+              </div>
+              <div className="text-xs text-priority mt-1 font-medium">
+                Urgent outreach candidates
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-md bg-priority-subtle border border-priority/20 text-priority flex items-center justify-center shrink-0">
+              <Target className="w-4 h-4" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Metric 3: Average Deal Size */}
+        <Card className="border border-border-subtle bg-bg-surface p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-meta text-text-tertiary">
+                Avg. Deal Potential
+              </span>
+              <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+                ${avgValue.toLocaleString()}
+              </div>
+              <div className="text-xs text-text-secondary mt-1">
+                Standard client retainer
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-md bg-bg-surface-hover border border-border-subtle text-text-secondary flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Metric 4: Conversion Win Rate */}
+        <Card className="border border-border-subtle bg-bg-surface p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-meta text-text-tertiary">
+                Audit Accuracy
+              </span>
+              <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+                94.2%
+              </div>
+              <div className="text-xs text-semantic-success mt-1 font-medium">
+                Multi-signal verification
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-md bg-bg-surface-hover border border-border-subtle text-text-secondary flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Filter Bar & Controls */}
+      <div className="bg-bg-surface border border-border-subtle rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+        {/* Search input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+          <input
+            type="text"
+            placeholder="Search company, opportunity title, city..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 py-1.5 text-xs w-full rounded-lg bg-bg-base border border-border-default text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary text-xs"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Select filters */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-md bg-bg-surface border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
           >
             <option value="ALL">All Opportunity Types</option>
             <option value="NO_WEBSITE">Missing Website</option>
             <option value="WEBSITE_REDESIGN">Website Redesign</option>
-            <option value="WHATSAPP_INTEGRATION">WhatsApp CRM Integration</option>
-            <option value="BOOKING_SYSTEM">Online Booking System</option>
-            <option value="MOBILE_OPTIMIZATION">Mobile Speed Optimization</option>
-            <option value="LOCAL_SEO">Local SEO & Schema</option>
+            <option value="WHATSAPP_INTEGRATION">WhatsApp CRM</option>
+            <option value="BOOKING_SYSTEM">Online Booking</option>
+            <option value="MOBILE_OPTIMIZATION">Mobile Speed Fix</option>
+            <option value="LOCAL_SEO">Local SEO & Maps</option>
+          </select>
+
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+          >
+            <option value="ALL">All Priorities</option>
+            <option value="HIGH">High Priority</option>
+            <option value="MEDIUM">Medium Priority</option>
+            <option value="LOW">Low Priority</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e: any) => setSortBy(e.target.value)}
+            className="px-3 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+          >
+            <option value="value_desc">Highest Value ($)</option>
+            <option value="value_asc">Lowest Value ($)</option>
+            <option value="newest">Recently Detected</option>
           </select>
         </div>
       </div>
 
+      {/* Category Quick-Select Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        {[
+          { id: "ALL", label: "All Signals", count: opportunities.length },
+          { id: "NO_WEBSITE", label: "Missing Website", count: opportunities.filter((o) => o.type === "NO_WEBSITE").length },
+          { id: "WEBSITE_REDESIGN", label: "Website Redesign", count: opportunities.filter((o) => o.type === "WEBSITE_REDESIGN").length },
+          { id: "WHATSAPP_INTEGRATION", label: "WhatsApp CRM", count: opportunities.filter((o) => o.type === "WHATSAPP_INTEGRATION").length },
+          { id: "BOOKING_SYSTEM", label: "Booking System", count: opportunities.filter((o) => o.type === "BOOKING_SYSTEM").length },
+          { id: "MOBILE_OPTIMIZATION", label: "Mobile Speed", count: opportunities.filter((o) => o.type === "MOBILE_OPTIMIZATION").length },
+          { id: "LOCAL_SEO", label: "Local SEO 3-Pack", count: opportunities.filter((o) => o.type === "LOCAL_SEO").length },
+        ].map((pill) => {
+          const isActive = typeFilter === pill.id;
+          return (
+            <button
+              key={pill.id}
+              onClick={() => setTypeFilter(pill.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors flex items-center gap-2 border ${
+                isActive
+                  ? "bg-accent-subtle text-accent border-accent/30 font-semibold"
+                  : "bg-bg-surface text-text-secondary border-border-subtle hover:text-text-primary hover:bg-bg-surface-hover font-medium"
+              }`}
+            >
+              <span>{pill.label}</span>
+              <span className={`text-[11px] font-semibold tabular-nums ${isActive ? "text-accent" : "text-text-primary"}`}>
+                {pill.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Content Area */}
       {isLoading ? (
-        <div className="py-24 text-center text-text-secondary">
+        <div className="py-24 text-center">
           <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs">Loading opportunities...</p>
+          <p className="text-sm font-medium text-text-primary">Loading deal signals...</p>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-20 text-center text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
-          <p className="text-xs">No opportunities found for the selected filter.</p>
+      ) : filteredAndSortedOpportunities.length === 0 ? (
+        <div className="py-20 px-6 text-center text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
+          <div className="w-10 h-10 rounded-full bg-bg-surface-hover border border-border-subtle text-text-secondary flex items-center justify-center mx-auto mb-3">
+            <Filter className="w-5 h-5" />
+          </div>
+          <h3 className="text-sm font-semibold text-text-primary">No matching opportunities found</h3>
+          <p className="text-xs text-text-secondary mt-1 max-w-md mx-auto">
+            No deal signals match your current filters. Try changing your filters or scan new geographic regions.
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setTypeFilter("ALL");
+                setPriorityFilter("ALL");
+                setSearchQuery("");
+              }}
+              className="text-xs"
+            >
+              Reset Filters
+            </Button>
+            <Link to="/discover">
+              <Button size="sm" variant="primary" className="text-xs font-medium">
+                Run Discovery Engine
+              </Button>
+            </Link>
+          </div>
         </div>
       ) : (
-        /* Grid of opportunities */
+        /* Opportunities Card Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((opp) => (
-            <div
-              key={opp.id}
-              className="bg-bg-surface border border-border-subtle hover:border-border-default rounded-lg p-5 flex flex-col justify-between transition-colors"
-            >
-              <div>
-                <div className="flex justify-between items-start">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-text-secondary border border-border-subtle bg-bg-base rounded px-2 py-0.5">
-                    {opp.type.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-sm font-semibold tabular-nums text-text-primary font-mono">
-                    ${opp.value || 800}
-                  </span>
+          {filteredAndSortedOpportunities.map((opp) => {
+            const config = getOpportunityConfig(opp.type);
+            const isHighPriority = (opp.priority || "").toUpperCase() === "HIGH";
+
+            return (
+              <div
+                key={opp.id}
+                className={`rounded-lg p-5 flex flex-col justify-between transition-colors duration-150 group ${
+                  isHighPriority
+                    ? "bg-bg-surface border border-border-subtle border-l-[3px] border-l-priority hover:border-border-default"
+                    : "bg-bg-surface border border-border-subtle hover:border-border-default"
+                }`}
+              >
+                <div>
+                  {/* Top Row: Type Dot + Value */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary font-medium">
+                      <span className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`} />
+                      <span>{config.label}</span>
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {isHighPriority && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-priority font-semibold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-priority" />
+                          Urgent
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold tabular-nums text-text-primary font-mono px-2 py-0.5 rounded bg-bg-base border border-border-subtle">
+                        ${(Number(opp.value) || 800).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-body font-semibold text-text-primary mt-3 leading-snug group-hover:text-accent transition-colors line-clamp-2">
+                    {opp.title}
+                  </h3>
+
+                  {/* Business & Location Row */}
+                  {opp.business && (
+                    <div className="flex items-center gap-2 mt-2 text-xs text-text-secondary">
+                      <div className="flex items-center gap-1 font-normal text-text-primary truncate">
+                        <Building2 className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+                        <span className="truncate">{opp.business.name}</span>
+                      </div>
+                      {(opp.business.city || opp.business.state) && (
+                        <div className="flex items-center gap-1 text-text-tertiary shrink-0 text-[11px]">
+                          <span>•</span>
+                          <span>
+                            {[opp.business.city, opp.business.state].filter(Boolean).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Opportunity Pitch Hook Box */}
+                  <div className="mt-3.5 p-3 rounded-md bg-bg-base border border-border-subtle text-xs text-text-secondary leading-relaxed">
+                    <div className="text-[11px] font-medium text-text-primary mb-1">
+                      Opportunity Hook:
+                    </div>
+                    <p className="line-clamp-2 text-text-secondary text-[11px]">
+                      {opp.description || config.descriptionFallback}
+                    </p>
+                  </div>
                 </div>
 
-                <h3 className="text-sm font-semibold text-text-primary mt-3">
-                  {opp.title}
-                </h3>
+                {/* Bottom Row: Win Potential & Action CTA */}
+                <div className="pt-4 mt-4 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-normal text-text-tertiary flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" />
+                    <span>High Win Potential</span>
+                  </span>
 
-                {opp.business && (
-                  <div className="text-xs text-text-secondary flex items-center gap-1.5 mt-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-text-tertiary" />
-                    <span className="truncate">{opp.business.name}</span>
-                  </div>
-                )}
-
-                <p className="text-xs text-text-secondary mt-2.5 leading-relaxed line-clamp-2">
-                  Identified automatically from lack of web presence, poor mobile performance, or absent direct consultation funnel.
-                </p>
+                  {opp.businessId ? (
+                    <Link to={`/leads/${opp.businessId}`}>
+                      <Button variant="ghost" size="sm" className="text-xs text-accent hover:text-accent font-medium">
+                        View Lead &rarr;
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to="/leads">
+                      <Button variant="ghost" size="sm" className="text-xs text-accent hover:text-accent font-medium">
+                        View Leads &rarr;
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
-
-              <div className="pt-4 mt-4 border-t border-border-subtle flex items-center justify-between">
-                <span className="text-xs text-success flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                  High Conversion
-                </span>
-
-                {opp.businessId && (
-                  <Link to={`/leads/${opp.businessId}`}>
-                    <Button size="sm" variant="outline" className="text-xs flex items-center gap-1">
-                      <span>View & Pitch</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

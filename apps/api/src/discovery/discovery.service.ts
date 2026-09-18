@@ -1,34 +1,44 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@ultimate-leads/database";
 import { JobsService } from "../jobs/jobs.service";
+import {
+  GooglePlacesProvider,
+  OverpassOsmProvider,
+  DiscoveredLeadData,
+  DiscoverySearchParams,
+} from "./providers";
 
-interface DiscoveryParams {
-  query: string;
-  location?: string;
-  countryCode?: string;
-  stateCode?: string;
-  cityName?: string;
-  radiusKm?: number;
-  limit?: number;
-  source?: "MAPS" | "SEARCH" | "DIRECTORY";
-  campaignId?: string;
-  provider?: string;
+export interface LeadScoreFactor {
+  name: string;
+  points: number;
+  met: boolean;
+  explanation: string;
+}
+
+export interface LeadScoringBreakdown {
+  score: number;
+  grade: "A" | "B" | "C";
+  factors: LeadScoreFactor[];
 }
 
 @Injectable()
 export class DiscoveryService {
-  constructor(private readonly jobsService?: JobsService) {}
+  private readonly googlePlaces: GooglePlacesProvider;
+  private readonly overpassOsm: OverpassOsmProvider;
 
-  async discover(params: DiscoveryParams) {
-    const { query, location, radiusKm, limit = 1000, source = "SEARCH", campaignId } = params;
+  constructor(private readonly jobsService?: JobsService) {
+    this.googlePlaces = new GooglePlacesProvider();
+    this.overpassOsm = new OverpassOsmProvider();
+  }
 
+  async discover(params: DiscoverySearchParams & { campaignId?: string; source?: string; userId?: string }) {
     if (this.jobsService) {
       const job = await this.jobsService.create({
         type: "DISCOVER_BUSINESSES",
         status: "PENDING",
-        campaignId,
+        campaignId: params.campaignId,
         progress: 0,
-        result: { query, location, radiusKm, limit, source },
+        result: params,
       });
 
       return {
@@ -41,8 +51,8 @@ export class DiscoveryService {
     return this.search(params);
   }
 
-  async search(params: DiscoveryParams) {
-    const query = (params.query || "Business").trim();
+  async search(params: DiscoverySearchParams & { userId?: string }) {
+    const query = (params.query || "").trim();
     const locationParts = params.location ? params.location.split(",").map((s) => s.trim()).filter(Boolean) : [];
     const searchCity = (params.cityName && params.cityName !== "All Cities" ? params.cityName : "") || locationParts[0] || "";
     const searchState = params.stateCode || locationParts[1] || "";
@@ -50,7 +60,7 @@ export class DiscoveryService {
     const effectiveLocation = [searchCity, searchState, searchCountry].filter(Boolean).join(", ") || params.location || "";
     const limit = Math.min(params.limit || 20, 50);
 
-    // 1. Search existing DB records
+    // 1. Search existing verified DB records first
     const where: any = {};
     if (query) {
       where.OR = [
@@ -64,15 +74,6 @@ export class DiscoveryService {
           OR: [
             { city: { contains: searchCity, mode: "insensitive" } },
             { address: { contains: searchCity, mode: "insensitive" } },
-          ],
-        },
-      ];
-    } else if (searchState) {
-      where.AND = [
-        {
-          OR: [
-            { state: { contains: searchState, mode: "insensitive" } },
-            { address: { contains: searchState, mode: "insensitive" } },
           ],
         },
       ];
@@ -91,11 +92,47 @@ export class DiscoveryService {
       },
     });
 
-    // 2. If fewer than 4 matches in DB, run Live Geographic Scraping
-    if (existing.length < 4) {
-      const scraped = await this.scrapeLiveGeographicData(query, effectiveLocation, searchCity, searchState);
-      if (scraped.length > 0) {
-        // Re-query DB after saving live scraped businesses
+    // 2. If fewer than 5 records exist, query live verified data providers
+    if (existing.length < 5) {
+      const liveResults: DiscoveredLeadData[] = [];
+
+      // A. Try Google Places if configured
+      if (this.googlePlaces.isConfigured()) {
+        try {
+          const googleResults = await this.googlePlaces.search({
+            ...params,
+            cityName: searchCity,
+            stateCode: searchState,
+            countryCode: searchCountry,
+            limit,
+          });
+          liveResults.push(...googleResults);
+        } catch (err: any) {
+          console.warn("Google Places query error:", err.message);
+        }
+      }
+
+      // B. Query OpenStreetMap Overpass live verified POIs
+      try {
+        const osmResults = await this.overpassOsm.search({
+          ...params,
+          cityName: searchCity,
+          stateCode: searchState,
+          countryCode: searchCountry,
+          limit,
+        });
+        liveResults.push(...osmResults);
+      } catch (err: any) {
+        console.warn("Overpass OSM query error:", err.message);
+      }
+
+      // 3. Persist and deduplicate real data into database
+      if (liveResults.length > 0) {
+        for (const item of liveResults) {
+          await this.persistAndDeduplicate(item, params.userId);
+        }
+
+        // Re-query database for consistent format
         existing = await prisma.business.findMany({
           where,
           take: limit,
@@ -111,10 +148,30 @@ export class DiscoveryService {
       }
     }
 
+    // Attach transparent explainability factors to each result
+    const itemsWithFactors = existing.map((b) => {
+      const scoring = this.calculateLeadScore({
+        hasWebsite: b.hasWebsite ?? Boolean(b.website),
+        hasPhone: b.hasPhone ?? Boolean(b.phone),
+        hasEmail: b.hasEmail ?? (b.emails && b.emails.length > 0),
+        category: b.category,
+        city: b.city,
+        rating: b.rating,
+        reviewCount: b.reviewCount,
+      });
+
+      return {
+        ...b,
+        leadScore: scoring.score,
+        leadGrade: scoring.grade,
+        scoringFactors: scoring.factors,
+      };
+    });
+
     return {
-      items: existing,
+      items: itemsWithFactors,
       meta: {
-        total: existing.length,
+        total: itemsWithFactors.length,
         query,
         location: effectiveLocation,
         countryCode: searchCountry,
@@ -126,249 +183,201 @@ export class DiscoveryService {
     };
   }
 
-  private async scrapeLiveGeographicData(
-    query: string,
-    rawLocation: string,
-    city: string,
-    state: string
-  ): Promise<any[]> {
-    const results: any[] = [];
-    const targetCity = city || "Local Metro";
-    const targetState = state || "Region";
+  calculateLeadScore(business: {
+    hasWebsite: boolean;
+    hasPhone: boolean;
+    hasEmail: boolean;
+    category?: string | null;
+    city?: string | null;
+    rating?: number | null;
+    reviewCount?: number | null;
+  }): LeadScoringBreakdown {
+    const factors: LeadScoreFactor[] = [];
+    let score = 0;
 
-    // Attempt Nominatim OpenStreetMap live API
-    try {
-      const osmQuery = rawLocation ? `${query} in ${rawLocation}` : query;
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        osmQuery
-      )}&format=json&addressdetails=1&limit=10`;
+    // Factor 1: Missing website (Primary Outreach Target)
+    const isMissingWebsite = !business.hasWebsite;
+    const pts1 = isMissingWebsite ? 35 : 10;
+    score += pts1;
+    factors.push({
+      name: "Website Opportunity",
+      points: pts1,
+      met: isMissingWebsite,
+      explanation: isMissingWebsite
+        ? "No website found (prime web design/booking system prospect)"
+        : "Website verified (redesign / performance audit target)",
+    });
 
-      const resp = await fetch(url, {
-        headers: {
-          "User-Agent": "UltimateLeadEngine/2.0 (lead-scraper-platform)",
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(6000),
-      });
+    // Factor 2: Direct Phone Available
+    const hasPhone = Boolean(business.hasPhone);
+    const pts2 = hasPhone ? 25 : 0;
+    score += pts2;
+    factors.push({
+      name: "Direct Contact Phone",
+      points: pts2,
+      met: hasPhone,
+      explanation: hasPhone
+        ? "Direct phone number verified for outreach"
+        : "No public phone number verified in source",
+    });
 
-      const data = await resp.json();
+    // Factor 3: Business Category & Match
+    const hasCategory = Boolean(business.category);
+    const pts3 = hasCategory ? 20 : 5;
+    score += pts3;
+    factors.push({
+      name: "Industry & Category",
+      points: pts3,
+      met: hasCategory,
+      explanation: hasCategory
+        ? `Categorized as '${business.category}'`
+        : "General unclassified commercial entity",
+    });
 
-      if (Array.isArray(data) && data.length > 0) {
-        for (const item of data) {
-          const rawName = item.name || item.display_name?.split(",")[0];
-          if (!rawName || rawName.length < 2) continue;
+    // Factor 4: Location Verification
+    const hasLocation = Boolean(business.city);
+    const pts4 = hasLocation ? 10 : 0;
+    score += pts4;
+    factors.push({
+      name: "Location Verified",
+      points: pts4,
+      met: hasLocation,
+      explanation: hasLocation
+        ? `Physical presence verified in ${business.city}`
+        : "Location partially unverified",
+    });
 
-          const addr = item.address || {};
-          const itemCity = addr.city || addr.town || addr.municipality || targetCity;
-          const itemState = addr.state || targetState;
-          const itemCountry = addr.country || "India";
-          const road = addr.road || addr.suburb || addr.neighbourhood || "Commercial Avenue";
-          const postcode = addr.postcode || "400001";
-          const lat = item.lat ? parseFloat(item.lat) : undefined;
-          const lon = item.lon ? parseFloat(item.lon) : undefined;
+    // Factor 5: Customer Reviews / Reputation
+    const hasReviews = (business.reviewCount || 0) > 0 || (business.rating || 0) > 0;
+    const pts5 = hasReviews ? 10 : 0;
+    score += pts5;
+    factors.push({
+      name: "Reputation & Reviews",
+      points: pts5,
+      met: hasReviews,
+      explanation: hasReviews
+        ? `Reputation data present (${business.rating || 0}★, ${business.reviewCount || 0} reviews)`
+        : "No public reviews recorded at source",
+    });
 
-          // Realistic variation in website presence (60% missing website = prime lead)
-          const hasWeb = Math.random() > 0.6;
-          const slug = rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const websiteUrl = hasWeb ? `https://${slug}-${itemCity.toLowerCase().replace(/[^a-z0-9]/g, "")}.com` : null;
+    const grade: "A" | "B" | "C" = score >= 80 ? "A" : score >= 60 ? "B" : "C";
 
-          const leadScore = hasWeb ? Math.floor(65 + Math.random() * 20) : Math.floor(88 + Math.random() * 10);
-          const leadGrade = leadScore >= 90 ? "A" : leadScore >= 75 ? "B" : "C";
-
-          const saved = await this.persistDiscoveredBusiness({
-            name: rawName,
-            category: query,
-            address: `${road}, ${addr.suburb || itemCity}`,
-            city: itemCity,
-            state: itemState,
-            country: itemCountry,
-            postalCode: postcode,
-            latitude: lat,
-            longitude: lon,
-            website: websiteUrl,
-            leadScore,
-            leadGrade,
-            phonePrefix: itemCountry.toLowerCase().includes("india") ? "+91" : "+1",
-          });
-
-          if (saved) results.push(saved);
-        }
-      }
-    } catch (err) {
-      console.warn("Live OSM scraper warning:", (err as Error).message);
-    }
-
-    // Fallback: If OSM returned fewer than 3 (or query had no direct OSM nodes), generate authentic localized businesses
-    if (results.length < 3) {
-      const synthetic = this.generateLocalizedBusinesses(query, targetCity, targetState);
-      for (const b of synthetic) {
-        const saved = await this.persistDiscoveredBusiness(b);
-        if (saved) results.push(saved);
-      }
-    }
-
-    return results;
+    return {
+      score: Math.min(score, 100),
+      grade,
+      factors,
+    };
   }
 
-  private async persistDiscoveredBusiness(data: {
-    name: string;
-    category: string;
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-    postalCode: string;
-    latitude?: number;
-    longitude?: number;
-    website: string | null;
-    leadScore: number;
-    leadGrade: string;
-    phonePrefix?: string;
-  }) {
+  private async persistAndDeduplicate(data: DiscoveredLeadData, userId?: string) {
     try {
-      const existing = await prisma.business.findFirst({
-        where: {
-          name: { equals: data.name, mode: "insensitive" },
-          city: { equals: data.city, mode: "insensitive" },
-        },
+      // Deduplication check: placeId, phone, or name + city
+      let existing = null;
+
+      if (data.googlePlaceId) {
+        existing = await prisma.business.findFirst({
+          where: { googlePlaceId: data.googlePlaceId },
+        });
+      }
+
+      if (!existing && data.sourceId) {
+        existing = await prisma.business.findFirst({
+          where: { sourceId: data.sourceId },
+        });
+      }
+
+      if (!existing && data.phone) {
+        existing = await prisma.business.findFirst({
+          where: { phone: data.phone },
+        });
+      }
+
+      if (!existing && data.name && data.city) {
+        existing = await prisma.business.findFirst({
+          where: {
+            name: { equals: data.name, mode: "insensitive" },
+            city: { equals: data.city, mode: "insensitive" },
+          },
+        });
+      }
+
+      const hasWebsite = Boolean(data.website && data.website.trim().length > 3);
+      const hasPhone = Boolean(data.phone && data.phone.trim().length > 4);
+      const scoring = this.calculateLeadScore({
+        hasWebsite,
+        hasPhone,
+        hasEmail: false,
+        category: data.category,
+        city: data.city,
+        rating: data.rating,
+        reviewCount: data.reviewCount,
       });
 
-      if (existing) return existing;
+      if (existing) {
+        // Merge verified fields without overwriting with nulls
+        return await prisma.business.update({
+          where: { id: existing.id },
+          data: {
+            address: existing.address || data.address,
+            phone: existing.phone || data.phone,
+            website: existing.website || data.website,
+            rating: existing.rating || data.rating,
+            reviewCount: existing.reviewCount || data.reviewCount,
+            lastVerifiedAt: new Date(),
+            verificationStatus: data.verificationStatus,
+            hasWebsite: existing.hasWebsite ?? hasWebsite,
+            hasPhone: existing.hasPhone ?? hasPhone,
+          },
+        });
+      }
 
-      const randomPhone = `${data.phonePrefix || "+91"} 98${Math.floor(10000000 + Math.random() * 89999999)}`;
-      const cleanSlug = data.name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 15);
-      const email = `contact@${cleanSlug}.example.com`;
-
-      const business = await prisma.business.create({
+      return await prisma.business.create({
         data: {
+          userId: userId || null,
           name: data.name,
-          category: data.category,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          country: data.country,
-          postalCode: data.postalCode,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          rating: Number((4.5 + Math.random() * 0.4).toFixed(1)),
-          reviewCount: Math.floor(40 + Math.random() * 450),
-          phone: randomPhone,
-          website: data.website,
-          source: "MAPS",
+          category: data.category || null,
+          address: data.address || null,
+          city: data.city || null,
+          state: data.state || null,
+          country: data.country || null,
+          postalCode: data.postalCode || null,
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
+          rating: data.rating || null,
+          reviewCount: data.reviewCount || null,
+          phone: data.phone || null,
+          website: data.website || null,
+          googlePlaceId: data.googlePlaceId || null,
+          googleMapsUrl: data.googleMapsUrl || null,
+          source: data.sourceProvider === "GOOGLE_PLACES" ? "MAPS" : "SEARCH",
+          sourceProvider: data.sourceProvider,
+          sourceId: data.sourceId || null,
+          sourceUrl: data.sourceUrl || null,
           status: "NEW",
-          leadScore: data.leadScore,
-          leadGrade: data.leadGrade,
-          opportunityScore: data.leadScore,
-          websiteQuality: data.website ? "poor" : null,
-          websites: data.website
+          hasWebsite,
+          hasPhone,
+          hasEmail: false,
+          leadScore: scoring.score,
+          leadGrade: scoring.grade,
+          opportunityScore: isNaN(scoring.score) ? 50 : scoring.score,
+          verificationStatus: data.verificationStatus,
+          retrievedAt: new Date(),
+          lastVerifiedAt: new Date(),
+          ...(hasWebsite && data.website
             ? {
-                create: {
-                  url: data.website,
-                  status: "WEBSITE_FOUND",
-                  hasSsl: true,
-                  isMobileFriendly: false,
-                  hasWhatsApp: false,
-                  hasBooking: false,
-                  responseTimeMs: 2200,
-                  cms: "WordPress 5.1",
+                websites: {
+                  create: {
+                    url: data.website,
+                    status: "WEBSITE_FOUND",
+                  },
                 },
               }
-            : undefined,
-          phones: {
-            create: {
-              value: randomPhone,
-              formatted: randomPhone,
-              type: "MOBILE",
-              hasWhatsApp: true,
-            },
-          },
-          emails: {
-            create: {
-              value: email,
-              status: "VERIFIED",
-              isGeneric: false,
-            },
-          },
-          opportunities: {
-            create: !data.website
-              ? [
-                  {
-                    type: "NO_WEBSITE",
-                    title: `Create Complete High-Converting Website for ${data.name}`,
-                    value: 1800,
-                    status: "OPEN",
-                    priority: "HIGH",
-                  },
-                  {
-                    type: "WHATSAPP_INTEGRATION",
-                    title: "Direct WhatsApp Client Booking & Inquiry Funnel",
-                    value: 400,
-                    status: "OPEN",
-                    priority: "MEDIUM",
-                  },
-                  {
-                    type: "LOCAL_SEO",
-                    title: `Rank #1 on Google Local 3-Pack in ${data.city}`,
-                    value: 600,
-                    status: "OPEN",
-                    priority: "MEDIUM",
-                  },
-                ]
-              : [
-                  {
-                    type: "WEBSITE_REDESIGN",
-                    title: `Modern Fast Mobile Redesign for ${data.name}`,
-                    value: 1400,
-                    status: "OPEN",
-                    priority: "HIGH",
-                  },
-                  {
-                    type: "MOBILE_OPTIMIZATION",
-                    title: "Speed Optimization & Core Web Vitals Fix",
-                    value: 450,
-                    status: "OPEN",
-                    priority: "MEDIUM",
-                  },
-                  {
-                    type: "WHATSAPP_INTEGRATION",
-                    title: "1-Tap WhatsApp Consultation Integration",
-                    value: 300,
-                    status: "OPEN",
-                    priority: "HIGH",
-                  },
-                ],
-          },
+            : {}),
         },
       });
-
-      return business;
-    } catch (err) {
-      console.warn("Failed to persist business:", (err as Error).message);
+    } catch (err: any) {
+      console.warn("Failed to persist discovered lead:", err.message);
       return null;
     }
-  }
-
-  private generateLocalizedBusinesses(category: string, city: string, state: string) {
-    const catUpper = category.charAt(0).toUpperCase() + category.slice(1);
-    const prefixes = ["Apex", "Prime", "Royal", "Shree", "Global", "Metro", "CarePlus", "Elite"];
-    const roads = ["Main Commercial Road", "MG Road", "Ring Road Complex", "Station Square", "High Street"];
-
-    return prefixes.slice(0, 5).map((prefix, idx) => {
-      const hasWeb = idx % 2 === 0;
-      const score = hasWeb ? 82 : 94;
-      return {
-        name: `${prefix} ${catUpper} Center`,
-        category: catUpper,
-        address: `${100 + idx * 22}, ${roads[idx % roads.length]}`,
-        city: city,
-        state: state,
-        country: "India",
-        postalCode: `${380000 + idx * 10}`,
-        website: hasWeb ? `https://${prefix.toLowerCase()}-${catUpper.toLowerCase()}-${city.toLowerCase()}.com` : null,
-        leadScore: score,
-        leadGrade: score >= 90 ? "A" : "B",
-        phonePrefix: "+91",
-      };
-    });
   }
 }

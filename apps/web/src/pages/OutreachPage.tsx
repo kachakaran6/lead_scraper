@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Copy,
   Check,
@@ -73,13 +73,21 @@ Would you like to test our 1-minute live demo on your smartphone?`,
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="pb-2">
+        <h1 className="text-h1 font-semibold text-text-primary tracking-tight">Outreach & AI Studio</h1>
+        <p className="text-body text-text-secondary mt-1">
+          Generate tailored cold email sequences, WhatsApp consultation hooks, and technical audit pitch decks.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Controls */}
         <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold text-text-primary">Lead Parameters</h3>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Customize dynamic pitch variables
+            <h2 className="text-h2 font-semibold text-text-primary tracking-tight">Lead Parameters</h2>
+            <p className="text-xs text-text-secondary mt-1">
+              Customize dynamic variables injected into the copy
             </p>
           </div>
 
@@ -98,7 +106,7 @@ Would you like to test our 1-minute live demo on your smartphone?`,
           />
 
           <div className="space-y-2 pt-1">
-            <label className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+            <label className="block text-meta text-text-tertiary">
               Identified Angle
             </label>
             {[
@@ -108,15 +116,16 @@ Would you like to test our 1-minute live demo on your smartphone?`,
             ].map((p) => (
               <button
                 key={p.id}
+                type="button"
                 onClick={() => setPitchType(p.id as any)}
-                className={`w-full text-left p-3 rounded-md border text-xs transition-colors ${
+                className={`w-full text-left p-3.5 rounded-lg border text-xs transition-colors duration-150 ${
                   pitchType === p.id
                     ? "bg-bg-surface-hover border-accent text-text-primary"
                     : "bg-bg-base border-border-subtle text-text-secondary hover:border-border-default hover:text-text-primary"
                 }`}
               >
                 <div className="font-medium text-text-primary">{p.label}</div>
-                <div className="text-[11px] text-text-tertiary mt-0.5">{p.desc}</div>
+                <div className="text-[11px] text-text-tertiary mt-1">{p.desc}</div>
               </button>
             ))}
           </div>
@@ -124,14 +133,14 @@ Would you like to test our 1-minute live demo on your smartphone?`,
 
         {/* Generated Pitch View */}
         <div className="bg-bg-surface border border-border-subtle rounded-lg p-6 space-y-4 lg:col-span-2">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-text-secondary" />
-                <h3 className="text-sm font-semibold text-text-primary">Generated Cold Pitch</h3>
+                <h2 className="text-h2 font-semibold text-text-primary tracking-tight">Generated Cold Pitch</h2>
               </div>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Ready to dispatch via Email, LinkedIn, or CRM outreach
+              <p className="text-xs text-text-secondary mt-1">
+                Engineered for high conversion via Email, LinkedIn, or WhatsApp outreach
               </p>
             </div>
 
@@ -141,7 +150,7 @@ Would you like to test our 1-minute live demo on your smartphone?`,
               onClick={() =>
                 handleCopy(`${currentPitch.subject}\n\n${currentPitch.body}`, "full")
               }
-              className="text-xs flex items-center gap-1.5"
+              className="text-xs flex items-center gap-1.5 self-start sm:self-auto"
             >
               {copied === "full" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied === "full" ? "Copied" : "Copy Subject & Body"}</span>
@@ -149,30 +158,30 @@ Would you like to test our 1-minute live demo on your smartphone?`,
           </div>
 
           {/* Subject Line */}
-          <div className="p-3 rounded-md bg-bg-base border border-border-subtle flex justify-between items-center text-xs">
+          <div className="p-3.5 rounded-lg bg-bg-base border border-border-subtle flex justify-between items-center text-xs">
             <div className="truncate mr-3">
-              <span className="text-text-tertiary font-medium mr-2 uppercase text-[10px]">Subject:</span>
-              <span className="text-text-primary">{currentPitch.subject}</span>
+              <span className="text-text-tertiary font-mono uppercase text-[10px] tracking-wider mr-2">Subject:</span>
+              <span className="text-text-primary font-medium">{currentPitch.subject}</span>
             </div>
             <button
               onClick={() => handleCopy(currentPitch.subject, "subj")}
-              className="text-text-secondary hover:text-text-primary p-1 transition-colors shrink-0"
+              className="text-text-secondary hover:text-text-primary p-1.5 rounded hover:bg-bg-surface transition-colors duration-150 shrink-0"
               title="Copy Subject"
             >
-              {copied === "subj" ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied === "subj" ? <Check className="w-3.5 h-3.5 text-semantic-success" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
 
           {/* Email Body */}
           <div>
-            <pre className="p-4 rounded-md bg-bg-base border border-border-subtle text-xs text-text-primary font-mono whitespace-pre-wrap leading-relaxed">
+            <pre className="p-4 rounded-lg bg-bg-base border border-border-subtle text-xs text-text-primary font-mono whitespace-pre-wrap leading-relaxed">
               {currentPitch.body}
             </pre>
           </div>
 
-          <div className="p-3 rounded-md bg-bg-base border border-border-subtle text-xs text-text-secondary flex items-center gap-2">
+          <div className="p-3.5 rounded-lg bg-bg-base border border-border-subtle text-xs text-text-secondary flex items-center gap-2.5">
             <Info className="w-4 h-4 text-text-tertiary shrink-0" />
-            <span>
+            <span className="leading-relaxed">
               Engineered with 3-part conversion structure: personalized compliment &rarr; specific weakness &rarr; low-friction CTA.
             </span>
           </div>
