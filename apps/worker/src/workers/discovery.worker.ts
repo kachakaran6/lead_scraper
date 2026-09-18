@@ -32,7 +32,11 @@ export class DiscoveryWorker extends BaseWorker {
     let results: DiscoveryResult[] = [];
     try {
       const provider = new SearxngProvider();
-      results = await provider.discover({ query, location, limit });
+      results = await provider.discover({
+        query: String(query || ""),
+        location: location ? String(location) : undefined,
+        limit: Number(limit) || 1000,
+      });
     } catch (error) {
       console.warn(`Discovery provider failed for "${query}":`, error);
       results = [];

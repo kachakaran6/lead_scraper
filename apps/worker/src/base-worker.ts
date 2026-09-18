@@ -49,7 +49,7 @@ export abstract class BaseWorker {
   protected async markStarted(jobId: string) {
     await prisma.job.update({
       where: { id: jobId },
-      data: { status: "ACTIVE", startedAt: new Date(), attempt: { increment: 1 } },
+      data: { status: "ACTIVE", startedAt: new Date(), attempts: { increment: 1 } },
     });
   }
 
@@ -60,14 +60,14 @@ export abstract class BaseWorker {
   protected async markCompleted(jobId: string, result: unknown) {
     await prisma.job.update({
       where: { id: jobId },
-      data: { status: "COMPLETED", finishedAt: new Date(), progress: 100, result },
+      data: { status: "COMPLETED", completedAt: new Date(), progress: 100, result: result as any },
     });
   }
 
   protected async markFailed(jobId: string, error: string) {
     await prisma.job.update({
       where: { id: jobId },
-      data: { status: "FAILED", finishedAt: new Date(), error },
+      data: { status: "FAILED", completedAt: new Date(), error },
     });
   }
 

@@ -10,6 +10,17 @@ import pLimit from "p-limit";
 const EMAIL_REGEX = /[\w.+-]+@[\w-]+\.[\w.]+/gi;
 const PHONE_REGEX = /(?:\+?\d{1,3}[\s-]?)?(?:\(?\d{3}\)?[\s-]?)\d{3}[\s-]?\d{4}/g;
 
+const SOCIAL_DOMAINS: Record<string, RegExp> = {
+  FACEBOOK: /facebook\.com/i,
+  INSTAGRAM: /instagram\.com/i,
+  TWITTER: /(?:twitter\.com|x\.com)/i,
+  LINKEDIN: /linkedin\.com/i,
+  YOUTUBE: /(?:youtube\.com|youtu\.be)/i,
+  TIKTOK: /tiktok\.com/i,
+  THREADS: /threads\.net/i,
+  PINTEREST: /pinterest\.com/i,
+};
+
 export class CrawlWorker extends BaseWorker {
   constructor() {
     super("crawler", "crawler");
@@ -56,7 +67,7 @@ export class CrawlWorker extends BaseWorker {
       const hasWhatsApp = html.toLowerCase().includes("wa.me") || html.toLowerCase().includes("whatsapp.com");
 
       if (businessId) {
-        await this.persistResults(businessId, { emails, phones, socials, title, metaDesc, h1Count, h2Count, hasContactForm, hasWhatsApp });
+        await this.persistCrawlResults(businessId, { emails, phones, socials, title, metaDesc, h1Count, h2Count, hasContactForm, hasWhatsApp });
       }
 
       await this.markProgress(jobId, 90);
@@ -93,9 +104,9 @@ export class CrawlWorker extends BaseWorker {
     return response.data;
   }
 
-  private extractEmails($: cheerio.CheerioAPI, baseUrl: string): string[] {
+  private extractEmails($: any, baseUrl: string): string[] {
     const emails = new Set<string>();
-    $("a[href], body").each((_i, el) => {
+    $("a[href], body").each((_i: any, el: any) => {
       const href = $(el).attr("href") || "";
       const text = $(el).text() || "";
       const candidates = [href, text];
@@ -111,9 +122,9 @@ export class CrawlWorker extends BaseWorker {
     return Array.from(emails).slice(0, 50);
   }
 
-  private extractPhones($: cheerio.CheerioAPI, baseUrl: string): string[] {
+  private extractPhones($: any, baseUrl: string): string[] {
     const phones = new Set<string>();
-    $("a[href], body").each((_i, el) => {
+    $("a[href], body").each((_i: any, el: any) => {
       const href = $(el).attr("href") || "";
       const text = $(el).text() || "";
       const candidates = [href, text];
@@ -121,8 +132,7 @@ export class CrawlWorker extends BaseWorker {
         const matches = candidate.match(PHONE_REGEX);
         if (matches) {
           for (const phone of matches) {
-            const parsed = parsePhoneNumberFromString(phone);
-            phones.add(parsed?.number || phone);
+            phones.add(phone.trim());
           }
         }
       }
@@ -130,22 +140,25 @@ export class CrawlWorker extends BaseWorker {
     return Array.from(phones).slice(0, 20);
   }
 
-  private extractSocials($: cheerio.CheerioAPI, baseUrl: string): Array<{ platform: string; url: string }> {
+  private extractSocials(
+    $: any,
+    baseUrl: string,
+  ): Array<{ platform: string; url: string }> {
     const socials: Array<{ platform: string; url: string }> = [];
-    $("a[href]").each((_i, el) => {
-      const href = $(el).attr("href") || "";
-      const lower = href.toLowerCase();
-      for (const platform of SOCIAL_PLATFORMS) {
-        if (lower.includes(platform) && !socials.some((s) => s.platform === platform)) {
+    $("a[href]").each((_i: any, el: any) => {
+      const href = $(el).attr("href");
+      if (!href) return;
+      for (const [platform, pattern] of Object.entries(SOCIAL_DOMAINS)) {
+        if (pattern.test(href)) {
           socials.push({ platform, url: href });
           break;
         }
       }
     });
-    return socials.slice(0, 20);
+    return socials;
   }
 
-  private async persistResults(
+  private async persistCrawlResults(
     businessId: string,
     data: Record<string, unknown>,
   ): Promise<void> {
@@ -155,43 +168,44 @@ export class CrawlWorker extends BaseWorker {
 
     for (const email of emails) {
       await prisma.email.upsert({
-        where: { value: email },
+        where: { businessId_value: { businessId, value: email } },
         update: {},
         create: {
           value: email,
           businessId,
           status: "UNVERIFIED",
           isGeneric: isGenericEmail(email),
-          source: "crawl",
         },
       });
     }
 
     for (const phone of phones) {
       const parsed = parsePhoneNumberFromString(phone);
+      let pType: "MOBILE" | "LANDLINE" | "UNKNOWN" = "UNKNOWN";
+      if (parsed?.getType() === "MOBILE") pType = "MOBILE";
+      else if (parsed?.getType() === "FIXED_LINE") pType = "LANDLINE";
+
       await prisma.phone.upsert({
-        where: { value: phone },
+        where: { businessId_value: { businessId, value: phone } },
         update: {},
         create: {
           value: phone,
           businessId,
-          country: parsed?.country ?? undefined,
-          countryCode: parsed?.countryCallingCode ?? undefined,
-          type: parsed?.getType() ?? undefined,
-          source: "crawl",
+          countryCode: parsed?.countryCallingCode ? String(parsed.countryCallingCode) : undefined,
+          formatted: parsed?.formatInternational() ?? phone,
+          type: pType,
         },
       });
     }
 
     for (const social of socials) {
       await prisma.socialProfile.upsert({
-        where: { url: social.url },
+        where: { businessId_platform: { businessId, platform: social.platform as any } },
         update: {},
         create: {
-          platform: social.platform,
+          platform: social.platform as any,
           url: social.url,
           businessId,
-          discoveredFrom: "crawl",
         },
       });
     }

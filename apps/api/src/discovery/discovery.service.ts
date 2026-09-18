@@ -272,7 +272,7 @@ export class DiscoveryService {
   private async persistAndDeduplicate(data: DiscoveredLeadData, userId?: string) {
     try {
       // Deduplication check: placeId, phone, or name + city
-      let existing = null;
+      let existing: any = null;
 
       if (data.googlePlaceId) {
         existing = await prisma.business.findFirst({
