@@ -13,17 +13,17 @@ export class WebhooksService {
     }
   }
 
-  async findAll(userId: string) {
-    return prisma.webhook.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+  async findAll() {
+    return prisma.webhook.findMany({ orderBy: { createdAt: "desc" } });
   }
 
-  async findOne(id: string, userId: string) {
-    const webhook = await prisma.webhook.findFirst({ where: { id, userId } });
+  async findOne(id: string) {
+    const webhook = await prisma.webhook.findUnique({ where: { id } });
     if (!webhook) throw new NotFoundException("Webhook not found");
     return webhook;
   }
 
-  async update(id: string, userId: string, dto: Prisma.WebhookUpdateInput) {
+  async update(id: string, dto: Prisma.WebhookUpdateInput) {
     try {
       return await prisma.webhook.update({ where: { id }, data: dto });
     } catch (error) {
@@ -31,7 +31,7 @@ export class WebhooksService {
     }
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string) {
     await prisma.webhook.delete({ where: { id } });
     return { deleted: true, id };
   }

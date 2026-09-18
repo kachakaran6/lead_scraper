@@ -6,16 +6,21 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 @Injectable()
 export class PhonesService {
-  async create(dto: Prisma.PhoneCreateInput) {
+  async create(dto: any) {
     try {
       const parsed = parsePhoneNumberFromString(dto.value);
+      let phoneType: "MOBILE" | "LANDLINE" | "UNKNOWN" = "UNKNOWN";
+      if (parsed?.getType() === "MOBILE") phoneType = "MOBILE";
+      else if (parsed?.getType() === "FIXED_LINE") phoneType = "LANDLINE";
+
       return await prisma.phone.create({
         data: {
           ...dto,
           value: parsed?.number ?? dto.value,
-          country: parsed?.country ?? dto.country,
-          countryCode: parsed?.countryCallingCode ?? dto.countryCode,
-          type: parsed?.getType() ?? dto.type,
+          formatted: parsed?.formatInternational() ?? dto.formatted,
+          countryCode: parsed?.countryCallingCode ? String(parsed.countryCallingCode) : dto.countryCode,
+          nationalNumber: parsed?.nationalNumber ? String(parsed.nationalNumber) : dto.nationalNumber,
+          type: phoneType,
         },
       });
     } catch (error) {
@@ -27,7 +32,7 @@ export class PhonesService {
     const { skip, take, page, limit } = parsePagination(query);
     const where: Prisma.PhoneWhereInput = {};
     if (query.businessId) where.businessId = query.businessId as string;
-    if (query.country) where.country = query.country as string;
+    if (query.countryCode) where.countryCode = query.countryCode as string;
     if (query.value) where.value = { contains: query.value as string };
 
     const [items, total] = await Promise.all([

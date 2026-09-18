@@ -18,7 +18,9 @@ export class WebsitesService {
     const where: Prisma.WebsiteWhereInput = {};
     if (query.businessId) where.businessId = query.businessId as string;
     if (query.status) where.status = query.status as WebsiteStatus;
-    if (query.domain) where.domain = { contains: query.domain as string, mode: "insensitive" };
+    if (query.url || query.domain) {
+      where.url = { contains: (query.url || query.domain) as string, mode: "insensitive" };
+    }
 
     const [items, total] = await Promise.all([
       prisma.website.findMany({
@@ -28,7 +30,6 @@ export class WebsitesService {
         orderBy: { createdAt: "desc" },
         include: {
           business: { select: { id: true, name: true, city: true, state: true, country: true } },
-          audits: { orderBy: { createdAt: "desc" }, take: 1 },
         },
       }),
       prisma.website.count({ where }),
@@ -40,8 +41,16 @@ export class WebsitesService {
     const website = await prisma.website.findUnique({
       where: { id },
       include: {
-        business: { select: { id: true, name: true, city: true, state: true, country: true } },
-        audits: { orderBy: { createdAt: "desc" } },
+        business: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            state: true,
+            country: true,
+            websiteAudits: { orderBy: { createdAt: "desc" } },
+          },
+        },
       },
     });
     if (!website) throw new NotFoundException("Website not found");
@@ -65,22 +74,28 @@ export class WebsitesService {
     return prisma.website.findMany({
       where: { businessId },
       orderBy: { createdAt: "desc" },
-      include: { audits: { orderBy: { createdAt: "desc" } } },
     });
   }
 
-  async addAudit(websiteId: string, dto: Prisma.WebsiteAuditCreateInput) {
+  async addAudit(websiteId: string, dto: any) {
     try {
-      const audit = await prisma.websiteAudit.create({ data: dto });
-      // Update website status based on audit
-      const status = dto.httpStatus
-        ? dto.httpStatus >= 500
-          ? "WEBSITE_DOWN"
-          : dto.httpStatus >= 400
-            ? "WEBSITE_BROKEN"
-            : "WEBSITE_FOUND"
-        : undefined;
-      if (status) {
+      const website = await prisma.website.findUnique({ where: { id: websiteId } });
+      if (!website) throw new NotFoundException("Website not found");
+
+      const audit = await prisma.websiteAudit.create({
+        data: {
+          ...dto,
+          business: { connect: { id: website.businessId } },
+        },
+      });
+
+      if (dto.httpStatus) {
+        const status =
+          dto.httpStatus >= 500
+            ? "WEBSITE_DOWN"
+            : dto.httpStatus >= 400
+              ? "WEBSITE_BROKEN"
+              : "WEBSITE_FOUND";
         await prisma.website.update({ where: { id: websiteId }, data: { status } });
       }
       return audit;

@@ -20,17 +20,17 @@ export class WebsitesController {
   }
 
   @Post()
-  async create(@Body() dto: Record<string, unknown>) {
+  async create(@Body() dto: any) {
     return this.websitesService.create(dto);
   }
 
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
+  async update(@Param("id") id: string, @Body() dto: any) {
     return this.websitesService.update(id, dto);
   }
 
   @Post(":id/audits")
-  async addAudit(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
+  async addAudit(@Param("id") id: string, @Body() dto: any) {
     return this.websitesService.addAudit(id, dto);
   }
 

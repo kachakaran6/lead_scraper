@@ -60,7 +60,7 @@ export class EmailsService {
   async markVerified(id: string) {
     return prisma.email.update({
       where: { id },
-      data: { status: "VERIFIED", lastVerified: new Date() },
+      data: { status: "VERIFIED", verifiedAt: new Date() },
     });
   }
 

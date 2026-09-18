@@ -20,12 +20,12 @@ export class SocialsController {
   }
 
   @Post()
-  async create(@Body() dto: Record<string, unknown>) {
+  async create(@Body() dto: any) {
     return this.socialsService.create(dto);
   }
 
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
+  async update(@Param("id") id: string, @Body() dto: any) {
     return this.socialsService.update(id, dto);
   }
 

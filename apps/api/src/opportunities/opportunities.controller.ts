@@ -20,12 +20,12 @@ export class OpportunitiesController {
   }
 
   @Post()
-  async create(@Body() dto: Record<string, unknown>) {
+  async create(@Body() dto: any) {
     return this.opportunitiesService.create(dto);
   }
 
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
+  async update(@Param("id") id: string, @Body() dto: any) {
     return this.opportunitiesService.update(id, dto);
   }
 

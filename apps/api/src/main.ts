@@ -21,7 +21,7 @@ async function bootstrap() {
     logger:
       env.NODE_ENV === "production"
         ? ["error", "warn", "log"]
-        : ["debug", "info", "warn", "error"],
+        : ["debug", "log", "warn", "error", "verbose"],
   });
 
   // Request body payload limits

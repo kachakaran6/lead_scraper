@@ -9,9 +9,13 @@ export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
   @Post()
-  async create(@Body() dto: Record<string, unknown>, @Req() req) {
+  async create(@Body() dto: any, @Req() req) {
     const user = requireAuth(req);
-    return this.notesService.create({ ...dto, userId: user.id });
+    return this.notesService.create({
+      content: dto.content,
+      business: { connect: { id: dto.businessId } },
+      user: { connect: { id: user.id } },
+    });
   }
 
   @Get("business/:businessId")

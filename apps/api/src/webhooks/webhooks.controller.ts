@@ -9,32 +9,27 @@ export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
   @Get()
-  async findAll(@Req() req) {
-    const user = requireAuth(req);
-    return this.webhooksService.findAll(user.id);
+  async findAll() {
+    return this.webhooksService.findAll();
   }
 
   @Get(":id")
-  async findOne(@Param("id") id: string, @Req() req) {
-    const user = requireAuth(req);
-    return this.webhooksService.findOne(id, user.id);
+  async findOne(@Param("id") id: string) {
+    return this.webhooksService.findOne(id);
   }
 
   @Post()
-  async create(@Body() dto: Record<string, unknown>, @Req() req) {
-    const user = requireAuth(req);
-    return this.webhooksService.create({ ...dto, userId: user.id });
+  async create(@Body() dto: any) {
+    return this.webhooksService.create(dto);
   }
 
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() dto: Record<string, unknown>, @Req() req) {
-    const user = requireAuth(req);
-    return this.webhooksService.update(id, user.id, dto);
+  async update(@Param("id") id: string, @Body() dto: any) {
+    return this.webhooksService.update(id, dto);
   }
 
   @Delete(":id")
-  async remove(@Param("id") id: string, @Req() req) {
-    const user = requireAuth(req);
-    return this.webhooksService.remove(id, user.id);
+  async remove(@Param("id") id: string) {
+    return this.webhooksService.remove(id);
   }
 }

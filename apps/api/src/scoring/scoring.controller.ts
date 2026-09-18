@@ -17,13 +17,13 @@ export class ScoringController {
 
   @Post("rules")
   @RequireAction("SCORING_RULES_EDIT")
-  async createRule(@Body() dto: Record<string, unknown>) {
+  async createRule(@Body() dto: any) {
     return this.scoringService.createRule(dto);
   }
 
   @Patch("rules/:id")
   @RequireAction("SCORING_RULES_EDIT")
-  async updateRule(@Param("id") id: string, @Body() dto: Record<string, unknown>) {
+  async updateRule(@Param("id") id: string, @Body() dto: any) {
     return this.scoringService.updateRule(id, dto);
   }
 

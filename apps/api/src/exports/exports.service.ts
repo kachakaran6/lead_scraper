@@ -93,8 +93,8 @@ export class ExportsService {
         details: {
           format: params.format,
           recordCount: leads.length,
-          filters: params,
-        },
+          filters: params as any,
+        } as any,
       },
     });
 

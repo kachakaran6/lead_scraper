@@ -17,7 +17,7 @@ export class OpportunitiesService {
     const { skip, take, page, limit } = parsePagination(query);
     const where: Prisma.OpportunityWhereInput = {};
     if (query.businessId) where.businessId = query.businessId as string;
-    if (query.type) where.type = query.type as Prisma.OpportunityTypeFilter;
+    if (query.type) where.type = query.type as any;
     if (query.status) where.status = query.status as string;
 
     const [items, total] = await Promise.all([
@@ -56,6 +56,6 @@ export class OpportunitiesService {
   }
 
   async findByBusiness(businessId: string) {
-    return prisma.opportunity.findMany({ where: { businessId }, orderBy: { score: "desc" } });
+    return prisma.opportunity.findMany({ where: { businessId }, orderBy: { createdAt: "desc" } });
   }
 }

@@ -17,7 +17,7 @@ export class JobsService {
     const { skip, take, page, limit } = parsePagination(query);
     const where: Prisma.JobWhereInput = {};
     if (query.status) where.status = query.status as JobStatus;
-    if (query.type) where.type = query.type as Prisma.JobTypeFilter;
+    if (query.type) where.type = query.type as any;
     if (query.campaignId) where.campaignId = query.campaignId as string;
     if (query.businessId) where.businessId = query.businessId as string;
 

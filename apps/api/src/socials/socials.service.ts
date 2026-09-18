@@ -17,7 +17,7 @@ export class SocialsService {
     const { skip, take, page, limit } = parsePagination(query);
     const where: Prisma.SocialProfileWhereInput = {};
     if (query.businessId) where.businessId = query.businessId as string;
-    if (query.platform) where.platform = query.platform as string;
+    if (query.platform) where.platform = query.platform as any;
 
     const [items, total] = await Promise.all([
       prisma.socialProfile.findMany({
