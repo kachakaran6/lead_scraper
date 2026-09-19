@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       localStorage.setItem("leadengine-jwt", token);
+      localStorage.setItem("token", token);
 
       // Verify token and fetch profile
       api
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setToken(null);
           localStorage.removeItem("leadengine-jwt");
+          localStorage.removeItem("token");
           delete api.defaults.headers.common["Authorization"];
         })
         .finally(() => {
@@ -84,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.data?.token) {
       setToken(res.data.token);
       setUser(res.data.user);
+      localStorage.setItem("leadengine-jwt", res.data.token);
+      localStorage.setItem("token", res.data.token);
       api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
     }
   };
@@ -93,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.data?.token) {
       setToken(res.data.token);
       setUser(res.data.user);
+      localStorage.setItem("leadengine-jwt", res.data.token);
+      localStorage.setItem("token", res.data.token);
       api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
     }
   };
@@ -104,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setToken(null);
     localStorage.removeItem("leadengine-jwt");
+    localStorage.removeItem("token");
     delete api.defaults.headers.common["Authorization"];
   };
 

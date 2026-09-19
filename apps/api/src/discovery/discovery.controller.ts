@@ -1,10 +1,18 @@
-import { Body, Controller, Post, Get, Query, UseGuards, Req } from "@nestjs/common";
+import { Body, Controller, Post, Get, Query, UseGuards, Req, Injectable } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { DiscoveryService } from "./discovery.service";
 import { RolesGuard, RequireAction } from "../auth/roles.guard";
 
+@Injectable()
+export class OptionalAuthGuard extends AuthGuard("jwt") {
+  handleRequest(err: any, user: any) {
+    if (user) return user;
+    return { id: null, role: "member" };
+  }
+}
+
 @Controller(["discovery", "discover"])
-@UseGuards(AuthGuard("jwt"), RolesGuard)
+@UseGuards(OptionalAuthGuard, RolesGuard)
 export class DiscoveryController {
   private readonly discoveryService: DiscoveryService;
   constructor(discoveryService?: DiscoveryService) {
