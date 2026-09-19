@@ -3,12 +3,9 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 COPY . .
 RUN corepack enable && pnpm install --no-frozen-lockfile
-# Build ALL workspace packages first so their ./src/index.js files exist
-RUN pnpm --filter @ultimate-leads/config build
-RUN pnpm --filter @ultimate-leads/shared build
+# Packages (config/shared/database) have pre-compiled .js in src/ already committed.
+# Only run prisma generate then build the API.
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
-RUN pnpm --filter @ultimate-leads/database build
-# Now build the API itself
 RUN pnpm --filter @ultimate-leads/api build
 
 FROM node:22-alpine AS runner
@@ -20,17 +17,17 @@ RUN apk add --no-cache libc6-compat openssl
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./package.json
 
-# Copy root node_modules (contains symlinks to workspace packages)
+# Copy root node_modules (pnpm hoisted deps)
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy Prisma schema for runtime migrations / client
+# Copy Prisma schema for migrations and generated client
 COPY --from=builder /app/packages/database/prisma ./prisma
 
-# Copy workspace packages WITH their compiled src/index.js files
+# Copy workspace packages (already have compiled src/*.js in git)
 COPY --from=builder /app/packages ./packages
 
-# Re-create workspace package symlinks explicitly so Node can find them
-# (Docker COPY breaks pnpm symlinks; we restore them manually)
+# pnpm uses symlinks for workspace packages; Docker COPY breaks them.
+# Restore symlinks explicitly so Node resolves @ultimate-leads/* correctly.
 RUN mkdir -p node_modules/@ultimate-leads && \
     ln -sfn /app/packages/config      node_modules/@ultimate-leads/config && \
     ln -sfn /app/packages/database    node_modules/@ultimate-leads/database && \
