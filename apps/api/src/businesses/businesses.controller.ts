@@ -7,15 +7,12 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
   Req,
 } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { BusinessesService } from "./businesses.service";
-import { RolesGuard, RequireAction } from "../auth/roles.guard";
+import { RequireAction } from "../auth/roles.guard";
 
 @Controller("businesses")
-@UseGuards(AuthGuard("jwt"), RolesGuard)
 export class BusinessesController {
   private readonly businessesService: BusinessesService;
   constructor(businessesService?: BusinessesService) {

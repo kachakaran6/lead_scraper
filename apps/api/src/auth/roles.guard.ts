@@ -6,6 +6,8 @@ import {
   SetMetadata,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { JwtService } from "@nestjs/jwt";
+import { getEnv } from "@ultimate-leads/config";
 import { AppAction, can } from "./roles";
 
 export const PERMISSION_ACTION_KEY = "rbac_action";
@@ -17,9 +19,11 @@ export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
 @Injectable()
 export class RolesGuard implements CanActivate {
   private reflector: Reflector;
+  private jwtService: JwtService;
 
   constructor(reflector?: Reflector) {
     this.reflector = reflector || new Reflector();
+    this.jwtService = new JwtService({ secret: getEnv().JWT_SECRET });
   }
 
   canActivate(context: ExecutionContext): boolean {
@@ -33,14 +37,38 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()]
     );
 
+    const request = context.switchToHttp().getRequest();
+    let user = request.user;
+
+    // Decode and verify JWT from Authorization header if request.user is not yet populated
+    if (!user) {
+      const authHeader = request.headers?.authorization || request.headers?.Authorization;
+      if (authHeader && typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.slice(7).trim();
+        try {
+          const payload = this.jwtService.verify(token);
+          if (payload && payload.sub) {
+            user = {
+              id: payload.sub,
+              sub: payload.sub,
+              email: payload.email,
+              role: payload.role || "MEMBER",
+            };
+            request.user = user;
+          }
+        } catch {
+          // Token invalid or expired
+        }
+      }
+    }
+
     if (!requiredAction && (!requiredRoles || requiredRoles.length === 0)) {
       return true; // No RBAC restrictions on this endpoint
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
     if (!user || !user.role) {
-      if (requiredAction === "DISCOVERY_RUN") {
+      // Allow public/guest access for general read actions and discovery
+      if (requiredAction === "DISCOVERY_RUN" || requiredAction === "LEADS_VIEW") {
         return true;
       }
       throw new ForbiddenException({
@@ -50,6 +78,7 @@ export class RolesGuard implements CanActivate {
         },
       });
     }
+
     const role = user.role.toLowerCase();
 
     // Check specific action requirement
@@ -85,3 +114,4 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
+
