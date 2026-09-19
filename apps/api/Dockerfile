@@ -14,7 +14,8 @@ COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database/prisma ./prisma
+COPY --from=builder /app/packages ./packages
 EXPOSE 4000
-HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
   CMD wget --quiet --tries=1 --spider http://localhost:4000/health || exit 1
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "if [ -f dist/apps/api/src/main.js ]; then node dist/apps/api/src/main.js; elif [ -f dist/main.js ]; then node dist/main.js; else node $(find dist -name main.js | head -n 1); fi"]

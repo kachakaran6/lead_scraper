@@ -14,5 +14,5 @@ COPY --from=builder /app/apps/worker/dist ./dist
 COPY --from=builder /app/apps/worker/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database/prisma ./prisma
-EXPOSE 4001
-CMD ["node", "dist/main.js"]
+COPY --from=builder /app/packages ./packages
+CMD ["sh", "-c", "if [ -f dist/apps/worker/src/main.js ]; then node dist/apps/worker/src/main.js; elif [ -f dist/main.js ]; then node dist/main.js; else node $(find dist -name main.js | head -n 1); fi"]

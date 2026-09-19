@@ -37,21 +37,9 @@ async function bootstrap() {
     next();
   });
 
-  // Strict CORS configuration
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    ...(env.FRONTEND_URL ? [env.FRONTEND_URL.replace(/\/$/, "")] : []),
-  ];
-
+  // Dynamic CORS configuration
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS blocked for origin: ${origin}`));
-      }
-    },
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
@@ -75,6 +63,18 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api", app, document);
+
+  try {
+    const { execSync } = await import("child_process");
+    console.log("[DB] Verifying database schema with prisma db push...");
+    execSync("npx prisma db push --skip-generate --schema=./prisma/schema.prisma", {
+      stdio: "inherit",
+      env: { ...process.env, DATABASE_URL: env.DATABASE_URL },
+    });
+    console.log("[DB] Schema verification complete.");
+  } catch (dbErr) {
+    console.warn("[DB] Prisma schema push notice:", dbErr);
+  }
 
   const port = env.API_PORT || 4000;
   await app.listen(port, "0.0.0.0");

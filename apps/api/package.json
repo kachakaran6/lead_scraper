@@ -9,6 +9,9 @@
     "lint": "eslint . '{src,apps,packages}/**/*.ts'"
   },
   "dependencies": {
+    "@ultimate-leads/config": "workspace:*",
+    "@ultimate-leads/database": "workspace:*",
+    "@ultimate-leads/shared": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
