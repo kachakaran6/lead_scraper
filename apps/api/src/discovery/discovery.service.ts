@@ -4,6 +4,7 @@ import { JobsService } from "../jobs/jobs.service";
 import {
   GooglePlacesProvider,
   OverpassOsmProvider,
+  SearxngProvider,
   DiscoveredLeadData,
   DiscoverySearchParams,
 } from "./providers";
@@ -25,10 +26,12 @@ export interface LeadScoringBreakdown {
 export class DiscoveryService {
   private readonly googlePlaces: GooglePlacesProvider;
   private readonly overpassOsm: OverpassOsmProvider;
+  private readonly searxng: SearxngProvider;
 
   constructor(private readonly jobsService?: JobsService) {
     this.googlePlaces = new GooglePlacesProvider();
     this.overpassOsm = new OverpassOsmProvider();
+    this.searxng = new SearxngProvider();
   }
 
   async discover(params: DiscoverySearchParams & { campaignId?: string; source?: string; userId?: string }) {
@@ -92,11 +95,11 @@ export class DiscoveryService {
       },
     });
 
-    // 2. If fewer than 5 records exist, query live verified data providers
-    if (existing.length < 5) {
+    // 2. If fewer records exist than requested limit, query live keyless data providers
+    if (existing.length < limit) {
       const liveResults: DiscoveredLeadData[] = [];
 
-      // A. Try Google Places if configured
+      // A. Try Google Places if configured (Optional official API)
       if (this.googlePlaces.isConfigured()) {
         try {
           const googleResults = await this.googlePlaces.search({
@@ -112,7 +115,7 @@ export class DiscoveryService {
         }
       }
 
-      // B. Query OpenStreetMap Overpass live verified POIs
+      // B. Query OpenStreetMap Overpass live verified POIs (Keyless)
       try {
         const osmResults = await this.overpassOsm.search({
           ...params,
@@ -126,15 +129,40 @@ export class DiscoveryService {
         console.warn("Overpass OSM query error:", err.message);
       }
 
+      // C. Query SearXNG Metasearch (Keyless - aggregates Google, Bing, DuckDuckGo)
+      if (this.searxng.isConfigured()) {
+        try {
+          const searxngResults = await this.searxng.search({
+            ...params,
+            cityName: searchCity,
+            stateCode: searchState,
+            countryCode: searchCountry,
+            limit,
+          });
+          liveResults.push(...searxngResults);
+        } catch (err: any) {
+          console.warn("SearXNG query error:", err.message);
+        }
+      }
+
       // 3. Persist and deduplicate real data into database
       if (liveResults.length > 0) {
+        const persistedIds: string[] = [];
         for (const item of liveResults) {
-          await this.persistAndDeduplicate(item, params.userId);
+          const saved = await this.persistAndDeduplicate(item, params.userId);
+          if (saved && (saved as any).id) {
+            persistedIds.push((saved as any).id);
+          }
         }
 
-        // Re-query database for consistent format
+        // Re-query database to fetch verified records with all relational data
         existing = await prisma.business.findMany({
-          where,
+          where: {
+            OR: [
+              where,
+              ...(persistedIds.length > 0 ? [{ id: { in: persistedIds } }] : []),
+            ],
+          },
           take: limit,
           orderBy: { leadScore: "desc" },
           include: {

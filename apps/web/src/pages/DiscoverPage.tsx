@@ -95,7 +95,7 @@ export const DiscoverPage: React.FC = () => {
       setResults([]);
       setSearchError(
         err?.response?.data?.message ||
-          "Unable to complete live provider discovery. Please check backend provider credentials."
+          "Unable to complete live discovery. Please verify search parameters or network connectivity."
       );
     } finally {
       setIsSearching(false);
@@ -116,7 +116,7 @@ export const DiscoverPage: React.FC = () => {
             Discovery Engine
           </h1>
           <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-            Real business discovery via Google Places & OpenStreetMap registries
+            Keyless business discovery via OpenStreetMap & SearXNG engines (Google Places optional)
           </p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">

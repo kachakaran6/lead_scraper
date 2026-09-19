@@ -79,6 +79,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      SEARXNG_URL: http://searxng:8080
       NODE_ENV: production
       API_PORT: 4000
     depends_on:
@@ -86,6 +87,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      searxng:
+        condition: service_started
     networks:
       coolify:
         aliases:

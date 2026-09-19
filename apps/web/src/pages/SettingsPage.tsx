@@ -424,18 +424,18 @@ export const SettingsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-text-primary">Google Places API</span>
                     <Badge variant={providerStatus?.googlePlaces?.configured ? "success" : "neutral"} size="sm">
-                      {providerStatus?.googlePlaces?.configured ? "Configured" : "Not Configured"}
+                      {providerStatus?.googlePlaces?.configured ? "Configured" : "Optional (Not Set)"}
                     </Badge>
                   </div>
                   <p className="text-xs text-text-secondary mt-2 leading-relaxed">
-                    Queries official Google Places Text Search and Details APIs strictly following quota and terms of service.
+                    Optional provider: Enhances discovery when an official Google Maps API Key is provided. The platform works fully without it using keyless providers.
                   </p>
                 </div>
                 <div className="pt-3 border-t border-border-subtle space-y-1.5 text-[11px]">
                   <div className="flex justify-between">
                     <span className="text-text-tertiary">Key Mask:</span>
                     <span className="font-mono text-text-primary">
-                      {providerStatus?.googlePlaces?.maskedKey || "Not configured"}
+                      {providerStatus?.googlePlaces?.maskedKey || "Not configured (Optional)"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -450,10 +450,10 @@ export const SettingsPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-text-primary">OpenStreetMap Overpass</span>
-                    <Badge variant="success" size="sm">Active</Badge>
+                    <Badge variant="success" size="sm">Active (Keyless)</Badge>
                   </div>
                   <p className="text-xs text-text-secondary mt-2 leading-relaxed">
-                    Permitted commercial POI provider querying global verified business coordinates without requiring API keys.
+                    Permitted commercial POI provider querying global verified business coordinates and contact details without requiring API keys.
                   </p>
                 </div>
                 <div className="pt-3 border-t border-border-subtle space-y-1.5 text-[11px]">
@@ -463,7 +463,30 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-tertiary">Status:</span>
-                    <span className="text-semantic-success font-medium">Ready</span>
+                    <span className="text-semantic-success font-medium">Ready (No Key Required)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SearXNG Metasearch */}
+              <div className="p-4 rounded-lg bg-bg-base border border-border-subtle space-y-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-text-primary">SearXNG Metasearch</span>
+                    <Badge variant="success" size="sm">Active (Keyless)</Badge>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-2 leading-relaxed">
+                    Internal metasearch engine aggregating Google, Bing, and DuckDuckGo for live business discovery without requiring any API keys.
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-border-subtle space-y-1.5 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">Engine:</span>
+                    <span className="text-text-primary">Self-Hosted SearXNG</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">Status:</span>
+                    <span className="text-semantic-success font-medium">Ready (No Key Required)</span>
                   </div>
                 </div>
               </div>

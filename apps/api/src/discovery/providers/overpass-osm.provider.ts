@@ -15,99 +15,143 @@ export class OverpassOsmProvider implements BusinessDataProvider {
 
   async search(params: DiscoverySearchParams): Promise<DiscoveredLeadData[]> {
     const cityName = params.cityName || params.location?.split(",")[0]?.trim();
-    if (!cityName) return [];
+    if (!cityName && !params.location) return [];
 
     const overpassUrl =
       getEnv().OVERPASS_API_URL || "https://overpass-api.de/api/interpreter";
 
-    // Map common user queries to OSM tags
+    const targetLocation = params.location || cityName || "";
     const categoryTag = this.resolveOsmTag(params.query);
+    const limit = Math.min(params.limit || 25, 50);
 
-    // Overpass QL query: search for matching nodes/ways within the area
-    const qlQuery = `
-      [out:json][timeout:15];
-      area["name"="${cityName}"]->.searchArea;
-      (
-        node[${categoryTag}](area.searchArea);
-        way[${categoryTag}](area.searchArea);
-      );
-      out center ${Math.min(params.limit || 25, 50)};
-    `;
+    // 1. Try Nominatim bounding-box resolution for rapid, reliable Overpass QL querying
+    const bbox = await this.getBoundingBox(targetLocation);
 
+    let qlQuery = "";
+    if (bbox) {
+      const [south, north, west, east] = bbox;
+      qlQuery = `
+        [out:json][timeout:15];
+        (
+          node[${categoryTag}](${south},${west},${north},${east});
+          way[${categoryTag}](${south},${west},${north},${east});
+        );
+        out center ${limit};
+      `;
+    } else if (cityName) {
+      qlQuery = `
+        [out:json][timeout:15];
+        area["name"~"${cityName}",i]->.searchArea;
+        (
+          node[${categoryTag}](area.searchArea);
+          way[${categoryTag}](area.searchArea);
+        );
+        out center ${limit};
+      `;
+    }
+
+    if (qlQuery) {
+      try {
+        const response = await axios.post(
+          overpassUrl,
+          `data=${encodeURIComponent(qlQuery)}`,
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "LeadEngine-Platform/1.0",
+            },
+            timeout: 15000,
+          }
+        );
+
+        const elements = response.data?.elements || [];
+        const results: DiscoveredLeadData[] = [];
+
+        for (const el of elements) {
+          const tags = el.tags || {};
+          const name = tags.name || tags["name:en"] || tags.brand;
+          if (!name || name.trim().length < 2) continue;
+
+          const street = tags["addr:street"] || tags["addr:housename"] || "";
+          const houseNumber = tags["addr:housenumber"] || "";
+          const address = [houseNumber, street].filter(Boolean).join(" ");
+
+          const phone =
+            tags["contact:phone"] ||
+            tags.phone ||
+            tags["contact:mobile"] ||
+            tags.mobile ||
+            null;
+
+          const website =
+            tags["contact:website"] ||
+            tags.website ||
+            tags["contact:url"] ||
+            tags.url ||
+            null;
+
+          const lat = el.lat || el.center?.lat;
+          const lon = el.lon || el.center?.lon;
+
+          results.push({
+            name: name.trim(),
+            category: params.query,
+            address: address || undefined,
+            city: tags["addr:city"] || cityName || targetLocation,
+            state: tags["addr:state"] || params.stateCode,
+            country: tags["addr:country"] || params.countryCode,
+            postalCode: tags["addr:postcode"],
+            latitude: lat,
+            longitude: lon,
+            phone: phone ? phone.trim() : null,
+            website: website ? this.normalizeUrl(website.trim()) : null,
+            sourceProvider: "OVERPASS_OSM",
+            sourceId: `osm-${el.type}-${el.id}`,
+            sourceUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
+            verificationStatus: "VERIFIED",
+            raw: tags,
+          });
+        }
+
+        if (results.length > 0) {
+          return results;
+        }
+      } catch (err: any) {
+        console.warn("Overpass API error:", err?.message || err);
+      }
+    }
+
+    // 2. Fallback to Nominatim structured live search if Overpass is down or yielded 0
+    return this.searchNominatimFallback(params, cityName || targetLocation);
+  }
+
+  private async getBoundingBox(
+    locationStr: string
+  ): Promise<[number, number, number, number] | null> {
     try {
-      const response = await axios.post(
-        overpassUrl,
-        `data=${encodeURIComponent(qlQuery)}`,
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          locationStr
+        )}&limit=1`,
         {
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "LeadScrapper-Engineering/1.0",
+            "User-Agent": "LeadEngine-Platform/1.0",
+            Accept: "application/json",
           },
-          timeout: 15000,
+          timeout: 6000,
         }
       );
-
-      const elements = response.data?.elements || [];
-      const results: DiscoveredLeadData[] = [];
-
-      for (const el of elements) {
-        const tags = el.tags || {};
-        const name = tags.name || tags["name:en"] || tags.brand;
-        if (!name || name.trim().length < 2) continue;
-
-        const street = tags["addr:street"] || tags["addr:housename"] || "";
-        const houseNumber = tags["addr:housenumber"] || "";
-        const address = [houseNumber, street].filter(Boolean).join(" ");
-
-        const phone =
-          tags["contact:phone"] ||
-          tags.phone ||
-          tags["contact:mobile"] ||
-          tags.mobile ||
-          null;
-
-        const website =
-          tags["contact:website"] ||
-          tags.website ||
-          tags["contact:url"] ||
-          tags.url ||
-          null;
-
-        const lat = el.lat || el.center?.lat;
-        const lon = el.lon || el.center?.lon;
-
-        results.push({
-          name: name.trim(),
-          category: params.query,
-          address: address || undefined,
-          city: tags["addr:city"] || cityName,
-          state: tags["addr:state"] || params.stateCode,
-          country: tags["addr:country"] || params.countryCode,
-          postalCode: tags["addr:postcode"],
-          latitude: lat,
-          longitude: lon,
-          phone: phone ? phone.trim() : null,
-          website: website ? this.normalizeUrl(website.trim()) : null,
-          sourceProvider: "OVERPASS_OSM",
-          sourceId: `osm-${el.type}-${el.id}`,
-          sourceUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
-          verificationStatus: "VERIFIED",
-          raw: tags,
-        });
+      const data = response.data?.[0];
+      if (data && data.boundingbox && data.boundingbox.length === 4) {
+        const [south, north, west, east] = data.boundingbox.map(Number);
+        if (!isNaN(south) && !isNaN(north) && !isNaN(west) && !isNaN(east)) {
+          return [south, north, west, east];
+        }
       }
-
-      // If Overpass returned nothing (city boundary resolution issue in OSM),
-      // attempt Nominatim structured query as secondary real data source
-      if (results.length === 0) {
-        return this.searchNominatimFallback(params, cityName);
-      }
-
-      return results;
-    } catch (err: any) {
-      console.warn("Overpass API error:", err?.message || err);
-      // Fallback to Nominatim live search for real verified places
-      return this.searchNominatimFallback(params, cityName);
+    } catch {
+      // Nominatim lookup timed out or failed
     }
+    return null;
   }
 
   private async searchNominatimFallback(
@@ -124,11 +168,11 @@ export class OverpassOsmProvider implements BusinessDataProvider {
           q
         )}&format=json&addressdetails=1&extratags=1&limit=${Math.min(
           params.limit || 15,
-          20
+          25
         )}`,
         {
           headers: {
-            "User-Agent": "LeadScrapper-Engineering/1.0",
+            "User-Agent": "LeadEngine-Platform/1.0",
             Accept: "application/json",
           },
           timeout: 8000,
@@ -176,26 +220,38 @@ export class OverpassOsmProvider implements BusinessDataProvider {
   }
 
   private resolveOsmTag(query: string): string {
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
     if (q.includes("dent")) return '"amenity"="dentist"';
     if (q.includes("doctor") || q.includes("clinic"))
       return '"amenity"~"doctors|clinic"';
     if (q.includes("hospital")) return '"amenity"="hospital"';
-    if (q.includes("pharmacy")) return '"amenity"="pharmacy"';
-    if (q.includes("restaurant")) return '"amenity"="restaurant"';
+    if (q.includes("pharmacy") || q.includes("chemist"))
+      return '"amenity"="pharmacy"';
+    if (q.includes("restaurant") || q.includes("dining"))
+      return '"amenity"="restaurant"';
     if (q.includes("cafe") || q.includes("coffee")) return '"amenity"="cafe"';
-    if (q.includes("hotel")) return '"tourism"="hotel"';
-    if (q.includes("gym") || q.includes("fitness"))
+    if (q.includes("hotel") || q.includes("resort") || q.includes("motel"))
+      return '"tourism"="hotel"';
+    if (q.includes("gym") || q.includes("fitness") || q.includes("yoga"))
       return '"leisure"="fitness_centre"';
-    if (q.includes("lawyer") || q.includes("legal"))
+    if (q.includes("lawyer") || q.includes("legal") || q.includes("attorney"))
       return '"office"="lawyer"';
-    if (q.includes("accountant")) return '"office"="accountant"';
-    if (q.includes("real estate") || q.includes("realtor"))
+    if (q.includes("accountant") || q.includes("cpa") || q.includes("tax"))
+      return '"office"="accountant"';
+    if (q.includes("real estate") || q.includes("realtor") || q.includes("property"))
       return '"office"="estate_agent"';
-    if (q.includes("car") || q.includes("mechanic"))
-      return '"shop"="car_repair"';
-    if (q.includes("salon") || q.includes("barber"))
-      return '"shop"="hairdresser"';
+    if (q.includes("car") || q.includes("mechanic") || q.includes("auto"))
+      return '"shop"~"car|car_repair"';
+    if (q.includes("salon") || q.includes("barber") || q.includes("spa") || q.includes("beauty"))
+      return '"shop"~"hairdresser|beauty"';
+    if (q.includes("plumber")) return '"craft"="plumber"';
+    if (q.includes("electrician")) return '"craft"="electrician"';
+    if (q.includes("bakery")) return '"shop"="bakery"';
+    if (q.includes("supermarket") || q.includes("grocery"))
+      return '"shop"="supermarket"';
+    if (q.includes("school") || q.includes("college") || q.includes("academy"))
+      return '"amenity"~"school|college"';
+
     return '"name"~"' + query + '",i';
   }
 
@@ -206,3 +262,4 @@ export class OverpassOsmProvider implements BusinessDataProvider {
     return url;
   }
 }
+

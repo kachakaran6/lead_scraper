@@ -38,6 +38,12 @@ export class DiscoveryController {
         status: "ACTIVE",
         maskedKey: "N/A (Open Public Data)",
       },
+      searxng: {
+        configured: true,
+        provider: "SearXNG Metasearch (Google/Bing/DuckDuckGo Keyless)",
+        status: "ACTIVE",
+        maskedKey: "N/A (Self-Hosted Internal Engine)",
+      },
     };
   }
 
