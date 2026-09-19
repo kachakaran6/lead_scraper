@@ -8,8 +8,13 @@
   /* ========================================================= */
   /* 1. DEFAULT THEME (Slate / Indigo)                         */
   /* ========================================================= */
+  /* ========================================================= */
+  /* 1. GLOBAL BASE STYLES: Dark Mode (Default)               */
+  /* Surfaces, backgrounds, borders & text remain invariant    */
+  /* ========================================================= */
   :root,
-  [data-theme="default"] {
+  [data-mode="dark"],
+  .dark {
     --bg-base: #0B0D12;
     --bg-surface: #13161D;
     --bg-surface-hover: #1B1F29;
@@ -38,8 +43,12 @@
     --scrollbar-thumb-hover: #2E323F;
   }
 
-  [data-theme="default"][data-mode="light"],
-  [data-theme="default"].light {
+  /* ========================================================= */
+  /* GLOBAL BASE STYLES: Light Mode                           */
+  /* Neutral clean slate / white backgrounds                  */
+  /* ========================================================= */
+  [data-mode="light"],
+  .light {
     --bg-base: #F8FAFC;
     --bg-surface: #FFFFFF;
     --bg-surface-hover: #F1F5F9;
@@ -68,247 +77,102 @@
   }
 
   /* ========================================================= */
-  /* 2. OCEAN THEME (Deep Navy / Cyan)                         */
+  /* ACCENT PALETTES (Backgrounds DO NOT change when toggling)  */
   /* ========================================================= */
+
+  /* 1. DEFAULT PALETTE (Indigo / Pink) */
+  [data-theme="default"] {
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --accent-subtle: rgba(99, 102, 241, 0.14);
+    --priority: #EC4899;
+    --priority-subtle: rgba(236, 72, 153, 0.12);
+    --ring: rgba(99, 102, 241, 0.4);
+  }
+  [data-theme="default"][data-mode="light"],
+  [data-theme="default"].light {
+    --accent: #4F46E5;
+    --accent-hover: #4338CA;
+    --accent-subtle: rgba(79, 70, 229, 0.08);
+    --priority: #DB2777;
+    --priority-subtle: rgba(219, 39, 119, 0.08);
+    --ring: rgba(79, 70, 229, 0.35);
+  }
+
+  /* 2. OCEAN PALETTE (Navy / Cyan) */
   [data-theme="ocean"] {
-    --bg-base: #06101E;
-    --bg-surface: #0B192C;
-    --bg-surface-hover: #12243C;
-    --bg-elevated: #1A304D;
-    --border-subtle: #19314F;
-    --border-default: #23436B;
-
-    --text-primary: #E2F1FF;
-    --text-secondary: #8EADC9;
-    --text-tertiary: #587796;
-
     --accent: #0284C7;
     --accent-hover: #38BDF8;
     --accent-subtle: rgba(2, 132, 199, 0.16);
     --priority: #06B6D4;
     --priority-subtle: rgba(6, 182, 212, 0.12);
-
-    --success: #10B981;
-    --warning: #F59E0B;
-    --danger: #F43F5E;
     --ring: rgba(56, 189, 248, 0.4);
-
-    --radius: 8px;
-    --scrollbar-track: #06101E;
-    --scrollbar-thumb: #19314F;
-    --scrollbar-thumb-hover: #23436B;
   }
-
   [data-theme="ocean"][data-mode="light"],
   [data-theme="ocean"].light {
-    --bg-base: #F0F9FF;
-    --bg-surface: #FFFFFF;
-    --bg-surface-hover: #E0F2FE;
-    --bg-elevated: #FFFFFF;
-    --border-subtle: #BAE6FD;
-    --border-default: #7DD3FC;
-
-    --text-primary: #0C4A6E;
-    --text-secondary: #0369A1;
-    --text-tertiary: #38BDF8;
-
     --accent: #0284C7;
     --accent-hover: #0369A1;
     --accent-subtle: rgba(2, 132, 199, 0.1);
     --priority: #0891B2;
     --priority-subtle: rgba(8, 145, 178, 0.08);
-
-    --success: #059669;
-    --warning: #D97706;
-    --danger: #E11D48;
     --ring: rgba(2, 132, 199, 0.35);
-
-    --scrollbar-track: #F0F9FF;
-    --scrollbar-thumb: #BAE6FD;
-    --scrollbar-thumb-hover: #7DD3FC;
   }
 
-  /* ========================================================= */
-  /* 3. EMERALD THEME (Forest / Mint)                          */
-  /* ========================================================= */
+  /* 3. EMERALD PALETTE (Forest / Mint) */
   [data-theme="emerald"] {
-    --bg-base: #06140D;
-    --bg-surface: #0B1F15;
-    --bg-surface-hover: #122E20;
-    --bg-elevated: #183D2B;
-    --border-subtle: #173827;
-    --border-default: #1F4C35;
-
-    --text-primary: #E6F7ED;
-    --text-secondary: #8DBCA1;
-    --text-tertiary: #59856D;
-
     --accent: #10B981;
     --accent-hover: #34D399;
     --accent-subtle: rgba(16, 185, 129, 0.16);
     --priority: #14B8A6;
     --priority-subtle: rgba(20, 184, 166, 0.12);
-
-    --success: #34D399;
-    --warning: #FBBF24;
-    --danger: #F87171;
     --ring: rgba(52, 211, 153, 0.4);
-
-    --radius: 8px;
-    --scrollbar-track: #06140D;
-    --scrollbar-thumb: #173827;
-    --scrollbar-thumb-hover: #1F4C35;
   }
-
   [data-theme="emerald"][data-mode="light"],
   [data-theme="emerald"].light {
-    --bg-base: #F0FDF4;
-    --bg-surface: #FFFFFF;
-    --bg-surface-hover: #DCFCE7;
-    --bg-elevated: #FFFFFF;
-    --border-subtle: #BBF7D0;
-    --border-default: #86EFAC;
-
-    --text-primary: #064E3B;
-    --text-secondary: #047857;
-    --text-tertiary: #10B981;
-
     --accent: #059669;
     --accent-hover: #047857;
     --accent-subtle: rgba(5, 150, 105, 0.1);
     --priority: #0D9488;
     --priority-subtle: rgba(13, 148, 136, 0.08);
-
-    --success: #10B981;
-    --warning: #D97706;
-    --danger: #DC2626;
     --ring: rgba(5, 150, 105, 0.35);
-
-    --scrollbar-track: #F0FDF4;
-    --scrollbar-thumb: #BBF7D0;
-    --scrollbar-thumb-hover: #86EFAC;
   }
 
-  /* ========================================================= */
-  /* 4. VIOLET THEME (Deep Violet / Mauve)                     */
-  /* ========================================================= */
+  /* 4. VIOLET PALETTE (Deep Violet / Lavender) */
   [data-theme="violet"] {
-    --bg-base: #0D0818;
-    --bg-surface: #140E24;
-    --bg-surface-hover: #1D1533;
-    --bg-elevated: #261D42;
-    --border-subtle: #271C43;
-    --border-default: #35275B;
-
-    --text-primary: #F3EEFF;
-    --text-secondary: #A89AC7;
-    --text-tertiary: #716290;
-
     --accent: #8B5CF6;
     --accent-hover: #A78BFA;
     --accent-subtle: rgba(139, 92, 246, 0.16);
     --priority: #C084FC;
     --priority-subtle: rgba(192, 132, 252, 0.12);
-
-    --success: #10B981;
-    --warning: #F59E0B;
-    --danger: #F43F5E;
     --ring: rgba(167, 139, 250, 0.4);
-
-    --radius: 8px;
-    --scrollbar-track: #0D0818;
-    --scrollbar-thumb: #271C43;
-    --scrollbar-thumb-hover: #35275B;
   }
-
   [data-theme="violet"][data-mode="light"],
   [data-theme="violet"].light {
-    --bg-base: #FAF5FF;
-    --bg-surface: #FFFFFF;
-    --bg-surface-hover: #F3E8FF;
-    --bg-elevated: #FFFFFF;
-    --border-subtle: #E9D5FF;
-    --border-default: #D8B4FE;
-
-    --text-primary: #3B0764;
-    --text-secondary: #6B21A8;
-    --text-tertiary: #9333EA;
-
     --accent: #7C3AED;
     --accent-hover: #6D28D9;
     --accent-subtle: rgba(124, 58, 237, 0.1);
     --priority: #A855F7;
     --priority-subtle: rgba(168, 85, 247, 0.08);
-
-    --success: #059669;
-    --warning: #D97706;
-    --danger: #DC2626;
     --ring: rgba(124, 58, 237, 0.35);
-
-    --scrollbar-track: #FAF5FF;
-    --scrollbar-thumb: #E9D5FF;
-    --scrollbar-thumb-hover: #D8B4FE;
   }
 
-  /* ========================================================= */
-  /* 5. AMBER THEME (Obsidian / Warm Bronze)                   */
-  /* ========================================================= */
+  /* 5. AMBER PALETTE (Warm Bronze / Gold) */
   [data-theme="amber"] {
-    --bg-base: #110E0A;
-    --bg-surface: #1B150F;
-    --bg-surface-hover: #261E15;
-    --bg-elevated: #33281C;
-    --border-subtle: #2F2417;
-    --border-default: #423321;
-
-    --text-primary: #FFF8EB;
-    --text-secondary: #C4B296;
-    --text-tertiary: #8A775C;
-
     --accent: #D97706;
     --accent-hover: #FBBF24;
     --accent-subtle: rgba(217, 119, 6, 0.16);
     --priority: #F59E0B;
     --priority-subtle: rgba(245, 158, 11, 0.12);
-
-    --success: #10B981;
-    --warning: #FBBF24;
-    --danger: #EF4444;
     --ring: rgba(251, 191, 36, 0.4);
-
-    --radius: 8px;
-    --scrollbar-track: #110E0A;
-    --scrollbar-thumb: #2F2417;
-    --scrollbar-thumb-hover: #423321;
   }
-
   [data-theme="amber"][data-mode="light"],
   [data-theme="amber"].light {
-    --bg-base: #FFFBEB;
-    --bg-surface: #FFFFFF;
-    --bg-surface-hover: #FEF3C7;
-    --bg-elevated: #FFFFFF;
-    --border-subtle: #FDE68A;
-    --border-default: #FCD34D;
-
-    --text-primary: #451A03;
-    --text-secondary: #92400E;
-    --text-tertiary: #B45309;
-
     --accent: #B45309;
     --accent-hover: #92400E;
     --accent-subtle: rgba(180, 83, 9, 0.1);
     --priority: #D97706;
     --priority-subtle: rgba(217, 119, 6, 0.08);
-
-    --success: #059669;
-    --warning: #D97706;
-    --danger: #DC2626;
     --ring: rgba(180, 83, 9, 0.35);
-
-    --scrollbar-track: #FFFBEB;
-    --scrollbar-thumb: #FDE68A;
-    --scrollbar-thumb-hover: #FCD34D;
   }
 
   * {

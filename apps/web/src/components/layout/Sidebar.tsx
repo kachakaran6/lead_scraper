@@ -77,14 +77,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Aside Container */}
       <aside
         className={cn(
-          "w-60 h-[calc(100vh-64px)] bg-bg-surface border-r border-border-subtle flex flex-col fixed md:sticky top-16 left-0 z-40 select-none transition-transform duration-200 ease-in-out shrink-0",
-          // Mobile visibility: drawer overlay
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          "bg-bg-surface border-r border-border-subtle flex flex-col select-none transition-transform duration-200 ease-in-out shrink-0",
+          // Mobile Drawer mode
+          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] h-full shadow-2xl md:shadow-none",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          // Desktop Static mode: exactly 240px wide, fills 100% height beneath header
+          "md:static md:translate-x-0 md:w-60 md:h-full md:z-auto"
         )}
       >
+        {/* Mobile-only drawer header with brand & close button */}
+        <div className="flex md:hidden items-center justify-between px-4 h-16 border-b border-border-subtle shrink-0 bg-bg-surface">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-sm text-text-primary">LeadEngine</span>
+              <span className="text-[9px] font-bold text-accent px-1 rounded bg-accent/10 border border-accent/20">PRO</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-md border border-border-default bg-bg-base hover:bg-bg-surface-hover text-text-secondary hover:text-text-primary transition-colors"
+            aria-label="Close navigation drawer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
         {/* Navigation Section Groups */}
         <nav
           aria-label="Main Navigation"

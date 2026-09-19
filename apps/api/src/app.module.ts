@@ -35,10 +35,11 @@ import { AIModule } from "./ai/ai.module";
     BullModule.forRootAsync({
       useFactory: () => {
         try {
-          const parsed = new URL(getEnv().REDIS_URL || "redis://localhost:6379");
+          const redisUrl = process.env.REDIS_URL || getEnv().REDIS_URL || (process.env.NODE_ENV === "production" ? "redis://redis:6379" : "redis://127.0.0.1:6379");
+          const parsed = new URL(redisUrl);
           return {
             connection: {
-              host: parsed.hostname || "127.0.0.1",
+              host: parsed.hostname || (process.env.NODE_ENV === "production" ? "redis" : "127.0.0.1"),
               port: parseInt(parsed.port || "6379", 10),
               maxRetriesPerRequest: null,
             },
@@ -46,7 +47,7 @@ import { AIModule } from "./ai/ai.module";
         } catch {
           return {
             connection: {
-              host: "127.0.0.1",
+              host: process.env.NODE_ENV === "production" ? "redis" : "127.0.0.1",
               port: 6379,
               maxRetriesPerRequest: null,
             },

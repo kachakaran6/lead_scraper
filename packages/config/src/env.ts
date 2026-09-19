@@ -7,7 +7,7 @@ export const envSchema = z.object({
   WORKER_PORT: z.coerce.number().default(4001),
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
-  JWT_SECRET: z.string().min(1),
+  JWT_SECRET: z.string().default("dev-secret-change-me"),
   JWT_EXPIRY: z.string().default("7d"),
   SEARXNG_URL: z.string().optional(),
   OLLAMA_BASE_URL: z.string().optional(),

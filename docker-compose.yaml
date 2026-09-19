@@ -122,6 +122,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ultimate_leads
       REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       SEARXNG_URL: http://searxng:8080
       NODE_ENV: production
     depends_on:

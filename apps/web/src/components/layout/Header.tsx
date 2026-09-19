@@ -116,20 +116,10 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 w-full border-b border-border-subtle bg-bg-surface/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 select-none shrink-0 transition-colors">
-      {/* 1. LEFT: Brand logo, PRO badge, Breadcrumbs */}
-      <div className="flex items-center gap-3 min-w-0">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          className="p-1.5 rounded-md border border-border-default bg-bg-base hover:bg-bg-surface-hover text-text-secondary md:hidden shrink-0"
-          aria-label="Toggle navigation menu"
-        >
-          <Menu className="w-4 h-4" />
-        </button>
-
-        {/* Global Brand mark visible on desktop & mobile */}
-        <Link to="/" className="flex items-center gap-2 shrink-0 group">
+    <header className="sticky top-0 z-30 h-16 w-full border-b border-border-subtle bg-bg-surface flex items-stretch select-none shrink-0 transition-colors">
+      {/* 1. LEFT BRAND BLOCK: Exactly w-60 (240px) on desktop to align perfectly with the sidebar aside */}
+      <div className="hidden md:flex md:w-60 h-full items-center px-4 sm:px-5 border-r border-border-subtle shrink-0 bg-bg-surface">
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
           <div className="w-7 h-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
             <Layers className="w-4 h-4" />
           </div>
@@ -142,12 +132,31 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
         </Link>
+      </div>
 
-        {/* Vertical divider */}
-        <div className="h-4 w-[1px] bg-border-subtle hidden sm:block shrink-0 mx-1" />
+      {/* Mobile brand & drawer toggle (<md devices) */}
+      <div className="flex md:hidden items-center gap-2 px-3 h-full border-r border-border-subtle shrink-0 bg-bg-surface">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="p-1.5 rounded-md border border-border-default bg-bg-base hover:bg-bg-surface-hover text-text-secondary shrink-0"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <div className="w-6 h-6 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+            <Layers className="w-3.5 h-3.5" />
+          </div>
+          <span className="font-bold text-xs tracking-tight text-text-primary">LeadEngine</span>
+          <span className="text-[9px] font-bold text-accent px-1 rounded bg-accent/10 border border-accent/20">PRO</span>
+        </Link>
+      </div>
 
-        {/* Breadcrumb path */}
-        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-xs min-w-0">
+      {/* 2. RIGHT WORKSPACE HEADER: Full-width workspace control strip directly above main content */}
+      <div className="flex-1 h-full flex items-center justify-between px-4 sm:px-6 lg:px-8 gap-4 min-w-0 bg-bg-surface/95 backdrop-blur-md">
+        {/* Breadcrumbs cleanly aligned with workspace content */}
+        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-xs min-w-0 shrink-0">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
             return (
@@ -156,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {crumb.path && !isLast ? (
                   <Link
                     to={crumb.path}
-                    className="text-text-secondary hover:text-text-primary transition-colors font-normal shrink-0"
+                    className="text-text-secondary hover:text-text-primary transition-colors font-medium shrink-0"
                   >
                     {crumb.label}
                   </Link>
@@ -165,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className={cn(
                       "truncate",
                       isLast
-                        ? "text-text-primary font-medium"
+                        ? "text-text-primary font-semibold"
                         : "text-text-tertiary font-normal shrink-0"
                     )}
                   >
@@ -176,7 +185,6 @@ export const Header: React.FC<HeaderProps> = ({
             );
           })}
         </nav>
-      </div>
 
       {/* 2. CENTER: Omnibar Search for quick filtering */}
       <form
@@ -324,6 +332,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   );

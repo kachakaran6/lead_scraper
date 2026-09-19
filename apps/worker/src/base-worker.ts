@@ -22,11 +22,21 @@ export abstract class BaseWorker {
   }
 
   protected get redisConnection() {
-    return {
-      host: "127.0.0.1",
-      port: 6379,
-      maxRetriesPerRequest: null,
-    };
+    try {
+      const redisUrl = process.env.REDIS_URL || getEnv().REDIS_URL || "redis://localhost:6379";
+      const parsed = new URL(redisUrl);
+      return {
+        host: parsed.hostname || "redis",
+        port: parseInt(parsed.port || "6379", 10),
+        maxRetriesPerRequest: null,
+      };
+    } catch {
+      return {
+        host: "redis",
+        port: 6379,
+        maxRetriesPerRequest: null,
+      };
+    }
   }
 
   protected getQueue(): Queue {
