@@ -367,3 +367,60 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+/* Hairline dividers and data surface utilities */
+.hairline-b {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hairline-r {
+  border-right: 1px solid var(--border-subtle);
+}
+
+.hairline-t {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hairline-l {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.data-surface {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.data-surface-elevated {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+}
+
+/* Tabular figures for numbers, scores, coordinates, counts */
+.tabular-numbers {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Micro-interaction transitions */
+.transition-fast {
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Accessible focus ring */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Accessibility: Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

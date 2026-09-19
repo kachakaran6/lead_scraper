@@ -11,12 +11,19 @@ import {
   ExternalLink,
   MapPin,
   RefreshCw,
+  Globe,
+  Sliders,
+  ChevronDown,
+  Building2,
+  ChevronRight,
+  Database,
+  ArrowUpDown,
+  Check,
 } from "lucide-react";
-import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { Badge } from "../components/ui/Badge";
 import { api, leadEngineApi } from "../lib/api";
 import { Business } from "../types";
+import { cn } from "../lib/utils";
 
 export const LeadsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -33,10 +40,22 @@ export const LeadsPage: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Sorting
+  const [sortBy, setSortBy] = useState<"leadScore" | "name" | "createdAt">("leadScore");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      const params: any = { limit: 100 };
+      const params: any = {
+        limit: 100,
+        sortBy,
+        sortOrder,
+      };
       if (search.trim()) params.search = search.trim();
       if (statusFilter !== "ALL") params.status = statusFilter;
       if (cityFilter !== "ALL") params.city = cityFilter;
@@ -57,7 +76,7 @@ export const LeadsPage: React.FC = () => {
         setAvailableCities(Array.from(new Set(cities)));
       }
     } catch (err) {
-      console.error("Failed to fetch leads", err);
+      console.error("Failed to fetch leads from API", err);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +84,7 @@ export const LeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [search, statusFilter, cityFilter, websiteFilter, gradeFilter]);
+  }, [search, statusFilter, cityFilter, websiteFilter, gradeFilter, sortBy, sortOrder]);
 
   const handleExport = async (format: "csv" | "json") => {
     setIsExporting(true);
@@ -99,310 +118,387 @@ export const LeadsPage: React.FC = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Server-side export failed:", err);
+      console.error("Export error", err);
     } finally {
       setIsExporting(false);
     }
   };
 
+  const paginatedLeads = leads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(leads.length / pageSize) || 1;
+
   return (
-    <div className="space-y-6">
-      {/* Page Header Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
+    <div className="space-y-5">
+      {/* 1. Header & Quick Export Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">
-            Leads Database
+          <h1 className="text-xl font-bold tracking-tight text-text-primary flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-accent" />
+            Leads Intelligence Database
           </h1>
-          <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-            {totalCount} verified business profiles with real data intelligence
+          <p className="text-xs text-text-secondary mt-1">
+            Browse, filter, and inspect verified commercial prospects harvested from authentic public registries.
           </p>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="text-xs h-8"
-            disabled={isExporting || leads.length === 0}
             onClick={() => handleExport("csv")}
+            isLoading={isExporting}
+            className="text-xs gap-1.5"
           >
-            <Download className="w-3.5 h-3.5 mr-1" />
-            <span>CSV Export</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs h-8"
-            disabled={isExporting || leads.length === 0}
-            onClick={() => handleExport("json")}
-          >
-            <Download className="w-3.5 h-3.5 mr-1" />
-            <span>JSON</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
           </Button>
 
           <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs h-8">
-              <Plus className="w-3.5 h-3.5 mr-1" />
-              <span>Discover More</span>
+            <Button variant="primary" size="sm" className="text-xs gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Discover Leads</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="flex flex-wrap gap-2.5 items-center justify-between">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Filter by business name, niche..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-bg-surface border border-border-default text-text-primary focus:outline-none focus:border-accent"
-          />
+      {/* 2. Omnibar Search & Multi-Attribute Filters Bar */}
+      <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-3 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Text search */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by business name, trade category, or address..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors"
+            />
+          </div>
+
+          {/* Filters cluster */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Website Presence Filter */}
+            <select
+              value={websiteFilter}
+              onChange={(e) => setWebsiteFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+            >
+              <option value="ALL">All Websites</option>
+              <option value="NO_WEBSITE">Missing Website (+35)</option>
+              <option value="HAS_WEBSITE">Has Active Website</option>
+            </select>
+
+            {/* Pipeline Stage Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+            >
+              <option value="ALL">All Stages</option>
+              <option value="NEW">New</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="CONTACTED">Contacted</option>
+              <option value="REPLIED">Replied</option>
+              <option value="WON">Closed / Won</option>
+            </select>
+
+            {/* City Filter */}
+            {availableCities.length > 0 && (
+              <select
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+              >
+                <option value="ALL">All Cities</option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Sort order toggle */}
+            <button
+              type="button"
+              onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+              className="px-2.5 py-1.5 rounded-lg bg-bg-base border border-border-default hover:bg-bg-surface-hover text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>Score {sortOrder === "desc" ? "High to Low" : "Low to High"}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Website Filter */}
-          <select
-            value={websiteFilter}
-            onChange={(e) => setWebsiteFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-lg bg-bg-surface border border-border-default text-text-primary"
-          >
-            <option value="ALL">All Website Status</option>
-            <option value="NO_WEBSITE">Missing Website (Opportunities)</option>
-            <option value="HAS_WEBSITE">Has Website</option>
-          </select>
+        {/* Active count & summary */}
+        <div className="flex items-center justify-between text-xs text-text-tertiary pt-1 border-t border-border-subtle">
+          <span>
+            Displaying <strong className="text-text-primary font-mono">{leads.length}</strong> of{" "}
+            <strong className="text-text-primary font-mono">{totalCount}</strong> verified leads
+          </span>
 
-          {/* Grade Filter */}
-          <select
-            value={gradeFilter}
-            onChange={(e) => setGradeFilter(e.target.value)}
-            className="text-xs px-2.5 py-1.5 rounded-lg bg-bg-surface border border-border-default text-text-primary"
-          >
-            <option value="ALL">All Grades</option>
-            <option value="A">Grade A (High Intent)</option>
-            <option value="B">Grade B</option>
-            <option value="C">Grade C</option>
-          </select>
-
-          {/* City Filter */}
-          {availableCities.length > 0 && (
-            <select
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-bg-surface border border-border-default text-text-primary"
-            >
-              <option value="ALL">All Cities</option>
-              {availableCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {(search || websiteFilter !== "ALL" || gradeFilter !== "ALL" || cityFilter !== "ALL") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-8 text-text-tertiary hover:text-text-primary"
+          {(search || websiteFilter !== "ALL" || statusFilter !== "ALL" || cityFilter !== "ALL") && (
+            <button
+              type="button"
               onClick={() => {
                 setSearch("");
                 setWebsiteFilter("ALL");
-                setGradeFilter("ALL");
+                setStatusFilter("ALL");
                 setCityFilter("ALL");
               }}
+              className="text-accent hover:underline text-xs"
             >
               Reset Filters
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Main Content Area: Responsive Table (Desktop) / Cards (Mobile) */}
-      {isLoading ? (
-        <div className="py-20 text-center text-text-secondary">
-          <RefreshCw className="w-6 h-6 text-accent animate-spin mx-auto mb-2" />
-          <span className="text-xs">Loading verified leads database...</span>
-        </div>
-      ) : leads.length === 0 ? (
-        <Card className="border border-border-subtle bg-bg-surface py-16 text-center">
-          <CardContent className="space-y-3">
-            <Filter className="w-8 h-8 text-text-tertiary mx-auto opacity-50" />
-            <h3 className="text-sm font-semibold text-text-primary">No leads match filters</h3>
-            <p className="text-xs text-text-secondary max-w-sm mx-auto">
-              Try adjusting your search criteria or run a new discovery scan to gather more real records.
-            </p>
-            <Link to="/discover">
-              <Button variant="primary" size="sm" className="mt-2 text-xs">
-                Launch Discovery
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Mobile Cards (<md) */}
-          <div className="grid grid-cols-1 gap-3 md:hidden">
-            {leads.map((lead) => {
-              const hasWeb = Boolean(lead.website);
+      {/* 3. DESKTOP DATA TABLE (Visible >= md) */}
+      <div className="hidden md:block bg-bg-surface border border-border-subtle rounded-xl overflow-hidden shadow-sm">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-border-subtle bg-bg-base/60 text-text-tertiary font-semibold uppercase tracking-wider text-[11px]">
+              <th className="py-3 px-4">Business & Niche</th>
+              <th className="py-3 px-4">Location</th>
+              <th className="py-3 px-4">Contact Phone</th>
+              <th className="py-3 px-4">Web Presence</th>
+              <th className="py-3 px-4 text-center">Score</th>
+              <th className="py-3 px-4">Registry Source</th>
+              <th className="py-3 px-4">Stage</th>
+              <th className="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
 
-              return (
-                <Card
+          <tbody className="divide-y divide-border-subtle">
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td colSpan={8} className="py-4 px-4">
+                    <div className="h-4 bg-bg-surface-hover rounded w-3/4" />
+                  </td>
+                </tr>
+              ))
+            ) : paginatedLeads.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-text-tertiary">
+                  No verified leads found matching your criteria. Try adjusting filters or launch a new discovery scrape.
+                </td>
+              </tr>
+            ) : (
+              paginatedLeads.map((lead) => (
+                <tr
                   key={lead.id}
-                  className="border border-border-subtle bg-bg-surface hover:border-accent/40 transition-colors"
+                  className="hover:bg-bg-surface-hover/60 transition-colors group"
                 >
-                  <CardContent className="p-4 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-text-secondary">
-                        {lead.category || "Business"}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          lead.leadGrade === "A"
-                            ? "bg-success/15 text-success"
-                            : "bg-accent/15 text-accent"
-                        }`}
+                  {/* Business & Niche */}
+                  <td className="py-3 px-4">
+                    <Link
+                      to={`/leads/${lead.id}`}
+                      className="font-semibold text-text-primary hover:text-accent transition-colors block truncate max-w-[220px]"
+                    >
+                      {lead.name}
+                    </Link>
+                    <span className="text-[11px] text-text-tertiary block truncate max-w-[200px]">
+                      {lead.category || "Commercial Service"}
+                    </span>
+                  </td>
+
+                  {/* Location */}
+                  <td className="py-3 px-4 text-text-secondary truncate max-w-[160px]">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-text-tertiary shrink-0" />
+                      <span className="truncate">{lead.city || lead.state || lead.country || "Registered"}</span>
+                    </div>
+                  </td>
+
+                  {/* Phone */}
+                  <td className="py-3 px-4 font-mono text-text-secondary whitespace-nowrap">
+                    {lead.phone ? (
+                      <span className="text-text-primary font-medium">{lead.phone}</span>
+                    ) : (
+                      <span className="text-text-tertiary text-[11px]">Unlisted</span>
+                    )}
+                  </td>
+
+                  {/* Website presence */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    {lead.website ? (
+                      <a
+                        href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-accent hover:underline"
                       >
-                        Grade {lead.leadGrade} • {lead.leadScore} pts
+                        <Globe className="w-3 h-3" />
+                        <span className="truncate max-w-[120px]">{lead.website.replace(/^https?:\/\//, "")}</span>
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        No Website
                       </span>
-                    </div>
+                    )}
+                  </td>
 
-                    <h3 className="text-sm font-semibold text-text-primary">{lead.name}</h3>
-
-                    <div className="text-xs text-text-secondary flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
-                      <span>{lead.city || "Unknown City"}</span>
-                    </div>
-
-                    <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
-                      {hasWeb ? (
-                        <span className="inline-flex items-center gap-1 text-success text-[11px]">
-                          <CheckCircle2 className="w-3 h-3" /> Website Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-warning text-[11px]">
-                          <AlertTriangle className="w-3 h-3" /> No Website Found
-                        </span>
+                  {/* Lead Score */}
+                  <td className="py-3 px-4 text-center">
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center font-mono font-bold text-xs px-2 py-0.5 rounded",
+                        lead.leadScore >= 80
+                          ? "bg-success/15 text-success border border-success/25"
+                          : lead.leadScore >= 60
+                          ? "bg-warning/15 text-warning border border-warning/25"
+                          : "bg-border-subtle text-text-tertiary"
                       )}
+                    >
+                      {lead.leadScore || 65}
+                    </span>
+                  </td>
 
-                      {lead.phone && (
-                        <span className="text-text-tertiary text-[11px]">
-                          • {lead.phone}
-                        </span>
-                      )}
-                    </div>
+                  {/* Source */}
+                  <td className="py-3 px-4 text-text-tertiary text-[11px] whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1">
+                      <Database className="w-3 h-3" />
+                      {lead.sourceProvider || "OpenStreetMap"}
+                    </span>
+                  </td>
 
-                    <div className="pt-2 border-t border-border-subtle flex justify-end">
-                      <Link to={`/leads/${lead.id}`}>
-                        <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">
-                          View Intel Record &rarr;
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  {/* Pipeline Stage */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-bg-base border border-border-default text-text-secondary">
+                      {lead.status || "NEW"}
+                    </span>
+                  </td>
+
+                  {/* Action link */}
+                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                    <Link to={`/leads/${lead.id}`}>
+                      <Button variant="outline" size="sm" className="text-xs h-7 px-2.5">
+                        <span>Inspect Intel</span>
+                        <ChevronRight className="w-3 h-3 ml-0.5" />
+                      </Button>
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 4. MOBILE CARD LIST (< md screens: Never squeezed, 100% responsive) */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="py-8 text-center text-xs text-text-tertiary">
+            Loading verified leads...
           </div>
+        ) : paginatedLeads.length === 0 ? (
+          <div className="py-8 text-center text-xs text-text-tertiary">
+            No leads found matching criteria.
+          </div>
+        ) : (
+          paginatedLeads.map((lead) => (
+            <div
+              key={lead.id}
+              className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-3 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <Link
+                    to={`/leads/${lead.id}`}
+                    className="font-bold text-sm text-text-primary hover:text-accent transition-colors block"
+                  >
+                    {lead.name}
+                  </Link>
+                  <span className="text-xs text-text-secondary block mt-0.5">
+                    {lead.category || "Commercial Service"} • {lead.city || lead.state || "Area"}
+                  </span>
+                </div>
 
-          {/* Desktop Table (md+) */}
-          <div className="hidden md:block rounded-xl border border-border-subtle bg-bg-surface overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border-subtle bg-bg-base/60 text-text-tertiary font-semibold uppercase text-[10px] tracking-wider">
-                    <th className="py-3 px-4">Business Name</th>
-                    <th className="py-3 px-3">Location</th>
-                    <th className="py-3 px-3">Website Status</th>
-                    <th className="py-3 px-3">Phone</th>
-                    <th className="py-3 px-3">Score</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {leads.map((lead) => {
-                    const hasWeb = Boolean(lead.website);
+                <span
+                  className={cn(
+                    "font-mono font-bold text-xs px-2 py-0.5 rounded shrink-0",
+                    lead.leadScore >= 80
+                      ? "bg-success/15 text-success border border-success/25"
+                      : "bg-warning/15 text-warning border border-warning/25"
+                  )}
+                >
+                  {lead.leadScore || 65} pts
+                </span>
+              </div>
 
-                    return (
-                      <tr
-                        key={lead.id}
-                        className="hover:bg-bg-surface-hover/60 transition-colors"
-                      >
-                        <td className="py-3 px-4 font-medium text-text-primary">
-                          <Link
-                            to={`/leads/${lead.id}`}
-                            className="hover:text-accent transition-colors block"
-                          >
-                            <span className="font-semibold text-text-primary">{lead.name}</span>
-                            <span className="block text-[11px] text-text-tertiary font-normal">
-                              {lead.category || "General Business"}
-                            </span>
-                          </Link>
-                        </td>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {lead.phone ? (
+                  <a
+                    href={`tel:${lead.phone}`}
+                    className="inline-flex items-center gap-1 text-text-primary font-mono px-2 py-1 rounded bg-bg-base border border-border-default"
+                  >
+                    <Phone className="w-3 h-3 text-accent" />
+                    <span>{lead.phone}</span>
+                  </a>
+                ) : (
+                  <span className="text-text-tertiary text-[11px] px-2 py-1 rounded bg-bg-base border border-border-subtle">
+                    No phone listed
+                  </span>
+                )}
 
-                        <td className="py-3 px-3 text-text-secondary whitespace-nowrap">
-                          {lead.city || "—"}, {lead.state || ""}
-                        </td>
+                {!lead.website ? (
+                  <span className="text-amber-400 font-medium text-[11px] px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">
+                    No Website
+                  </span>
+                ) : (
+                  <span className="text-text-secondary text-[11px] px-2 py-1 rounded bg-bg-base border border-border-subtle">
+                    Website verified
+                  </span>
+                )}
+              </div>
 
-                        <td className="py-3 px-3 whitespace-nowrap">
-                          {hasWeb ? (
-                            <span className="inline-flex items-center gap-1.5 text-success font-medium">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span className="truncate max-w-[130px]">{lead.website}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-warning font-medium">
-                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                              <span>No Website Found</span>
-                            </span>
-                          )}
-                        </td>
+              <div className="pt-2 border-t border-border-subtle flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-text-tertiary uppercase">
+                  Stage: {lead.status || "NEW"}
+                </span>
 
-                        <td className="py-3 px-3 text-text-secondary whitespace-nowrap">
-                          {lead.phone ? (
-                            <span className="font-mono text-xs">{lead.phone}</span>
-                          ) : (
-                            <span className="text-text-tertiary">Not available</span>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-3 whitespace-nowrap">
-                          <span
-                            className={`font-mono text-xs font-semibold px-2 py-0.5 rounded ${
-                              lead.leadGrade === "A"
-                                ? "bg-success/15 text-success"
-                                : "bg-accent/15 text-accent"
-                            }`}
-                          >
-                            {lead.leadScore} ({lead.leadGrade})
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-3 whitespace-nowrap">
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-bg-base border border-border-subtle text-text-secondary">
-                            {lead.status}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <Link to={`/leads/${lead.id}`}>
-                            <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">
-                              Intel &rarr;
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                <Link to={`/leads/${lead.id}`}>
+                  <Button variant="outline" size="sm" className="text-xs h-7 px-3">
+                    <span>Inspect Intel &rarr;</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
+          ))
+        )}
+      </div>
+
+      {/* 5. Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2 text-xs">
+          <span className="text-text-tertiary">
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="text-xs h-8"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="text-xs h-8"
+            >
+              Next
+            </Button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

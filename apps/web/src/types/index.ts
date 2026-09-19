@@ -53,6 +53,7 @@ export interface Business {
   sourceUrl?: string | null;
   sourceProvider?: string | null;
   sourcePlaceId?: string | null;
+  sourceId?: string | null;
   googlePlaceId?: string | null;
   googleMapsUrl?: string | null;
   hasWebsite?: boolean | null;
@@ -61,6 +62,12 @@ export interface Business {
   verificationStatus?: string | null;
   retrievedAt?: string | null;
   lastVerifiedAt?: string | null;
+  scoringFactors?: Array<{
+    name: string;
+    points: number;
+    met: boolean;
+    explanation: string;
+  }>;
   status: LeadStatus;
   leadScore: number;
   leadGrade: string;
