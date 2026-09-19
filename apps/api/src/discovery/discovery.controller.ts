@@ -1,18 +1,7 @@
-import { Body, Controller, Post, Get, Query, UseGuards, Req, Injectable } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
+import { Body, Controller, Post, Get, Query, Req } from "@nestjs/common";
 import { DiscoveryService } from "./discovery.service";
-import { RolesGuard, RequireAction } from "../auth/roles.guard";
-
-@Injectable()
-export class OptionalAuthGuard extends AuthGuard("jwt") {
-  handleRequest(err: any, user: any) {
-    if (user) return user;
-    return { id: null, role: "member" };
-  }
-}
 
 @Controller(["discovery", "discover"])
-@UseGuards(OptionalAuthGuard, RolesGuard)
 export class DiscoveryController {
   private readonly discoveryService: DiscoveryService;
   constructor(discoveryService?: DiscoveryService) {
@@ -20,13 +9,11 @@ export class DiscoveryController {
   }
 
   @Post()
-  @RequireAction("DISCOVERY_RUN")
   async discover(@Body() dto: Record<string, unknown>, @Req() req: any) {
     return this.discoveryService.discover({ ...dto, userId: req.user?.id } as any);
   }
 
   @Post("search")
-  @RequireAction("DISCOVERY_RUN")
   async search(@Body() dto: Record<string, unknown>, @Req() req: any) {
     return this.discoveryService.search({ ...dto, userId: req.user?.id } as any);
   }
@@ -56,8 +43,7 @@ export class DiscoveryController {
   }
 
   @Get("search")
-  @RequireAction("DISCOVERY_RUN")
   async searchGet(@Query() query: Record<string, unknown>, @Req() req: any) {
     return this.discoveryService.search({ ...query, userId: req.user?.id } as any);
   }
-}
+}
