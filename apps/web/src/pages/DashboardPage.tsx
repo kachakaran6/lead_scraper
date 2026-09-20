@@ -5,21 +5,25 @@ import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { leadEngineApi } from "../lib/api";
 import { Business } from "../types";
+import { Bot, Zap, Play, Pause, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
 
 export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [topLeads, setTopLeads] = useState<Business[]>([]);
+  const [autopilotStatus, setAutopilotStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, leadsData] = await Promise.all([
+        const [statsData, leadsData, autoData] = await Promise.all([
           leadEngineApi.getDashboardKpis(),
           leadEngineApi.getLeads({ limit: 5, sortBy: "leadScore", sortOrder: "desc" }),
+          leadEngineApi.getAutopilotStatus(),
         ]);
         setStats(statsData);
         setTopLeads(leadsData?.items || []);
+        setAutopilotStatus(autoData);
       } catch (err) {
         console.error("Error loading dashboard data:", err);
       } finally {
@@ -48,6 +52,39 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Autopilot 24/7 Autonomous Discovery Banner */}
+      <div className="p-4 rounded-xl bg-gradient-to-r from-bg-surface via-bg-surface to-accent/5 border border-border-subtle shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-text-primary">
+                Autopilot 24/7 Discovery Engine
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success/15 border border-success/30 text-success">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-ping" />
+                {autopilotStatus?.status === "RUNNING" ? "RUNNING" : "ACTIVE"}
+              </span>
+            </div>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Territory: <span className="text-text-primary font-medium">{autopilotStatus?.currentRegion || "Ahmedabad, India"}</span> · Niche: <span className="text-accent font-medium">{autopilotStatus?.currentNiche || "Dentist & Dental Clinics"}</span> · Today: <span className="font-mono text-text-primary font-semibold">{autopilotStatus?.todayDiscovered || 0} / {autopilotStatus?.dailyTarget || 150} leads</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Link to="/discover">
+            <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
+              <Zap className="w-3.5 h-3.5" />
+              <span>Manage Engine</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
         <div>

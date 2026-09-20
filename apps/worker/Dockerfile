@@ -3,35 +3,48 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 COPY . .
 RUN corepack enable && pnpm install --no-frozen-lockfile
-# Packages (config/shared/database) have pre-compiled .js in src/ already committed.
-# Only run prisma generate (needed for Prisma client types) then build the worker.
+
+# config tsconfig outDir=./dist — build then place JS in src/ to match "main": "./src/index.js"
+RUN cd packages/config && npx tsc && cp -r dist/. src/
+
+# shared tsconfig outDir=./dist — same approach
+RUN cd packages/shared && npx tsc && cp -r dist/. src/
+
+# Generate Prisma client (must come before writing database package JS)
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+# database package has no tsconfig — it only re-exports @prisma/client.
+# Write the two compiled CJS files directly (they're trivial wrappers):
+COPY scripts/build-packages.sh /build-packages.sh
+RUN chmod +x /build-packages.sh && /build-packages.sh
+
+# Build the worker app
 RUN pnpm --filter @ultimate-leads/worker build
 
+# ─────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache libc6-compat openssl
 
-# Copy compiled worker output
+# Compiled worker output
 COPY --from=builder /app/apps/worker/dist ./dist
 COPY --from=builder /app/apps/worker/package.json ./package.json
 
-# Copy root node_modules (pnpm hoisted deps)
+# All hoisted node_modules including Prisma generated client
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy Prisma schema for migrations and generated client
+# Prisma schema for runtime
 COPY --from=builder /app/packages/database/prisma ./prisma
 
-# Copy workspace packages (already have compiled src/*.js in git)
-COPY --from=builder /app/packages ./packages
+# Remove broken pnpm workspace symlinks before copying real package folders
+RUN rm -rf ./node_modules/@ultimate-leads
 
-# pnpm uses symlinks for workspace packages; Docker COPY breaks them.
-# Restore symlinks explicitly so Node resolves @ultimate-leads/* correctly.
-RUN mkdir -p node_modules/@ultimate-leads && \
-    ln -sfn /app/packages/config      node_modules/@ultimate-leads/config && \
-    ln -sfn /app/packages/database    node_modules/@ultimate-leads/database && \
-    ln -sfn /app/packages/shared      node_modules/@ultimate-leads/shared
+# Copy workspace packages directly both to /app/packages and /app/node_modules/@ultimate-leads
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/packages/config   ./node_modules/@ultimate-leads/config
+COPY --from=builder /app/packages/database ./node_modules/@ultimate-leads/database
+COPY --from=builder /app/packages/shared   ./node_modules/@ultimate-leads/shared
 
 CMD ["sh", "-c", "if [ -f dist/apps/worker/src/main.js ]; then node dist/apps/worker/src/main.js; elif [ -f dist/main.js ]; then node dist/main.js; else node $(find dist -name main.js | head -n 1); fi"]
 

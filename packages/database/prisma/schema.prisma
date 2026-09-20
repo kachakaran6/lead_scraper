@@ -89,8 +89,61 @@ enum OpportunityType {
   LOCAL_SEO
 }
 
+enum LeadLifecycleStage {
+  DISCOVERED
+  NORMALIZED
+  DEDUPLICATED
+  VALIDATED
+  STORED
+  ENRICHED
+  SCORED
+  AI_REVIEWED
+  READY_FOR_OUTREACH
+}
+
+enum AutopilotStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  STOPPED
+  COOLDOWN
+  ERROR
+}
+
+enum ResourceBudget {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AiProcessingLevel {
+  MINIMAL
+  PROMISING_ONLY
+  FULL
+}
+
+enum RegionScanStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  COMPLETED
+  COOLDOWN
+  EXHAUSTED
+  FAILED
+}
+
+enum ProviderStatus {
+  ACTIVE
+  DEGRADED
+  COOLDOWN
+  ERROR
+}
+
 enum JobType {
   DISCOVER_BUSINESSES
+  DISCOVER_REGION
+  DISCOVER_CELL
+  DISCOVER_NICHE
   NORMALIZE_LEAD
   DEDUPLICATE
   FIND_WEBSITE
@@ -101,6 +154,7 @@ enum JobType {
   AUDIT_WEBSITE
   CALCULATE_SCORE
   AI_ANALYSIS
+  DAILY_DIGEST
   EXPORT_DATA
   CHANGE_DETECTION
 }
@@ -142,6 +196,8 @@ model User {
   exports              Export[]
   auditLogs            AuditLog[]
   businesses           Business[]
+  discoveryProfiles    DiscoveryProfile[]
+  dailyDigests         DailyDigest[]
 
   @@index([email])
 }
@@ -163,73 +219,104 @@ model ApiKey {
 }
 
 model Business {
-  id               String          @id @default(uuid())
-  userId           String?
-  name             String
-  category         String?
-  address          String?
-  city             String?
-  state            String?
-  country          String?
-  postalCode       String?
-  phone            String?
-  website          String?
-  latitude         Float?
-  longitude        Float?
-  rating           Float?
-  reviewCount      Int?
-  source           BusinessSource  @default(SEARCH)
-  sourceProvider   String?
-  sourcePlaceId    String?
-  sourceUrl        String?
-  sourceId         String?
-  googlePlaceId    String?
-  googleMapsUrl    String?
-  status           LeadStatus      @default(NEW)
-  leadScore        Int             @default(0)
-  leadGrade        String          @default("C")
-  opportunityScore Int             @default(0)
-  websiteQuality   String?
-  hasWebsite       Boolean?
-  hasPhone         Boolean?
-  hasEmail         Boolean?
-  verificationStatus String        @default("UNVERIFIED")
-  retrievedAt      DateTime        @default(now())
-  lastVerifiedAt   DateTime?
-  firstSeen        DateTime        @default(now())
-  lastSeen         DateTime        @default(now())
-  lastCrawled      DateTime?
-  nextCrawl        DateTime?
-  changeDetectedAt DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                 String              @id @default(uuid())
+  userId             String?
+  name               String
+  canonicalName      String?
+  normalizedName     String?
+  normalizedPhone    String?
+  websiteDomain      String?
+  phoneHash          String?
+  domainHash         String?
+  geoNameHash        String?
+  identityHash       String?
+  category           String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  postalCode         String?
+  phone              String?
+  website            String?
+  latitude           Float?
+  longitude          Float?
+  rating             Float?
+  reviewCount        Int?
+  source             BusinessSource      @default(SEARCH)
+  sourceProvider     String?
+  sourcePlaceId      String?
+  sourceUrl          String?
+  sourceId           String?
+  googlePlaceId      String?
+  googleMapsUrl      String?
+  status             LeadStatus          @default(NEW)
+  lifecycleStage     LeadLifecycleStage  @default(STORED)
+  leadScore          Int                 @default(0)
+  leadGrade          String              @default("C")
+  dataScore          Int                 @default(0)
+  opportunityScore   Int                 @default(0)
+  aiScore            Int?
+  scoringBreakdown   Json?
+  aiSummary          String?
+  aiQualification    Json?
+  aiAnalyzedAt       DateTime?
+  aiInputHash        String?
+  websiteQuality     String?
+  hasWebsite         Boolean?
+  hasPhone           Boolean?
+  hasEmail           Boolean?
+  verificationStatus String              @default("UNVERIFIED")
+  duplicateConfidence Float?
+  matchReason        String?
+  retrievedAt        DateTime            @default(now())
+  lastVerifiedAt     DateTime?
+  firstSeen          DateTime            @default(now())
+  lastSeen           DateTime            @default(now())
+  lastCrawled        DateTime?
+  nextCrawl          DateTime?
+  changeDetectedAt   DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  user             User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  emails           Email[]
-  phones           Phone[]
-  websites         Website[]
-  websiteAudits    WebsiteAudit[]
-  socialProfiles   SocialProfile[]
-  contacts         Contact[]
-  opportunities    Opportunity[]
-  deals            Deal[]
-  jobs             Job[]
-  notes            Note[]
-  activities       Activity[]
-  tags             Tag[]
-  proposals        Proposal[]
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sources            LeadSource[]
+  emails             Email[]
+  phones             Phone[]
+  websites           Website[]
+  websiteAudits      WebsiteAudit[]
+  socialProfiles     SocialProfile[]
+  contacts           Contact[]
+  opportunities      Opportunity[]
+  deals              Deal[]
+  jobs               Job[]
+  notes              Note[]
+  activities         Activity[]
+  tags               Tag[]
+  proposals          Proposal[]
+  leadEvents         LeadEvent[]
 
   @@index([userId])
   @@index([name])
+  @@index([canonicalName])
+  @@index([normalizedPhone])
+  @@index([websiteDomain])
+  @@index([phoneHash])
+  @@index([domainHash])
+  @@index([geoNameHash])
+  @@index([identityHash])
   @@index([city, state])
   @@index([category])
   @@index([website])
   @@index([phone])
   @@index([status])
+  @@index([lifecycleStage])
   @@index([leadScore])
+  @@index([opportunityScore])
   @@index([googlePlaceId])
   @@index([verificationStatus])
   @@index([source, sourceId])
+  @@index([firstSeen])
+  @@index([lastSeen])
 }
 
 model Website {
@@ -585,4 +672,203 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+model LeadSource {
+  id              String    @id @default(uuid())
+  businessId      String
+  provider        String    // OVERPASS_OSM, SEARXNG, GOOGLE_PLACES, MANUAL, DIRECTORY
+  providerPlaceId String?
+  rawName         String?
+  rawAddress      String?
+  rawPhone        String?
+  rawWebsite      String?
+  rawCategory     String?
+  rawData         Json?
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  business        Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerPlaceId])
+  @@index([businessId])
+  @@index([provider])
+}
+
+model LeadEvent {
+  id          String   @id @default(uuid())
+  businessId  String?
+  profileId   String?
+  type        String   // DISCOVERED, MERGED, DEDUPLICATED, ENRICHED, SCORED, AI_QUALIFIED, STATUS_CHANGED
+  title       String
+  description String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  business    Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([profileId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model DiscoveryProfile {
+  id                 String             @id @default(uuid())
+  userId             String
+  name               String
+  status             AutopilotStatus    @default(IDLE)
+  targetCountries    Json               // ["India", "UAE", "United States"]
+  targetRegions      Json               // ["Gujarat", "Maharashtra", "Dubai"]
+  targetCities       Json?              // Optional override
+  targetNiches       Json               // ["Dentist", "Dental Clinic", "Orthodontist"]
+  opportunityFilters Json?              // { noWebsite: true, hasPhone: true, hasAddress: true, ratingAvailable: false }
+  discoverySources   Json?              // ["OVERPASS_OSM", "SEARXNG", "GOOGLE_PLACES"]
+  dailyTarget        Int                @default(150)
+  resourceBudget     ResourceBudget     @default(LOW)
+  aiProcessingLevel  AiProcessingLevel  @default(PROMISING_ONLY)
+  totalDiscovered    Int                @default(0)
+  todayDiscovered    Int                @default(0)
+  duplicatesPrevented Int               @default(0)
+  currentCountry     String?
+  currentRegion      String?
+  currentNiche       String?
+  currentCellId      String?
+  lastRunAt          DateTime?
+  nextRunAt          DateTime?
+  lastDailyReset     DateTime?          @default(now())
+  errorMessage       String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regions            DiscoveryRegion[]
+  queryLogs          DiscoveryQueryLog[]
+  dailyDigests       DailyDigest[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model DiscoveryRegion {
+  id               String            @id @default(uuid())
+  profileId        String?
+  country          String
+  state            String?
+  province         String?
+  city             String?
+  latitude         Float?
+  longitude        Float?
+  boundingBox      Json?             // { minLat, maxLat, minLon, maxLon }
+  parentRegionId   String?
+  priority         Int               @default(50)
+  status           RegionScanStatus  @default(PENDING)
+  lastScannedAt    DateTime?
+  nextScanAt       DateTime?
+  scanCount        Int               @default(0)
+  leadCount        Int               @default(0)
+  discoveryDepth   Int               @default(1)
+  geoCellId        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  profile          DiscoveryProfile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  parentRegion     DiscoveryRegion?  @relation("RegionHierarchy", fields: [parentRegionId], references: [id], onDelete: SetNull)
+  childRegions     DiscoveryRegion[] @relation("RegionHierarchy")
+  cells            DiscoveryCell[]
+
+  @@index([profileId])
+  @@index([country, state, city])
+  @@index([status])
+  @@index([priority])
+  @@index([nextScanAt])
+  @@index([geoCellId])
+}
+
+model DiscoveryCell {
+  id               String            @id @default(uuid())
+  regionId         String
+  geoCellId        String
+  bounds           Json              // { minLat, maxLat, minLon, maxLon }
+  status           RegionScanStatus  @default(PENDING)
+  lastScannedAt    DateTime?
+  leadYield        Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  region           DiscoveryRegion   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@unique([regionId, geoCellId])
+  @@index([status])
+}
+
+model DiscoveryQueryLog {
+  id               String            @id @default(uuid())
+  profileId        String?
+  queryHash        String
+  queryText        String
+  niche            String
+  location         String
+  provider         String
+  resultsCount     Int               @default(0)
+  uniqueCount      Int               @default(0)
+  duplicateCount   Int               @default(0)
+  durationMs       Int               @default(0)
+  status           String            @default("SUCCESS") // SUCCESS, ERROR, RATE_LIMITED
+  error            String?
+  createdAt        DateTime          @default(now())
+
+  profile          DiscoveryProfile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([queryHash])
+  @@index([createdAt])
+}
+
+model DailyDigest {
+  id                  String            @id @default(uuid())
+  userId              String
+  profileId           String?
+  date                String            // "YYYY-MM-DD"
+  totalDiscovered     Int               @default(0)
+  uniqueCount         Int               @default(0)
+  duplicatesPrevented Int               @default(0)
+  verifiedCount       Int               @default(0)
+  missingWebsitesCount Int              @default(0)
+  highOpportunityCount Int              @default(0)
+  topLeads            Json              // Array of ranked lead items with evidence
+  summaryText         String?
+  breakdown           Json?             // { byCountry: {}, byCategory: {} }
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile             DiscoveryProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([profileId])
+  @@index([date])
+}
+
+model ProviderHealth {
+  id                  String          @id @default(uuid())
+  provider            String          @unique // OVERPASS_OSM, SEARXNG, GOOGLE_PLACES
+  status              ProviderStatus  @default(ACTIVE)
+  requestsTotal       Int             @default(0)
+  successTotal        Int             @default(0)
+  failureTotal        Int             @default(0)
+  consecutiveFailures Int             @default(0)
+  lastRequestAt       DateTime?
+  cooldownUntil       DateTime?
+  rateLimitRpm        Int             @default(60)
+  avgLatencyMs        Int             @default(0)
+  lastErrorMessage    String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([provider])
+  @@index([status])
 }

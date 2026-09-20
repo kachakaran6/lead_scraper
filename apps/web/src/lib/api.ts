@@ -242,5 +242,87 @@ export const leadEngineApi = {
     const res = await api.post("/api-keys", { name });
     return res.data;
   },
+
+  // Autopilot 24/7 Discovery Engine
+  async getAutopilotStatus() {
+    try {
+      const res = await api.get("/autopilot/status");
+      return res.data;
+    } catch {
+      return {
+        status: "IDLE",
+        todayDiscovered: 0,
+        dailyTarget: 150,
+        totalDiscovered: 0,
+        duplicatesPrevented: 0,
+        currentRegion: "All Regions",
+        currentNiche: "Dentist",
+        currentCountry: "India",
+        gridProgress: { totalCells: 1, completedCells: 0, percent: 0 },
+        recentLogs: [],
+        providersHealth: [],
+      };
+    }
+  },
+
+  async getAutopilotProfiles() {
+    try {
+      const res = await api.get("/autopilot/profiles");
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async createAutopilotProfile(data: {
+    name: string;
+    targetCountries: string[];
+    targetRegions?: string[];
+    targetCities?: string[];
+    targetNiches: string[];
+    opportunityFilters?: any;
+    dailyTarget?: number;
+    resourceBudget?: string;
+    aiProcessingLevel?: string;
+  }) {
+    const res = await api.post("/autopilot/profiles", data);
+    return res.data;
+  },
+
+  async toggleAutopilot(profileId: string) {
+    const res = await api.post(`/autopilot/profiles/${profileId}/toggle`);
+    return res.data;
+  },
+
+  async triggerAutopilotRun(profileId?: string) {
+    const res = await api.post("/autopilot/trigger", { profileId });
+    return res.data;
+  },
+
+  async getAutopilotActivity(limit = 15) {
+    try {
+      const res = await api.get("/autopilot/activity", { params: { limit } });
+      return res.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async getTodayDigest(date?: string) {
+    try {
+      const res = await api.get("/autopilot/digest/today", { params: { date } });
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  async expandNiche(niche: string, country?: string) {
+    const res = await api.get("/autopilot/niches/expand", {
+      params: { niche, country },
+    });
+    return res.data;
+  },
 };
+
 

@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { prisma } from "@ultimate-leads/database";
 import { JobsService } from "../jobs/jobs.service";
+import { DeduplicationService } from "./deduplication.service";
+import { ProviderHealthService } from "./providers/provider-health.service";
 import {
   GooglePlacesProvider,
   OverpassOsmProvider,
@@ -27,11 +29,19 @@ export class DiscoveryService {
   private readonly googlePlaces: GooglePlacesProvider;
   private readonly overpassOsm: OverpassOsmProvider;
   private readonly searxng: SearxngProvider;
+  private readonly deduplicationService: DeduplicationService;
+  private readonly healthService: ProviderHealthService;
 
-  constructor(private readonly jobsService?: JobsService) {
+  constructor(
+    private readonly jobsService?: JobsService,
+    deduplicationService?: DeduplicationService,
+    healthService?: ProviderHealthService
+  ) {
     this.googlePlaces = new GooglePlacesProvider();
     this.overpassOsm = new OverpassOsmProvider();
     this.searxng = new SearxngProvider();
+    this.deduplicationService = deduplicationService || new DeduplicationService();
+    this.healthService = healthService || new ProviderHealthService();
   }
 
   async discover(params: DiscoverySearchParams & { campaignId?: string; source?: string; userId?: string }) {
@@ -299,113 +309,11 @@ export class DiscoveryService {
 
   private async persistAndDeduplicate(data: DiscoveredLeadData, userId?: string) {
     try {
-      // Deduplication check: placeId, phone, or name + city
-      let existing: any = null;
-
-      if (data.googlePlaceId) {
-        existing = await prisma.business.findFirst({
-          where: { googlePlaceId: data.googlePlaceId },
-        });
-      }
-
-      if (!existing && data.sourceId) {
-        existing = await prisma.business.findFirst({
-          where: { sourceId: data.sourceId },
-        });
-      }
-
-      if (!existing && data.phone) {
-        existing = await prisma.business.findFirst({
-          where: { phone: data.phone },
-        });
-      }
-
-      if (!existing && data.name && data.city) {
-        existing = await prisma.business.findFirst({
-          where: {
-            name: { equals: data.name, mode: "insensitive" },
-            city: { equals: data.city, mode: "insensitive" },
-          },
-        });
-      }
-
-      const hasWebsite = Boolean(data.website && data.website.trim().length > 3);
-      const hasPhone = Boolean(data.phone && data.phone.trim().length > 4);
-      const scoring = this.calculateLeadScore({
-        hasWebsite,
-        hasPhone,
-        hasEmail: false,
-        category: data.category,
-        city: data.city,
-        rating: data.rating,
-        reviewCount: data.reviewCount,
-      });
-
-      if (existing) {
-        // Merge verified fields without overwriting with nulls
-        return await prisma.business.update({
-          where: { id: existing.id },
-          data: {
-            address: existing.address || data.address,
-            phone: existing.phone || data.phone,
-            website: existing.website || data.website,
-            rating: existing.rating || data.rating,
-            reviewCount: existing.reviewCount || data.reviewCount,
-            lastVerifiedAt: new Date(),
-            verificationStatus: data.verificationStatus,
-            hasWebsite: existing.hasWebsite ?? hasWebsite,
-            hasPhone: existing.hasPhone ?? hasPhone,
-          },
-        });
-      }
-
-      return await prisma.business.create({
-        data: {
-          userId: userId || null,
-          name: data.name,
-          category: data.category || null,
-          address: data.address || null,
-          city: data.city || null,
-          state: data.state || null,
-          country: data.country || null,
-          postalCode: data.postalCode || null,
-          latitude: data.latitude || null,
-          longitude: data.longitude || null,
-          rating: data.rating || null,
-          reviewCount: data.reviewCount || null,
-          phone: data.phone || null,
-          website: data.website || null,
-          googlePlaceId: data.googlePlaceId || null,
-          googleMapsUrl: data.googleMapsUrl || null,
-          source: data.sourceProvider === "GOOGLE_PLACES" ? "MAPS" : "SEARCH",
-          sourceProvider: data.sourceProvider,
-          sourceId: data.sourceId || null,
-          sourceUrl: data.sourceUrl || null,
-          status: "NEW",
-          hasWebsite,
-          hasPhone,
-          hasEmail: false,
-          leadScore: scoring.score,
-          leadGrade: scoring.grade,
-          opportunityScore: isNaN(scoring.score) ? 50 : scoring.score,
-          verificationStatus: data.verificationStatus,
-          retrievedAt: new Date(),
-          lastVerifiedAt: new Date(),
-          ...(hasWebsite && data.website
-            ? {
-                websites: {
-                  create: {
-                    url: data.website,
-                    status: "WEBSITE_FOUND",
-                  },
-                },
-              }
-            : {}),
-        },
-      });
+      const res = await this.deduplicationService.resolveAndPersistLead(data, userId);
+      return res?.lead || null;
     } catch (err: any) {
       console.warn("Failed to persist discovered lead:", err.message);
       return null;
     }
   }
-}
+}
