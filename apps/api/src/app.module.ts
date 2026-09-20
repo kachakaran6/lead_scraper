@@ -28,6 +28,7 @@ import { DealsModule } from "./deals/deals.module";
 import { NotesModule } from "./notes/notes.module";
 import { ActivitiesModule } from "./activities/activities.module";
 import { AIModule } from "./ai/ai.module";
+import { AdminModule } from "./admin/admin.module";
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { AIModule } from "./ai/ai.module";
       },
     }),
     AuthModule,
+    AdminModule,
     UsersModule,
     BusinessesModule,
     ContactsModule,
