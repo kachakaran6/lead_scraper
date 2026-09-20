@@ -69,8 +69,10 @@ export class AutopilotController {
 
     // If countries or regions updated, seed geographic queue for new territories
     if (body.targetCountries?.length || body.targetRegions?.length) {
+      const countries = (Array.isArray(updated.targetCountries) ? updated.targetCountries : ["India"]) as string[];
+      const regions = (Array.isArray(updated.targetRegions) ? updated.targetRegions : []) as string[];
       this.autopilotService
-        .seedGeographicQueue(id, updated.targetCountries, updated.targetRegions)
+        .seedGeographicQueue(id, countries, regions)
         .catch(() => {});
     }
 
