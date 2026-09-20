@@ -7,6 +7,8 @@ export interface AuthUser {
   name?: string | null;
   role: string;
   emailVerified?: boolean;
+  accountStatus?: "PENDING" | "ACTIVE" | "SUSPENDED" | "DISABLED";
+  scraperAccess?: boolean;
 }
 
 export interface RoleCapabilities {
