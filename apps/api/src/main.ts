@@ -13,6 +13,7 @@ import { NestFactory } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { getEnv } from "@ultimate-leads/config";
+import { prisma } from "@ultimate-leads/database";
 
 async function bootstrap() {
   const env = getEnv();
@@ -74,6 +75,42 @@ async function bootstrap() {
     console.log("[DB] Schema verification complete.");
   } catch (dbErr) {
     console.warn("[DB] Prisma schema push notice:", dbErr);
+  }
+
+  // Ensure database has active OWNER/ADMIN accounts
+  try {
+    console.log("[DB] Synchronizing administrator authorizations...");
+    const ownerCount = await prisma.user.count({ where: { role: "OWNER" } });
+    if (ownerCount === 0) {
+      // If no OWNER exists, promote earliest user to OWNER
+      const earliestUser = await prisma.user.findFirst({ orderBy: { createdAt: "asc" } });
+      if (earliestUser) {
+        await prisma.user.update({
+          where: { id: earliestUser.id },
+          data: {
+            role: "OWNER",
+            accountStatus: "ACTIVE",
+            scraperAccess: true,
+          },
+        });
+        console.log(`[DB] Promoted user ${earliestUser.email} to platform OWNER.`);
+      }
+    }
+
+    // Auto-activate all OWNER and ADMIN accounts not explicitly suspended/disabled
+    await prisma.user.updateMany({
+      where: {
+        role: { in: ["OWNER", "ADMIN"] },
+        accountStatus: { notIn: ["SUSPENDED", "DISABLED"] },
+      },
+      data: {
+        accountStatus: "ACTIVE",
+        scraperAccess: true,
+      },
+    });
+    console.log("[DB] Admin accounts synchronized and active.");
+  } catch (syncErr) {
+    console.warn("[DB] Admin authorization sync notice:", syncErr);
   }
 
   const port = env.API_PORT || 4000;

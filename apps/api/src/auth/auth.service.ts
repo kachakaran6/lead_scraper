@@ -138,6 +138,19 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
+    // If user is OWNER or ADMIN and not suspended/disabled, ensure ACTIVE with scraperAccess
+    let accountStatus = user.accountStatus;
+    let scraperAccess = user.scraperAccess;
+    if (
+      (user.role === "OWNER" || user.role === "ADMIN") &&
+      user.accountStatus !== "SUSPENDED" &&
+      user.accountStatus !== "DISABLED" &&
+      (user.accountStatus !== "ACTIVE" || !user.scraperAccess)
+    ) {
+      accountStatus = "ACTIVE";
+      scraperAccess = true;
+    }
+
     // Successful login: reset failed attempts & update last login
     await prisma.user.update({
       where: { id: user.id },
@@ -145,6 +158,8 @@ export class AuthService {
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: new Date(),
+        accountStatus,
+        scraperAccess,
       },
     });
 
@@ -170,8 +185,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        accountStatus: user.accountStatus,
-        scraperAccess: user.scraperAccess,
+        accountStatus,
+        scraperAccess,
         emailVerified: user.emailVerified,
       },
       token,
@@ -326,6 +341,8 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
+        accountStatus: true,
+        scraperAccess: true,
         emailVerified: true,
         createdAt: true,
         lastLoginAt: true,

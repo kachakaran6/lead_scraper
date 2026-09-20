@@ -91,16 +91,7 @@ export class ScraperAccessGuard implements CanActivate {
       role: dbUser.role,
     };
 
-    // 1. Account must be active
-    if (dbUser.accountStatus === "PENDING") {
-      throw new ForbiddenException({
-        error: "ACCOUNT_PENDING_APPROVAL",
-        code: "ACCOUNT_PENDING_APPROVAL",
-        message:
-          "Your account is currently pending administrator approval. Please contact your administrator.",
-      });
-    }
-
+    // 1. Explicit Suspended / Disabled checks apply to all accounts
     if (dbUser.accountStatus === "SUSPENDED") {
       throw new ForbiddenException({
         error: "ACCOUNT_SUSPENDED",
@@ -119,6 +110,22 @@ export class ScraperAccessGuard implements CanActivate {
       });
     }
 
+    // 2. OWNER and ADMIN roles are platform superusers and automatically authorized
+    const isOwnerOrAdmin = dbUser.role === "OWNER" || dbUser.role === "ADMIN";
+    if (isOwnerOrAdmin) {
+      return true;
+    }
+
+    // 3. For regular users, enforce active approval and scraperAccess
+    if (dbUser.accountStatus === "PENDING") {
+      throw new ForbiddenException({
+        error: "ACCOUNT_PENDING_APPROVAL",
+        code: "ACCOUNT_PENDING_APPROVAL",
+        message:
+          "Your account is currently pending administrator approval. Please contact your administrator.",
+      });
+    }
+
     if (dbUser.accountStatus !== "ACTIVE") {
       throw new ForbiddenException({
         error: "ACCOUNT_INACTIVE",
@@ -127,9 +134,7 @@ export class ScraperAccessGuard implements CanActivate {
       });
     }
 
-    // 2. Scraper access must be explicitly granted (or user is OWNER/ADMIN)
-    const isOwnerOrAdmin = dbUser.role === "OWNER" || dbUser.role === "ADMIN";
-    if (!dbUser.scraperAccess && !isOwnerOrAdmin) {
+    if (!dbUser.scraperAccess) {
       throw new ForbiddenException({
         error: "SCRAPER_ACCESS_REVOKED",
         code: "SCRAPER_ACCESS_REVOKED",

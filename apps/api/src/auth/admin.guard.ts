@@ -72,17 +72,17 @@ export class AdminGuard implements CanActivate {
       });
     }
 
-    if (dbUser.accountStatus !== "ACTIVE") {
-      throw new ForbiddenException({
-        error: "ADMIN_ACCOUNT_INACTIVE",
-        message: `Admin account is currently ${dbUser.accountStatus.toLowerCase()}.`,
-      });
-    }
-
     if (dbUser.role !== "ADMIN" && dbUser.role !== "OWNER") {
       throw new ForbiddenException({
         error: "FORBIDDEN",
         message: "Administrative privileges required to access this resource.",
+      });
+    }
+
+    if (dbUser.accountStatus === "SUSPENDED" || dbUser.accountStatus === "DISABLED") {
+      throw new ForbiddenException({
+        error: "ADMIN_ACCOUNT_INACTIVE",
+        message: `Admin account is currently ${dbUser.accountStatus.toLowerCase()}.`,
       });
     }
 
