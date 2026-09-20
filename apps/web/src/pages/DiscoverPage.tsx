@@ -216,10 +216,13 @@ export const DiscoverPage: React.FC = () => {
     };
 
     try {
-      if (autopilotStatus?.profile?.id) {
-        await leadEngineApi.updateAutopilotProfile(autopilotStatus.profile.id, payload);
+      let targetProfileId = autopilotStatus?.profile?.id;
+      if (targetProfileId) {
+        await leadEngineApi.updateAutopilotProfile(targetProfileId, payload);
+        await leadEngineApi.reseedAutopilotProfile(targetProfileId);
       } else {
-        await leadEngineApi.createAutopilotProfile(payload);
+        const created = await leadEngineApi.createAutopilotProfile(payload);
+        targetProfileId = created?.id;
       }
       setShowConfigModal(false);
       await fetchAutopilotData();

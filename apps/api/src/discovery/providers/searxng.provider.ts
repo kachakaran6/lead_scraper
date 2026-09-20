@@ -27,8 +27,10 @@ export class SearxngProvider implements BusinessDataProvider {
 
   async search(params: DiscoverySearchParams): Promise<DiscoveredLeadData[]> {
     const base = this.getBaseUrl();
-    const loc = params.location || [params.cityName, params.stateCode, params.countryCode].filter(Boolean).join(", ");
-    const searchQuery = loc ? `"${params.query}" "${loc}"` : params.query;
+    const cleanCity = params.cityName || params.location?.split(",")[0]?.trim() || "";
+    const cleanState = params.stateCode || "";
+    const locParts = [cleanCity, cleanState, params.countryCode].filter(Boolean).join(" ");
+    const searchQuery = locParts ? `${params.query} ${locParts}` : params.query;
 
     try {
       const response = await axios.get(`${base}/search`, {

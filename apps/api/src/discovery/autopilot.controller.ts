@@ -91,6 +91,11 @@ export class AutopilotController {
     });
   }
 
+  @Post("profiles/:id/reseed")
+  async reseedProfile(@Param("id") id: string) {
+    return this.autopilotService.reseedProfile(id);
+  }
+
   @Post("trigger")
   async triggerCycle(@Body() body: { profileId?: string }) {
     return this.autopilotService.runAutopilotCycle(body.profileId);

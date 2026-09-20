@@ -54,13 +54,103 @@ const TERRITORY_SEEDS: Record<
   "United States": {
     bounds: { minLat: 24.5, maxLat: 49.38, minLon: -125.0, maxLon: -66.93 },
     cities: [
-      { name: "New York", lat: 40.7128, lon: -74.006, state: "New York" },
+      // Colorado
+      { name: "Denver", lat: 39.7392, lon: -104.9903, state: "Colorado" },
+      { name: "Colorado Springs", lat: 38.8339, lon: -104.8214, state: "Colorado" },
+      { name: "Aurora", lat: 39.7294, lon: -104.8319, state: "Colorado" },
+      { name: "Boulder", lat: 40.015, lon: -105.2705, state: "Colorado" },
+      { name: "Fort Collins", lat: 40.5853, lon: -105.0844, state: "Colorado" },
+      { name: "Lakewood", lat: 39.7047, lon: -105.0814, state: "Colorado" },
+
+      // California
       { name: "Los Angeles", lat: 34.0522, lon: -118.2437, state: "California" },
-      { name: "Chicago", lat: 41.8781, lon: -87.6298, state: "Illinois" },
-      { name: "Houston", lat: 29.7604, lon: -95.3698, state: "Texas" },
-      { name: "Miami", lat: 25.7617, lon: -80.1918, state: "Florida" },
-      { name: "Dallas", lat: 32.7767, lon: -96.797, state: "Texas" },
+      { name: "San Diego", lat: 32.7157, lon: -117.1611, state: "California" },
       { name: "San Francisco", lat: 37.7749, lon: -122.4194, state: "California" },
+      { name: "San Jose", lat: 37.3382, lon: -121.8863, state: "California" },
+      { name: "Irvine", lat: 33.6846, lon: -117.8265, state: "California" },
+      { name: "Newport Beach", lat: 33.6189, lon: -117.9298, state: "California" },
+      { name: "Sacramento", lat: 38.5816, lon: -121.4944, state: "California" },
+      { name: "Long Beach", lat: 33.7701, lon: -118.1937, state: "California" },
+      { name: "Oakland", lat: 37.8044, lon: -122.2712, state: "California" },
+      { name: "Anaheim", lat: 33.8366, lon: -117.9143, state: "California" },
+      { name: "Beverly Hills", lat: 34.0736, lon: -118.4004, state: "California" },
+
+      // Texas
+      { name: "Austin", lat: 30.2672, lon: -97.7431, state: "Texas" },
+      { name: "Dallas", lat: 32.7767, lon: -96.797, state: "Texas" },
+      { name: "Houston", lat: 29.7604, lon: -95.3698, state: "Texas" },
+      { name: "San Antonio", lat: 29.4241, lon: -98.4936, state: "Texas" },
+      { name: "Fort Worth", lat: 32.7555, lon: -97.3308, state: "Texas" },
+      { name: "Plano", lat: 33.0198, lon: -96.6989, state: "Texas" },
+
+      // Florida
+      { name: "Miami", lat: 25.7617, lon: -80.1918, state: "Florida" },
+      { name: "Orlando", lat: 28.5383, lon: -81.3792, state: "Florida" },
+      { name: "Tampa", lat: 27.9506, lon: -82.4572, state: "Florida" },
+      { name: "Jacksonville", lat: 30.3322, lon: -81.6557, state: "Florida" },
+      { name: "Fort Lauderdale", lat: 26.1224, lon: -80.1373, state: "Florida" },
+
+      // New York
+      { name: "New York", lat: 40.7128, lon: -74.006, state: "New York" },
+      { name: "New York City", lat: 40.7128, lon: -74.006, state: "New York" },
+      { name: "Brooklyn", lat: 40.6782, lon: -73.9442, state: "New York" },
+      { name: "Buffalo", lat: 42.8864, lon: -78.8784, state: "New York" },
+
+      // Illinois
+      { name: "Chicago", lat: 41.8781, lon: -87.6298, state: "Illinois" },
+      { name: "Naperville", lat: 41.7508, lon: -88.1535, state: "Illinois" },
+
+      // Washington
+      { name: "Seattle", lat: 47.6062, lon: -122.3321, state: "Washington" },
+      { name: "Bellevue", lat: 47.6101, lon: -122.2015, state: "Washington" },
+      { name: "Spokane", lat: 47.6588, lon: -117.426, state: "Washington" },
+
+      // Massachusetts
+      { name: "Boston", lat: 42.3601, lon: -71.0589, state: "Massachusetts" },
+      { name: "Cambridge", lat: 42.3736, lon: -71.1097, state: "Massachusetts" },
+
+      // Georgia
+      { name: "Atlanta", lat: 33.749, lon: -84.388, state: "Georgia" },
+      { name: "Savannah", lat: 32.0809, lon: -81.0912, state: "Georgia" },
+
+      // Arizona
+      { name: "Phoenix", lat: 33.4484, lon: -112.074, state: "Arizona" },
+      { name: "Scottsdale", lat: 33.4942, lon: -111.9261, state: "Arizona" },
+      { name: "Tucson", lat: 32.2226, lon: -110.9747, state: "Arizona" },
+
+      // North Carolina
+      { name: "Charlotte", lat: 35.2271, lon: -80.8431, state: "North Carolina" },
+      { name: "Raleigh", lat: 35.7796, lon: -78.6382, state: "North Carolina" },
+
+      // New Jersey
+      { name: "Newark", lat: 40.7357, lon: -74.1724, state: "New Jersey" },
+      { name: "Jersey City", lat: 40.7178, lon: -74.0431, state: "New Jersey" },
+
+      // Virginia
+      { name: "Virginia Beach", lat: 36.8529, lon: -75.978, state: "Virginia" },
+      { name: "Richmond", lat: 37.5407, lon: -77.436, state: "Virginia" },
+
+      // Pennsylvania
+      { name: "Philadelphia", lat: 39.9526, lon: -75.1652, state: "Pennsylvania" },
+      { name: "Pittsburgh", lat: 40.4406, lon: -79.9959, state: "Pennsylvania" },
+
+      // Ohio
+      { name: "Columbus", lat: 39.9612, lon: -82.9988, state: "Ohio" },
+      { name: "Cleveland", lat: 41.4993, lon: -81.6944, state: "Ohio" },
+
+      // Michigan
+      { name: "Detroit", lat: 42.3314, lon: -83.0458, state: "Michigan" },
+
+      // Nevada
+      { name: "Las Vegas", lat: 36.1699, lon: -115.1398, state: "Nevada" },
+      { name: "Reno", lat: 39.5296, lon: -119.8138, state: "Nevada" },
+
+      // Oregon
+      { name: "Portland", lat: 45.5152, lon: -122.6784, state: "Oregon" },
+
+      // Tennessee
+      { name: "Nashville", lat: 36.1627, lon: -86.7816, state: "Tennessee" },
+      { name: "Memphis", lat: 35.1495, lon: -90.049, state: "Tennessee" },
     ],
   },
   "United Kingdom": {
@@ -74,6 +164,61 @@ const TERRITORY_SEEDS: Record<
     ],
   },
 };
+
+const US_STATE_NAMES = new Set([
+  "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut",
+  "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa",
+  "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan",
+  "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire",
+  "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio",
+  "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota",
+  "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia",
+  "wisconsin", "wyoming", "district of columbia"
+]);
+
+const USA_ALIASES = new Set(["usa", "us", "united states", "united states of america", "america"]);
+
+function normalizeTerritoryTarget(countryInput: string): { country: string; inferredRegion?: string } {
+  const clean = (countryInput || "").trim();
+  const lower = clean.toLowerCase();
+
+  if (US_STATE_NAMES.has(lower)) {
+    // Capitalize state name
+    const stateName = clean
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+    return { country: "United States", inferredRegion: stateName };
+  }
+
+  if (USA_ALIASES.has(lower)) {
+    return { country: "United States" };
+  }
+
+  if (lower === "uae" || lower === "united arab emirates" || lower === "dubai") {
+    return { country: "UAE" };
+  }
+
+  if (lower === "uk" || lower === "united kingdom" || lower === "great britain" || lower === "england") {
+    return { country: "United Kingdom" };
+  }
+
+  if (lower === "india" || lower === "bharat") {
+    return { country: "India" };
+  }
+
+  if (TERRITORY_SEEDS[clean]) {
+    return { country: clean };
+  }
+
+  for (const key of Object.keys(TERRITORY_SEEDS)) {
+    if (key.toLowerCase() === lower) {
+      return { country: key };
+    }
+  }
+
+  return { country: clean };
+}
 
 @Injectable()
 export class AutopilotService implements OnModuleInit, OnModuleDestroy {
@@ -92,6 +237,8 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     this.logger.log("Autopilot 24/7 autonomous discovery loop initiated.");
+    // Reset provider health so any past timeout cooldowns are cleared
+    this.healthService.resetProviderHealth().catch(() => {});
     // Initial discovery tick 5s after startup
     setTimeout(() => this.runScheduledAutopilot(), 5000);
     // Recurring autonomous exploration tick every 35s
@@ -184,8 +331,23 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
    * Seeds the recursive territorial discovery queue and grid cells
    */
   async seedGeographicQueue(profileId: string, countries: string[], targetRegions?: string[]) {
-    for (const country of countries) {
-      const territory = TERRITORY_SEEDS[country] || TERRITORY_SEEDS["India"];
+    // Normalize countries and gather inferred regions (e.g. US States)
+    const normalizedCountryMap = new Map<string, Set<string>>();
+
+    for (const rawCountry of (countries && countries.length > 0 ? countries : ["United States"])) {
+      const norm = normalizeTerritoryTarget(rawCountry);
+      if (!normalizedCountryMap.has(norm.country)) {
+        normalizedCountryMap.set(norm.country, new Set<string>());
+      }
+      if (norm.inferredRegion) {
+        normalizedCountryMap.get(norm.country)!.add(norm.inferredRegion.toLowerCase());
+      }
+    }
+
+    const explicitRegions = (targetRegions || []).map((r) => r.trim().toLowerCase()).filter(Boolean);
+
+    for (const [country, stateSet] of normalizedCountryMap.entries()) {
+      const territory = TERRITORY_SEEDS[country] || TERRITORY_SEEDS["United States"];
       const bounds = territory.bounds;
 
       // Create country level region
@@ -200,22 +362,33 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
         },
       });
 
-      // Filter cities matching targetRegions if specified
+      // Filter cities matching targetRegions or inferred states
+      const filterTargets = [...Array.from(stateSet), ...explicitRegions];
+
       let matchedCities = territory.cities;
-      if (targetRegions && targetRegions.length > 0) {
-        const regLower = targetRegions.map((r) => r.toLowerCase());
-        matchedCities = territory.cities.filter(
-          (c) =>
-            regLower.includes(c.state.toLowerCase()) ||
-            regLower.includes(c.name.toLowerCase())
+      if (filterTargets.length > 0) {
+        const filtered = territory.cities.filter((c) =>
+          filterTargets.some((target) => {
+            const stateLower = c.state.toLowerCase();
+            const cityLower = c.name.toLowerCase();
+            return (
+              stateLower === target ||
+              cityLower === target ||
+              cityLower.includes(target) ||
+              target.includes(cityLower)
+            );
+          })
         );
-        if (matchedCities.length === 0) {
-          matchedCities = territory.cities;
+        if (filtered.length > 0) {
+          matchedCities = filtered;
         }
       }
 
+      // Limit to 25 cities max per country to maintain optimal cell queue
+      const citiesToSeed = matchedCities.slice(0, 25);
+
       // Seed city regions and micro-grid cells
-      for (const city of matchedCities) {
+      for (const city of citiesToSeed) {
         const cityBounds: GeoBounds = {
           minLat: city.lat - 0.15,
           maxLat: city.lat + 0.15,
@@ -306,7 +479,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
     }
 
     // Pick next pending cell or city region to explore
-    const cell = await prisma.discoveryCell.findFirst({
+    let cell = await prisma.discoveryCell.findFirst({
       where: {
         region: { profileId: profile.id },
         status: { in: ["PENDING", "COOLDOWN"] },
@@ -315,24 +488,62 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       orderBy: { createdAt: "asc" },
     });
 
-    // Determine target location & niche
-    let targetLocation = "Ahmedabad, Gujarat, India";
-    let targetCity = "Ahmedabad";
-    let targetCountry = "India";
-    let targetBounds: GeoBounds | undefined;
-
-    if (cell) {
-      targetLocation = [cell.region.city, cell.region.state, cell.region.country]
-        .filter(Boolean)
-        .join(", ");
-      targetCity = cell.region.city || "Ahmedabad";
-      targetCountry = cell.region.country || "India";
-      targetBounds = cell.bounds as any;
-      await prisma.discoveryCell.update({
-        where: { id: cell.id },
-        data: { status: "PROCESSING", lastScannedAt: new Date() },
+    if (!cell) {
+      // Check if all cells are completed - if so, recycle completed cells to COOLDOWN so discovery runs 24/7 continuously
+      const completedCount = await prisma.discoveryCell.count({
+        where: { region: { profileId: profile.id }, status: "COMPLETED" },
       });
+      if (completedCount > 0) {
+        await prisma.discoveryCell.updateMany({
+          where: { region: { profileId: profile.id }, status: "COMPLETED" },
+          data: { status: "COOLDOWN" },
+        });
+        cell = await prisma.discoveryCell.findFirst({
+          where: {
+            region: { profileId: profile.id },
+            status: { in: ["PENDING", "COOLDOWN"] },
+          },
+          include: { region: true },
+          orderBy: { lastScannedAt: "asc" },
+        });
+      } else {
+        // No cells exist at all! Re-seed queue immediately
+        const countries = (Array.isArray(profile.targetCountries) && profile.targetCountries.length > 0)
+          ? (profile.targetCountries as string[])
+          : ["United States"];
+        const regions = Array.isArray(profile.targetRegions) ? (profile.targetRegions as string[]) : [];
+        await this.seedGeographicQueue(profile.id, countries, regions);
+        cell = await prisma.discoveryCell.findFirst({
+          where: {
+            region: { profileId: profile.id },
+            status: { in: ["PENDING", "COOLDOWN"] },
+          },
+          include: { region: true },
+          orderBy: { createdAt: "asc" },
+        });
+      }
     }
+
+    if (!cell) {
+      return {
+        processed: false,
+        discovered: 0,
+        duplicates: 0,
+        message: "No cells ready for exploration in active profile.",
+      };
+    }
+
+    // Determine target location & niche
+    const targetCity = cell.region.city || "Denver";
+    const targetState = cell.region.state || "";
+    const targetCountry = cell.region.country || "United States";
+    const targetLocation = [targetCity, targetState, targetCountry].filter(Boolean).join(", ");
+    const targetBounds = cell.bounds as any;
+
+    await prisma.discoveryCell.update({
+      where: { id: cell.id },
+      data: { status: "PROCESSING", lastScannedAt: new Date() },
+    });
 
     const niches = Array.isArray(profile.targetNiches) ? (profile.targetNiches as string[]) : ["Dentist"];
     const targetNiche = niches[Math.floor(Math.random() * niches.length)] || "Dentist";
@@ -348,7 +559,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
         currentCountry: targetCountry,
         currentRegion: targetCity,
         currentNiche: queryTerm,
-        currentCellId: cell?.geoCellId || null,
+        currentCellId: cell.geoCellId,
         lastRunAt: new Date(),
       },
     });
@@ -366,6 +577,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
           location: targetLocation,
           cityName: targetCity,
           countryCode: targetCountry,
+          bounds: targetBounds,
           limit: profile.resourceBudget === "HIGH" ? 50 : 25,
         });
         if (osmResults.length > 0) {
@@ -381,8 +593,9 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
     // 2. Try SearXNG Metasearch if OSM yielded few results
     if (rawResults.length < 5 && (await this.healthService.canQuery("SEARXNG"))) {
       try {
+        const searxQuery = `${queryTerm} in ${targetCity} ${targetState}`.trim();
         const searxResults = await this.searxng.search({
-          query: `${queryTerm} ${targetCity}`,
+          query: searxQuery,
           location: targetLocation,
           cityName: targetCity,
           countryCode: targetCountry,
@@ -525,13 +738,23 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
    * Returns complete telemetry and status for Autopilot Dashboard
    */
   async getAutopilotStatus(userId: string) {
-    const profile = await prisma.discoveryProfile.findFirst({
+    let profile = await prisma.discoveryProfile.findFirst({
       where: { userId },
       orderBy: { updatedAt: "desc" },
       include: {
         regions: { take: 5, orderBy: { updatedAt: "desc" } },
       },
     });
+
+    if (!profile) {
+      profile = await prisma.discoveryProfile.findFirst({
+        where: { status: "RUNNING" },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          regions: { take: 5, orderBy: { updatedAt: "desc" } },
+        },
+      });
+    }
 
     const totalCells = profile
       ? await prisma.discoveryCell.count({ where: { region: { profileId: profile.id } } })
@@ -684,5 +907,69 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
     }
 
     return digest;
+  }
+
+  /**
+   * Cleans existing regions/cells for a profile and reseeds with normalized territories
+   */
+  async reseedProfile(profileId: string) {
+    const profile = await prisma.discoveryProfile.findUnique({
+      where: { id: profileId },
+    });
+    if (!profile) throw new Error("Profile not found");
+
+    this.logger.log(`Reseeding Autopilot profile [${profile.name}] with clean normalized territories...`);
+
+    // 1. Delete old cells and regions
+    await prisma.discoveryCell.deleteMany({
+      where: { region: { profileId } },
+    });
+    await prisma.discoveryRegion.deleteMany({
+      where: { profileId },
+    });
+
+    // Reset provider health so OVERPASS or SEARXNG are immediately ACTIVE
+    await this.healthService.resetProviderHealth();
+
+    // 2. Normalize countries and regions
+    const rawCountries = Array.isArray(profile.targetCountries) ? (profile.targetCountries as string[]) : ["United States"];
+    const rawRegions = Array.isArray(profile.targetRegions) ? (profile.targetRegions as string[]) : [];
+
+    const normalizedCountries: string[] = [];
+    const normalizedRegions: string[] = [...rawRegions];
+
+    for (const c of rawCountries) {
+      const norm = normalizeTerritoryTarget(c);
+      if (!normalizedCountries.includes(norm.country)) {
+        normalizedCountries.push(norm.country);
+      }
+      if (norm.inferredRegion && !normalizedRegions.includes(norm.inferredRegion)) {
+        normalizedRegions.push(norm.inferredRegion);
+      }
+    }
+
+    if (normalizedCountries.length === 0) {
+      normalizedCountries.push("United States");
+    }
+
+    // Update profile with clean normalized countries and regions
+    await prisma.discoveryProfile.update({
+      where: { id: profileId },
+      data: {
+        targetCountries: normalizedCountries,
+        targetRegions: normalizedRegions,
+        currentCountry: normalizedCountries[0] || "United States",
+        currentRegion: normalizedRegions[0] || "Denver",
+        status: "RUNNING",
+      },
+    });
+
+    // 3. Seed new geographic queue
+    await this.seedGeographicQueue(profileId, normalizedCountries, normalizedRegions);
+
+    this.logger.log(`Successfully reseeded Autopilot profile [${profile.name}]. Triggering first discovery cycle...`);
+
+    // 4. Trigger one cycle right away
+    return this.runAutopilotCycle(profileId);
   }
 }

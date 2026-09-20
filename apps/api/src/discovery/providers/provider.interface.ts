@@ -29,6 +29,12 @@ export interface DiscoverySearchParams {
   countryCode?: string;
   radiusKm?: number;
   limit?: number;
+  bounds?: {
+    minLat: number;
+    maxLat: number;
+    minLon: number;
+    maxLon: number;
+  };
 }
 
 export interface BusinessDataProvider {

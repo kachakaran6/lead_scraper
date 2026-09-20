@@ -4,6 +4,40 @@ import { prisma } from "@ultimate-leads/database";
 @Injectable()
 export class ProviderHealthService {
   /**
+   * Resets provider health to ACTIVE and clears cooldowns
+   */
+  async resetProviderHealth(provider?: string) {
+    try {
+      if (provider) {
+        await prisma.providerHealth.upsert({
+          where: { provider },
+          create: {
+            provider,
+            status: "ACTIVE",
+            consecutiveFailures: 0,
+            cooldownUntil: null,
+          },
+          update: {
+            status: "ACTIVE",
+            consecutiveFailures: 0,
+            cooldownUntil: null,
+          },
+        });
+      } else {
+        await prisma.providerHealth.updateMany({
+          data: {
+            status: "ACTIVE",
+            consecutiveFailures: 0,
+            cooldownUntil: null,
+          },
+        });
+      }
+    } catch (err: any) {
+      console.warn("Failed to reset provider health:", err?.message);
+    }
+  }
+
+  /**
    * Checks if provider is healthy and not in cooldown
    */
   async canQuery(provider: string): Promise<boolean> {

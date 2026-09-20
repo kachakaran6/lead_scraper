@@ -316,11 +316,15 @@ export function expandNicheQuery(
   const normalized = rawNiche.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
   let matchedKey: string | undefined;
+  const rawLower = rawNiche.toLowerCase().trim();
+
   for (const [key, def] of Object.entries(NICHE_TAXONOMY)) {
     if (
       key === normalized ||
-      def.canonical.toLowerCase().includes(rawNiche.toLowerCase()) ||
-      def.aliases.some((a) => a.toLowerCase().includes(rawNiche.toLowerCase()))
+      def.canonical.toLowerCase().includes(rawLower) ||
+      rawLower.includes(def.canonical.toLowerCase()) ||
+      def.aliases.some((a) => a.toLowerCase().includes(rawLower) || rawLower.includes(a.toLowerCase())) ||
+      def.subSpecialties.some((s) => s.toLowerCase().includes(rawLower) || rawLower.includes(s.toLowerCase()))
     ) {
       matchedKey = key;
       break;
@@ -348,7 +352,14 @@ export function expandNicheQuery(
   const def = NICHE_TAXONOMY[matchedKey];
   const variantsSet = new Set<string>();
 
+  // If specific niche requested (e.g. "Implant Dentist"), place it first, then canonical
+  const titleCaseNiche = rawNiche
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  variantsSet.add(titleCaseNiche);
   variantsSet.add(def.canonical);
+
   if (includeSubSpecialties) {
     for (const sub of def.subSpecialties.slice(0, 3)) {
       variantsSet.add(sub);

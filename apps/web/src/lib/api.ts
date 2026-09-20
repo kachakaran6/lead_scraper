@@ -304,6 +304,11 @@ export const leadEngineApi = {
     return res.data;
   },
 
+  async reseedAutopilotProfile(profileId: string) {
+    const res = await api.post(`/autopilot/profiles/${profileId}/reseed`);
+    return res.data;
+  },
+
   async triggerAutopilotRun(profileId?: string) {
     const res = await api.post("/autopilot/trigger", { profileId });
     return res.data;
