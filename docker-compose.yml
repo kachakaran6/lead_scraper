@@ -197,18 +197,6 @@ services:
       - "caddy=https://leadsadmin.kachakaran.me, http://leadsadmin.kachakaran.me, https://leadsadmin.kachakaran.tech, http://leadsadmin.kachakaran.tech, http://leadsadmin.141.148.214.132.sslip.io"
       - "caddy.reverse_proxy={{upstreams 80}}"
       - "caddy.networks=coolify"
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.gzip.compress=true"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.leadsadmin-http.entryPoints=http"
-      - "traefik.http.routers.leadsadmin-http.middlewares=redirect-to-https"
-      - "traefik.http.routers.leadsadmin-http.rule=Host(`leadsadmin.kachakaran.me`)"
-      - "traefik.http.routers.leadsadmin-https.entryPoints=https"
-      - "traefik.http.routers.leadsadmin-https.middlewares=gzip"
-      - "traefik.http.routers.leadsadmin-https.rule=Host(`leadsadmin.kachakaran.me`)"
-      - "traefik.http.routers.leadsadmin-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.leadsadmin-https.tls=true"
-      - "traefik.http.services.leadsadmin.loadbalancer.server.port=80"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 15s
