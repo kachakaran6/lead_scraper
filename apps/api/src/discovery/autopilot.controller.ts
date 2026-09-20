@@ -50,10 +50,31 @@ export class AutopilotController {
 
   @Patch("profiles/:id")
   async updateProfile(@Param("id") id: string, @Body() body: any) {
-    return prisma.discoveryProfile.update({
+    const dataToUpdate: any = {};
+    if (body.name !== undefined) dataToUpdate.name = body.name;
+    if (body.targetCountries !== undefined) dataToUpdate.targetCountries = body.targetCountries;
+    if (body.targetRegions !== undefined) dataToUpdate.targetRegions = body.targetRegions;
+    if (body.targetCities !== undefined) dataToUpdate.targetCities = body.targetCities;
+    if (body.targetNiches !== undefined) dataToUpdate.targetNiches = body.targetNiches;
+    if (body.opportunityFilters !== undefined) dataToUpdate.opportunityFilters = body.opportunityFilters;
+    if (body.dailyTarget !== undefined) dataToUpdate.dailyTarget = Number(body.dailyTarget);
+    if (body.resourceBudget !== undefined) dataToUpdate.resourceBudget = body.resourceBudget;
+    if (body.aiProcessingLevel !== undefined) dataToUpdate.aiProcessingLevel = body.aiProcessingLevel;
+    if (body.status !== undefined) dataToUpdate.status = body.status;
+
+    const updated = await prisma.discoveryProfile.update({
       where: { id },
-      data: body,
+      data: dataToUpdate,
     });
+
+    // If countries or regions updated, seed geographic queue for new territories
+    if (body.targetCountries?.length || body.targetRegions?.length) {
+      this.autopilotService
+        .seedGeographicQueue(id, updated.targetCountries, updated.targetRegions)
+        .catch(() => {});
+    }
+
+    return updated;
   }
 
   @Post("profiles/:id/toggle")

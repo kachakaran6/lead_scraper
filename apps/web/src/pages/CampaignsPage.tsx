@@ -7,6 +7,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
@@ -24,8 +25,7 @@ export const CampaignsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await leadEngineApi.getCampaigns();
-      const items = Array.isArray(data) ? data : (data as any)?.items || [];
-      setCampaigns(items);
+      setCampaigns(data || []);
     } catch (err) {
       console.error("Failed to load campaigns", err);
     } finally {
@@ -39,13 +39,14 @@ export const CampaignsPage: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !query.trim()) return;
+    if (!name.trim()) return;
+
     try {
       await leadEngineApi.createCampaign({
-        name,
-        query,
-        location,
-        radiusKm: Number(radiusKm) || 15,
+        name: name.trim(),
+        query: query.trim(),
+        location: location.trim(),
+        radiusKm: Number(radiusKm) || 20,
       });
       setIsModalOpen(false);
       setName("");
@@ -76,24 +77,21 @@ export const CampaignsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <h1 className="text-h1 font-semibold text-text-primary tracking-tight">Scraping Campaigns</h1>
-          <p className="text-body text-text-secondary mt-1">
-            Autonomous geo-targeted crawlers, real-time worker bot queues, and lead extraction schedules.
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 text-xs font-medium self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Scraping Campaign</span>
-        </Button>
-      </div>
+      <PageHeader
+        title="Scraping Campaigns"
+        description="Autonomous geo-targeted crawlers, real-time worker bot queues, and lead extraction schedules."
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-white"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Scraping Campaign</span>
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="py-24 text-center text-text-secondary">

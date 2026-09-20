@@ -4,6 +4,7 @@ import {
   Plus,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
@@ -23,14 +24,13 @@ export const DealsPage: React.FC = () => {
     try {
       const [dealsData, statsData, leadsData] = await Promise.all([
         leadEngineApi.getDeals(),
-        leadEngineApi.getDashboardKpis(),
-        leadEngineApi.getLeads({ limit: 20 }),
+        leadEngineApi.getDashboardKpis().catch(() => null),
+        leadEngineApi.getLeads({ limit: 50 }).catch(() => ({ items: [] })),
       ]);
-      setDeals(dealsData || []);
-      setStages(statsData?.charts?.pipeline || []);
+      setDeals(Array.isArray(dealsData) ? dealsData : (dealsData as any)?.items || []);
       setBusinesses(leadsData?.items || []);
     } catch (err) {
-      console.error("Failed to load deals", err);
+      console.error("Failed to load deals pipeline:", err);
     } finally {
       setIsLoading(false);
     }
@@ -46,16 +46,40 @@ export const DealsPage: React.FC = () => {
 
     try {
       await leadEngineApi.createDeal({
-        title: newDealTitle,
-        value: Number(newDealValue) || 0,
+        title: newDealTitle.trim(),
+        value: Number(newDealValue) || 2000,
         businessId: newDealBusinessId || undefined,
-        stageId: stages[0]?.id || undefined,
+        stage: "NEW",
       });
       setIsNewDealOpen(false);
       setNewDealTitle("");
+      setNewDealValue("2000");
+      setNewDealBusinessId("");
       fetchData();
     } catch (err) {
-      console.error("Failed to create deal", err);
+      console.error("Failed to create deal:", err);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, stageName: string) => {
+    e.preventDefault();
+    const dealId = e.dataTransfer.getData("text/plain");
+    if (!dealId) return;
+
+    // Optimistic UI update
+    setDeals((prev) =>
+      prev.map((d) => (d.id === dealId ? { ...d, stage: stageName } : d))
+    );
+
+    try {
+      await leadEngineApi.updateDealStage(dealId, stageName);
+    } catch (err) {
+      console.error("Failed to update deal stage:", err);
+      fetchData();
     }
   };
 
@@ -70,11 +94,10 @@ export const DealsPage: React.FC = () => {
 
   const totalPipeline = deals.reduce((acc, d) => acc + (d.value || 0), 0);
 
-  // Group deals by stage
-  const stagesToRender = stages.length > 0
+  const pipelineStages = stages.length > 0
     ? stages
     : [
-        { id: "s1", name: "NEW", color: "var(--text-tertiary)" },
+        { id: "s1", name: "NEW", color: "var(--accent)" },
         { id: "s2", name: "QUALIFIED", color: "var(--accent)" },
         { id: "s3", name: "CONTACTED", color: "var(--accent)" },
         { id: "s4", name: "MEETING", color: "var(--warning)" },
@@ -82,36 +105,35 @@ export const DealsPage: React.FC = () => {
         { id: "s6", name: "WON", color: "var(--success)" },
       ];
 
+  const stagesToRender = pipelineStages;
+
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-        <div>
-          <h1 className="text-h1 font-semibold text-text-primary tracking-tight">Deals Pipeline</h1>
-          <p className="text-body text-text-secondary mt-1">
-            Track deal conversions, manage stage progression, and monitor active revenue pipeline.
-          </p>
-        </div>
+      <PageHeader
+        title="Deals Pipeline"
+        description="Track deal conversions, manage stage progression, and monitor active revenue pipeline."
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs font-mono text-text-secondary">
+              <span className="text-accent font-bold tabular-nums text-sm">
+                ${totalPipeline.toLocaleString()}
+              </span>
+              <span>Total Pipeline</span>
+            </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs font-mono text-text-secondary">
-            <span className="text-accent font-bold tabular-nums text-sm">
-              ${totalPipeline.toLocaleString()}
-            </span>
-            <span>Total Pipeline</span>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsNewDealOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-white"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Custom Deal</span>
+            </Button>
           </div>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setIsNewDealOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Custom Deal</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading ? (
         <div className="py-24 text-center text-text-secondary">

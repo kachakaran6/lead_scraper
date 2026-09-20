@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import {
   Copy,
   Check,
@@ -6,6 +6,7 @@ import {
   Info,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { Input } from "../components/ui/Input";
 
 export const OutreachPage: React.FC = () => {
@@ -23,23 +24,20 @@ I was looking at the top-rated dental clinics in ${city} and noticed your stella
 
 However, when searching on Google, I couldn't find a direct official website for ${businessName}. Right now, patients searching for emergency appointments or cosmetic dentistry are landing on general aggregator directories instead of booking directly with your clinic.
 
-We specialize in launching high-converting, mobile-first websites with 1-click WhatsApp patient appointment booking for healthcare practices.
+We designed a modern, high-converting clinic website template customized specifically for dental practices in ${city}. It features direct WhatsApp booking, Google Maps integration, and mobile appointment scheduling.
 
-We built a quick 60-second interactive preview for ${businessName}. Would you be open to checking it out this week?
+Would you be open to a 2-minute screenshot preview of what your clinic's site would look like?
 
 Best regards,
-LeadEngine Agency Partner`,
+LeadEngine Growth Team`,
     },
     redesign: {
-      subject: `Technical audit findings for ${businessName}'s website`,
+      subject: `Modernizing the patient experience on ${businessName}'s site`,
       body: `Hi Team at ${businessName},
 
-We ran an automated mobile speed and SEO audit on your current web portal. 
+I visited ${businessName}'s website today while researching healthcare services in ${city}.
 
-We noticed three critical revenue leaks:
-1. Mobile page load is over 2.5 seconds (leading to 40% bounce rate before seeing your phone number)
-2. Missing structured Schema.org MedicalClinic tags, causing you to lose top Google Maps 3-Pack rankings in ${city}
-3. No direct WhatsApp 1-tap booking widget for mobile visitors
+Your clinic provides great care, but the current website is missing critical mobile-friendly booking CTAs and takes over 4 seconds to load on 4G connections. With 78% of local patients browsing on smartphones, this directly impacts daily consultation inquiries.
 
 We modernized clinics in your category, reducing bounce rates by 60% and increasing booked inquiries within 14 days.
 
@@ -74,12 +72,10 @@ Would you like to test our 1-minute live demo on your smartphone?`,
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="pb-2">
-        <h1 className="text-h1 font-semibold text-text-primary tracking-tight">Outreach & AI Studio</h1>
-        <p className="text-body text-text-secondary mt-1">
-          Generate tailored cold email sequences, WhatsApp consultation hooks, and technical audit pitch decks.
-        </p>
-      </div>
+      <PageHeader
+        title="Outreach & AI Studio"
+        description="Generate tailored cold email sequences, WhatsApp consultation hooks, and technical audit pitch decks."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Controls */}

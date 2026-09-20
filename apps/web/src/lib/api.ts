@@ -167,6 +167,11 @@ export const leadEngineApi = {
     return res.data;
   },
 
+  async auditWebsite(url: string) {
+    const res = await api.post(`/websites/audit`, { url });
+    return res.data;
+  },
+
   // Scoring
   async getScoringRules() {
     const res = await api.get("/scoring/rules");
@@ -286,6 +291,11 @@ export const leadEngineApi = {
     aiProcessingLevel?: string;
   }) {
     const res = await api.post("/autopilot/profiles", data);
+    return res.data;
+  },
+
+  async updateAutopilotProfile(id: string, data: any) {
+    const res = await api.patch(`/autopilot/profiles/${id}`, data);
     return res.data;
   },
 

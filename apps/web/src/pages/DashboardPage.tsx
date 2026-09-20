@@ -7,6 +7,8 @@ import { leadEngineApi } from "../lib/api";
 import { Business } from "../types";
 import { Bot, Zap, Play, Pause, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
 
+import { PageHeader } from "../components/ui/PageHeader";
+
 export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [topLeads, setTopLeads] = useState<Business[]>([]);
@@ -52,6 +54,27 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        title="Dashboard Overview"
+        description="Real-time pipeline analytics, lead signals, and conversion metrics."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <Link to="/discover">
+              <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Launch Discovery</span>
+              </Button>
+            </Link>
+            <Link to="/leads">
+              <Button variant="secondary" size="sm" className="text-xs font-medium">
+                View All Leads
+              </Button>
+            </Link>
+          </div>
+        }
+      />
+
       {/* Autopilot 24/7 Autonomous Discovery Banner */}
       <div className="p-4 rounded-xl bg-gradient-to-r from-bg-surface via-bg-surface to-accent/5 border border-border-subtle shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -76,34 +99,10 @@ export const DashboardPage: React.FC = () => {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
-              <Zap className="w-3.5 h-3.5" />
+            <Button variant="outline" size="sm" className="text-xs font-medium gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-accent" />
               <span>Manage Engine</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
-        <div>
-          <h1 className="text-h1 font-semibold text-text-primary tracking-tight">
-            Dashboard Overview
-          </h1>
-          <p className="text-body-secondary mt-1">
-            Real-time pipeline analytics, lead signals, and conversion metrics
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs font-medium">
-              Launch Discovery
-            </Button>
-          </Link>
-          <Link to="/leads">
-            <Button variant="secondary" size="sm" className="text-xs font-medium">
-              View All Leads
             </Button>
           </Link>
         </div>

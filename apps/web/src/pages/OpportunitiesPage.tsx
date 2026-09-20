@@ -16,12 +16,14 @@ import {
   Zap,
   Target,
   DollarSign,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { leadEngineApi } from "../lib/api";
+import { PageHeader } from "../components/ui/PageHeader";
 
 interface OpportunityItem {
   id: string;
@@ -202,42 +204,42 @@ export const OpportunitiesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
-        <div>
+      {/* Page Header */}
+      <PageHeader
+        title={
           <div className="flex items-center gap-2.5">
-            <h1 className="text-h1 font-semibold text-text-primary tracking-tight">
-              Opportunities & Deal Signals
-            </h1>
-            <span className="text-xs px-2 py-0.5 rounded-md border border-border-subtle bg-bg-surface text-text-secondary font-medium">
-              {opportunities.length} Detected
-            </span>
+            <Sparkles className="w-5 h-5 text-accent" />
+            <span>Opportunities & Deal Signals</span>
           </div>
-          <p className="text-body-secondary mt-1">
-            Service gaps identified from scraped business directories, technical audits, and digital footprints.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`} />
-            <span>{isRefreshing ? "Refreshing..." : "Sync Signals"}</span>
-          </Button>
-
-          <Link to="/discover">
-            <Button size="sm" variant="primary" className="flex items-center gap-1.5 text-xs font-medium">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Scan More Leads</span>
+        }
+        badge={
+          <span className="text-xs px-2.5 py-0.5 rounded-full border border-border-default bg-bg-surface text-text-secondary font-semibold">
+            {opportunities.length} Detected
+          </span>
+        }
+        description="Service gaps identified from scraped business directories, technical audits, and digital footprints."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-accent" : ""}`} />
+              <span>{isRefreshing ? "Refreshing..." : "Sync Signals"}</span>
             </Button>
-          </Link>
-        </div>
-      </div>
+
+            <Link to="/discover">
+              <Button size="sm" variant="primary" className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-white">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Scan More Leads</span>
+              </Button>
+            </Link>
+          </div>
+        }
+      />
 
       {/* KPI Metrics Ribbon */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

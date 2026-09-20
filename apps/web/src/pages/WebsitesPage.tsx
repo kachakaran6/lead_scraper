@@ -15,6 +15,7 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { leadEngineApi } from "../lib/api";
 import { Business } from "../types";
 import { cn } from "../lib/utils";
@@ -24,29 +25,48 @@ export const WebsitesPage: React.FC = () => {
   const [missingWebLeads, setMissingWebLeads] = useState<Business[]>([]);
   const [activeTab, setActiveTab] = useState<"audited" | "missing">("missing");
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [auditTargetUrl, setAuditTargetUrl] = useState("");
+  const [auditError, setAuditError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
+  const fetchData = async () => {
+    try {
+      const [webData, missingData] = await Promise.all([
+        leadEngineApi.getWebsites({ limit: 50 }),
+        leadEngineApi.getLeads({ withoutWebsite: true, limit: 50 }),
+      ]);
+      setWebsites(Array.isArray(webData) ? webData : webData?.items || []);
+      setMissingWebLeads(Array.isArray(missingData) ? missingData : missingData?.items || []);
+    } catch (err) {
+      console.error("Failed to load website audit data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [sitesData, leadsData] = await Promise.all([
-          leadEngineApi.getWebsites().catch(() => []),
-          leadEngineApi.getLeads({ hasWebsite: false, limit: 50 }).catch(() => ({ items: [] })),
-        ]);
-        const sites = Array.isArray(sitesData) ? sitesData : (sitesData as any)?.items || [];
-        setWebsites(sites);
-        setMissingWebLeads(leadsData?.items || []);
-        // If there are crawled websites, default to audited; otherwise missing
-        if (sites.length > 0) setActiveTab("audited");
-      } catch (err) {
-        console.error("Failed to load website audit center", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleRunAdHocAudit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auditTargetUrl.trim()) return;
+
+    setIsAuditing(true);
+    setAuditError(null);
+    try {
+      await leadEngineApi.auditWebsite(auditTargetUrl.trim());
+      setAuditTargetUrl("");
+      await fetchData();
+    } catch (err: any) {
+      console.error("Audit error:", err);
+      setAuditError(err?.response?.data?.message || "Failed to complete audit inspection.");
+    } finally {
+      setIsAuditing(false);
+    }
+  };
 
   const totalSites = websites.length;
   const sslCount = websites.filter((s) => s.hasSsl).length;
@@ -54,27 +74,26 @@ export const WebsitesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary flex items-center gap-2">
+      {/* 1. Page Header */}
+      <PageHeader
+        title={
+          <div className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-accent" />
-            Website Intelligence & Technical Audits
-          </h1>
-          <p className="text-xs text-text-secondary mt-1">
-            Technical inspection records, mobile responsiveness, SSL security, and missing website acquisition targets.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs gap-1.5">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Discover Prospects</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
+            <span>Website Audits</span>
+          </div>
+        }
+        description="Technical inspection records, mobile responsiveness, SSL security, and missing website acquisition targets."
+        actions={
+          <div className="flex items-center gap-2">
+            <Link to="/discover">
+              <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
+                <Plus className="w-3.5 h-3.5" />
+                <span>Discover Prospects</span>
+              </Button>
+            </Link>
+          </div>
+        }
+      />
 
       {/* 2. Overview Metrics Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">

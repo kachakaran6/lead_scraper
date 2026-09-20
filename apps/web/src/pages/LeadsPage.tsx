@@ -21,6 +21,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { api, leadEngineApi } from "../lib/api";
 import { Business } from "../types";
 import { cn } from "../lib/utils";
@@ -129,38 +130,42 @@ export const LeadsPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* 1. Header & Quick Export Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary flex items-center gap-2">
+      {/* 1. Standardized Page Header & Quick Export Actions */}
+      <PageHeader
+        title={
+          <div className="flex items-center gap-2">
             <Building2 className="w-5 h-5 text-accent" />
-            Leads Intelligence Database
-          </h1>
-          <p className="text-xs text-text-secondary mt-1">
-            Browse, filter, and inspect verified commercial prospects harvested from authentic public registries.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport("csv")}
-            isLoading={isExporting}
-            className="text-xs gap-1.5"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </Button>
-
-          <Link to="/discover">
-            <Button variant="primary" size="sm" className="text-xs gap-1.5">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Discover Leads</span>
+            <span>Leads Database</span>
+          </div>
+        }
+        badge={
+          <span className="text-xs px-2.5 py-0.5 rounded-full border border-border-default bg-bg-surface text-text-secondary font-semibold">
+            {leads.length} Records
+          </span>
+        }
+        description="Browse, filter, and inspect verified commercial prospects harvested from authentic public registries."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExport("csv")}
+              isLoading={isExporting}
+              className="text-xs gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
             </Button>
-          </Link>
-        </div>
-      </div>
+
+            <Link to="/discover">
+              <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
+                <Plus className="w-3.5 h-3.5" />
+                <span>Discover Leads</span>
+              </Button>
+            </Link>
+          </div>
+        }
+      />
 
       {/* 2. Omnibar Search & Multi-Attribute Filters Bar */}
       <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-3 shadow-sm">

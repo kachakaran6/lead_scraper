@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { PageHeader } from "../components/ui/PageHeader";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import { useTheme, ThemePalette } from "../lib/theme";
@@ -141,14 +142,10 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="pb-2 border-b border-border-subtle">
-        <h1 className="text-xl sm:text-2xl font-semibold text-text-primary tracking-tight">
-          Platform Settings
-        </h1>
-        <p className="text-xs sm:text-sm text-text-secondary mt-1">
-          Configure design system themes, user security, server-side data integrations, and audit logs.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings & Workspace Rules"
+        description="Configure design system themes, user security, server-side data integrations, and audit logs."
+      />
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-4 sm:gap-6 border-b border-border-subtle overflow-x-auto">

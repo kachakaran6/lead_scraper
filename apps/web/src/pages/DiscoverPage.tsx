@@ -36,6 +36,8 @@ import { LocationSelector, LocationSelection } from "../components/ui/LocationSe
 import { leadEngineApi } from "../lib/api";
 import { cn } from "../lib/utils";
 
+import { PageHeader } from "../components/ui/PageHeader";
+
 interface DiscoveredLead {
   id: string;
   name: string;
@@ -76,22 +78,39 @@ export const DiscoverPage: React.FC = () => {
 
   // Autopilot Config Form State
   const [strategyName, setStrategyName] = useState("Healthcare & Dental Growth Engine");
-  const [selectedNiches, setSelectedNiches] = useState<string[]>([
-    "Dentist",
-    "Dental Clinic",
-    "Orthodontist",
-  ]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>(["India", "UAE"]);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([
-    "Gujarat",
-    "Maharashtra",
-    "Dubai",
-  ]);
+  const [nichesInput, setNichesInput] = useState("Dentist, Dental Clinic, Orthodontist");
+  const [countriesInput, setCountriesInput] = useState("India, UAE");
+  const [regionsInput, setRegionsInput] = useState("Gujarat, Maharashtra, Dubai");
   const [dailyTarget, setDailyTarget] = useState(150);
   const [resourceBudget, setResourceBudget] = useState<"LOW" | "MEDIUM" | "HIGH">("LOW");
   const [aiProcessingLevel, setAiProcessingLevel] = useState<"PROMISING_ONLY" | "FULL" | "MINIMAL">("PROMISING_ONLY");
   const [oppFilterNoWebsite, setOppFilterNoWebsite] = useState(true);
   const [oppFilterHasPhone, setOppFilterHasPhone] = useState(true);
+  const [isSavingStrategy, setIsSavingStrategy] = useState(false);
+
+  // Sync state when autopilot status loads
+  useEffect(() => {
+    if (autopilotStatus?.profile) {
+      const p = autopilotStatus.profile;
+      if (p.name) setStrategyName(p.name);
+      if (Array.isArray(p.targetNiches) && p.targetNiches.length > 0) {
+        setNichesInput(p.targetNiches.join(", "));
+      }
+      if (Array.isArray(p.targetCountries) && p.targetCountries.length > 0) {
+        setCountriesInput(p.targetCountries.join(", "));
+      }
+      if (Array.isArray(p.targetRegions) && p.targetRegions.length > 0) {
+        setRegionsInput(p.targetRegions.join(", "));
+      }
+      if (p.dailyTarget) setDailyTarget(p.dailyTarget);
+      if (p.resourceBudget) setResourceBudget(p.resourceBudget);
+      if (p.aiProcessingLevel) setAiProcessingLevel(p.aiProcessingLevel);
+      if (p.opportunityFilters) {
+        setOppFilterNoWebsite(Boolean(p.opportunityFilters.noWebsite));
+        setOppFilterHasPhone(Boolean(p.opportunityFilters.hasPhone));
+      }
+    }
+  }, [autopilotStatus?.profile?.id]);
 
   // --- Manual Discovery State ---
   const [query, setQuery] = useState("Dentist");
@@ -165,26 +184,49 @@ export const DiscoverPage: React.FC = () => {
 
   const handleSaveStrategy = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSavingStrategy(true);
+
+    const parsedNiches = nichesInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const parsedCountries = countriesInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const parsedRegions = regionsInput
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      name: strategyName.trim() || "LeadEngine Growth Strategy",
+      targetNiches: parsedNiches.length > 0 ? parsedNiches : ["Dentist"],
+      targetCountries: parsedCountries.length > 0 ? parsedCountries : ["India"],
+      targetRegions: parsedRegions,
+      dailyTarget: Number(dailyTarget) || 150,
+      resourceBudget,
+      aiProcessingLevel,
+      opportunityFilters: {
+        noWebsite: oppFilterNoWebsite,
+        hasPhone: oppFilterHasPhone,
+        hasAddress: true,
+        ratingAvailable: false,
+      },
+    };
+
     try {
-      await leadEngineApi.createAutopilotProfile({
-        name: strategyName,
-        targetNiches: selectedNiches,
-        targetCountries: selectedCountries,
-        targetRegions: selectedRegions,
-        dailyTarget,
-        resourceBudget,
-        aiProcessingLevel,
-        opportunityFilters: {
-          noWebsite: oppFilterNoWebsite,
-          hasPhone: oppFilterHasPhone,
-          hasAddress: true,
-          ratingAvailable: false,
-        },
-      });
+      if (autopilotStatus?.profile?.id) {
+        await leadEngineApi.updateAutopilotProfile(autopilotStatus.profile.id, payload);
+      } else {
+        await leadEngineApi.createAutopilotProfile(payload);
+      }
       setShowConfigModal(false);
       await fetchAutopilotData();
     } catch (err) {
       console.error("Save profile error:", err);
+    } finally {
+      setIsSavingStrategy(false);
     }
   };
 
@@ -238,48 +280,44 @@ export const DiscoverPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header & Mode Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border-subtle">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary flex items-center gap-2">
+      {/* 1. Standardized Global Page Header with Dual Mode Switcher */}
+      <PageHeader
+        title={
+          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-text-primary">
             <Zap className="w-5 h-5 text-accent" />
-            Lead Discovery Engine
-          </h1>
-          <p className="text-xs text-text-secondary mt-1">
-            Autonomous 24/7 territory harvesting, multi-signal deduplication, and verified lead collection.
-          </p>
-        </div>
-
-        {/* Dual Mode Switcher Tabs */}
-        <div className="flex items-center p-1 rounded-lg bg-bg-surface border border-border-subtle shrink-0">
-          <button
-            onClick={() => setActiveTab("autopilot")}
-            className={cn(
-              "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
-              activeTab === "autopilot"
-                ? "bg-accent text-white shadow-sm"
-                : "text-text-secondary hover:text-text-primary"
-            )}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>Autopilot 24/7</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
-          </button>
-
-          <button
-            onClick={() => setActiveTab("manual")}
-            className={cn(
-              "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
-              activeTab === "manual"
-                ? "bg-accent text-white shadow-sm"
-                : "text-text-secondary hover:text-text-primary"
-            )}
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span>Targeted Search</span>
-          </button>
-        </div>
-      </div>
+            <span>Discovery</span>
+          </div>
+        }
+        description="Autonomous 24/7 territory harvesting, multi-signal deduplication, and verified lead collection."
+        actions={
+          <div className="flex items-center p-1 rounded-lg bg-bg-surface border border-border-subtle shrink-0">
+            <button
+              onClick={() => setActiveTab("autopilot")}
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
+                activeTab === "autopilot"
+                  ? "bg-accent text-white shadow-sm"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <Bot className="w-3.5 h-3.5" />
+              <span>Autopilot Engine (24/7)</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("manual")}
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
+                activeTab === "manual"
+                  ? "bg-accent text-white shadow-sm"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Manual Registry Search</span>
+            </button>
+          </div>
+        }
+      />
 
       {/* ======================================================== */}
       {/* AUTOPILOT MODE                                           */}
@@ -792,8 +830,8 @@ export const DiscoverPage: React.FC = () => {
               <div>
                 <label className="block font-semibold text-text-primary mb-1">Target Niches (Comma Separated)</label>
                 <Input
-                  value={selectedNiches.join(", ")}
-                  onChange={(e) => setSelectedNiches(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+                  value={nichesInput}
+                  onChange={(e) => setNichesInput(e.target.value)}
                   placeholder="Dentist, Dental Clinic, Orthodontist"
                   required
                 />
@@ -803,8 +841,8 @@ export const DiscoverPage: React.FC = () => {
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">Target Countries</label>
                   <Input
-                    value={selectedCountries.join(", ")}
-                    onChange={(e) => setSelectedCountries(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+                    value={countriesInput}
+                    onChange={(e) => setCountriesInput(e.target.value)}
                     placeholder="India, UAE, United States"
                     required
                   />
@@ -813,8 +851,8 @@ export const DiscoverPage: React.FC = () => {
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">Target Regions / States</label>
                   <Input
-                    value={selectedRegions.join(", ")}
-                    onChange={(e) => setSelectedRegions(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+                    value={regionsInput}
+                    onChange={(e) => setRegionsInput(e.target.value)}
                     placeholder="Gujarat, Maharashtra, Dubai"
                   />
                 </div>
@@ -843,10 +881,21 @@ export const DiscoverPage: React.FC = () => {
               </div>
 
               <div className="pt-3 border-t border-border-subtle flex items-center justify-end gap-2.5">
-                <Button type="button" variant="secondary" size="sm" onClick={() => setShowConfigModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowConfigModal(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" size="sm" className="bg-accent text-white font-semibold">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  isLoading={isSavingStrategy}
+                  className="bg-accent text-white font-semibold"
+                >
                   Launch Strategy
                 </Button>
               </div>
