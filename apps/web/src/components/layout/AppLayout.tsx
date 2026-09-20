@@ -38,13 +38,13 @@ export const AppLayout: React.FC = () => {
           onClose={() => setIsMobileSidebarOpen(false)}
         />
 
-        {/* Scrollable Content Pane: Independent scroll container */}
+        {/* Scrollable Content Pane: Full-width fluid responsive workspace */}
         <main
           id="main-scroll-pane"
-          className="flex-1 h-full min-w-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 focus:outline-none"
+          className="flex-1 h-full min-w-0 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-8 focus:outline-none"
           tabIndex={-1}
         >
-          <div className="max-w-7xl mx-auto w-full">
+          <div className="w-full">
             <Outlet />
           </div>
         </main>
