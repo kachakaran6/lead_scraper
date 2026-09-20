@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { prisma, AutopilotStatus, ResourceBudget, AiProcessingLevel } from "@ultimate-leads/database";
 import { DeduplicationService } from "./deduplication.service";
 import { ProviderHealthService } from "./providers/provider-health.service";
@@ -76,17 +76,59 @@ const TERRITORY_SEEDS: Record<
 };
 
 @Injectable()
-export class AutopilotService {
+export class AutopilotService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AutopilotService.name);
   private readonly googlePlaces = new GooglePlacesProvider();
   private readonly overpassOsm = new OverpassOsmProvider();
   private readonly searxng = new SearxngProvider();
+  private loopTimer?: NodeJS.Timeout;
+  private isCycleRunning = false;
 
   constructor(
     private readonly deduplicationService: DeduplicationService,
     private readonly healthService: ProviderHealthService,
     private readonly aiService: AIService
   ) {}
+
+  onModuleInit() {
+    this.logger.log("Autopilot 24/7 autonomous discovery loop initiated.");
+    // Initial discovery tick 5s after startup
+    setTimeout(() => this.runScheduledAutopilot(), 5000);
+    // Recurring autonomous exploration tick every 35s
+    this.loopTimer = setInterval(() => this.runScheduledAutopilot(), 35000);
+  }
+
+  onModuleDestroy() {
+    if (this.loopTimer) {
+      clearInterval(this.loopTimer);
+    }
+  }
+
+  private async runScheduledAutopilot() {
+    if (this.isCycleRunning) return;
+    this.isCycleRunning = true;
+    try {
+      const runningProfiles = await prisma.discoveryProfile.findMany({
+        where: { status: "RUNNING" },
+        take: 3,
+      });
+
+      for (const profile of runningProfiles) {
+        try {
+          const result = await this.runAutopilotCycle(profile.id);
+          if (result.processed && result.discovered > 0) {
+            this.logger.log(`Autopilot Cycle [${profile.name}]: ${result.message}`);
+          }
+        } catch (err: any) {
+          this.logger.warn(`Autopilot cycle tick error for profile ${profile.id}: ${err.message}`);
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn("Autopilot scheduler loop error:", err?.message);
+    } finally {
+      this.isCycleRunning = false;
+    }
+  }
 
   /**
    * Creates a new Autopilot Strategy Profile and initializes geographic queue
@@ -392,47 +434,41 @@ export class AutopilotService {
         if (res.isDuplicate) {
           duplicates++;
         } else {
-          // Check opportunity criteria
+          newUnique++;
           const lead = res.lead;
-          const meetsWeb = !oppFilters.noWebsite || !lead.hasWebsite;
-          const meetsPhone = !oppFilters.hasPhone || Boolean(lead.phone);
 
-          if (meetsWeb && meetsPhone) {
-            newUnique++;
+          // Calculate deterministic score
+          const score = (!lead.hasWebsite ? 35 : 10) + (lead.phone ? 25 : 0) + (lead.category ? 20 : 5) + 10;
+          await prisma.business.update({
+            where: { id: lead.id },
+            data: {
+              leadScore: Math.min(score, 100),
+              opportunityScore: !lead.hasWebsite ? 85 : 50,
+              lifecycleStage: score >= 70 ? "SCORED" : "STORED",
+            },
+          });
 
-            // Calculate deterministic score
-            const score = (!lead.hasWebsite ? 35 : 10) + (lead.phone ? 25 : 0) + (lead.category ? 20 : 5) + 10;
-            await prisma.business.update({
-              where: { id: lead.id },
-              data: {
-                leadScore: Math.min(score, 100),
-                opportunityScore: !lead.hasWebsite ? 85 : 50,
-                lifecycleStage: score >= 70 ? "SCORED" : "STORED",
-              },
-            });
-
-            // Async AI Qualification if promising
-            if (
-              (profile.aiProcessingLevel === "FULL" || (profile.aiProcessingLevel === "PROMISING_ONLY" && score >= 70)) &&
-              this.aiService.isConfigured()
-            ) {
-              this.aiService
-                .analyzeLead(lead)
-                .then((aiRes) => {
-                  prisma.business
-                    .update({
-                      where: { id: lead.id },
-                      data: {
-                        aiSummary: aiRes?.summary || null,
-                        aiQualification: aiRes || null,
-                        aiAnalyzedAt: new Date(),
-                        lifecycleStage: "AI_REVIEWED",
-                      },
-                    })
-                    .catch(() => {});
-                })
-                .catch(() => {});
-            }
+          // Async AI Qualification if promising
+          if (
+            (profile.aiProcessingLevel === "FULL" || (profile.aiProcessingLevel === "PROMISING_ONLY" && score >= 70)) &&
+            this.aiService.isConfigured()
+          ) {
+            this.aiService
+              .analyzeLead(lead)
+              .then((aiRes) => {
+                prisma.business
+                  .update({
+                    where: { id: lead.id },
+                    data: {
+                      aiSummary: aiRes?.summary || null,
+                      aiQualification: aiRes || null,
+                      aiAnalyzedAt: new Date(),
+                      lifecycleStage: "AI_REVIEWED",
+                    },
+                  })
+                  .catch(() => {});
+              })
+              .catch(() => {});
           }
         }
       }
@@ -509,19 +545,34 @@ export class AutopilotService {
     const recentLogs = profile
       ? await prisma.discoveryQueryLog.findMany({
           where: { profileId: profile.id },
-          take: 5,
+          take: 8,
           orderBy: { createdAt: "desc" },
         })
       : [];
 
     const providersHealth = await this.healthService.getAllHealth();
 
+    // Calculate real database metrics
+    const totalDbLeads = await prisma.business.count({ where: { userId } });
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayDbLeads = await prisma.business.count({
+      where: { userId, createdAt: { gte: startOfToday } },
+    });
+    const missingWebsites = await prisma.business.count({
+      where: { userId, hasWebsite: false },
+    });
+
+    const effectiveTotal = Math.max(profile?.totalDiscovered || 0, totalDbLeads);
+    const effectiveToday = Math.max(profile?.todayDiscovered || 0, todayDbLeads);
+
     return {
       profile: profile || null,
       status: profile?.status || "IDLE",
-      todayDiscovered: profile?.todayDiscovered || 0,
+      todayDiscovered: effectiveToday,
       dailyTarget: profile?.dailyTarget || 150,
-      totalDiscovered: profile?.totalDiscovered || 0,
+      totalDiscovered: effectiveTotal,
+      missingWebsitesCount: missingWebsites,
       duplicatesPrevented: profile?.duplicatesPrevented || 0,
       currentRegion: profile?.currentRegion || "All Regions",
       currentNiche: profile?.currentNiche || "Dentist",
