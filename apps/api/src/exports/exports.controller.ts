@@ -10,9 +10,10 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ExportsService, ExportFilterParams } from "./exports.service";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("exports")
-@UseGuards(AuthGuard("jwt"))
+@UseGuards(AuthGuard("jwt"), ScraperAccessGuard)
 export class ExportsController {
   constructor(private readonly exportsService: ExportsService) {}
 

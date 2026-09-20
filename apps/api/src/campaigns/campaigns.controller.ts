@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { CampaignsService } from "./campaigns.service";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("campaigns")
+@UseGuards(ScraperAccessGuard)
 export class CampaignsController {
   private readonly campaignsService: CampaignsService;
   constructor(campaignsService?: CampaignsService) {

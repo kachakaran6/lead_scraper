@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { JobsService } from "./jobs.service";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("jobs")
+@UseGuards(ScraperAccessGuard)
 export class JobsController {
   private readonly jobsService: JobsService;
   constructor(jobsService?: JobsService) {

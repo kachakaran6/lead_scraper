@@ -1,8 +1,9 @@
 import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { ScrapeService } from "./scrape.service";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("scrape")
+@UseGuards(ScraperAccessGuard)
 export class ScrapeController {
   constructor(private readonly scrapeService: ScrapeService) {}
 

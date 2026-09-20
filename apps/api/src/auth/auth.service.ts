@@ -41,6 +41,8 @@ export class AuthService {
         name: dto.name?.trim() || null,
         passwordHash: hashPassword(dto.password),
         role: isFirstUser ? "OWNER" : "MEMBER",
+        accountStatus: isFirstUser ? "ACTIVE" : "PENDING",
+        scraperAccess: isFirstUser,
         emailVerified: isFirstUser, // First owner automatically verified
       },
     });
@@ -51,7 +53,12 @@ export class AuthService {
         userId: user.id,
         action: "REGISTER",
         ipAddress: ipAddress || null,
-        details: { email: user.email, role: user.role },
+        details: {
+          email: user.email,
+          role: user.role,
+          accountStatus: user.accountStatus,
+          scraperAccess: user.scraperAccess,
+        },
       },
     });
 
@@ -67,6 +74,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        accountStatus: user.accountStatus,
+        scraperAccess: user.scraperAccess,
         emailVerified: user.emailVerified,
       },
       token,
@@ -161,6 +170,8 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        accountStatus: user.accountStatus,
+        scraperAccess: user.scraperAccess,
         emailVerified: user.emailVerified,
       },
       token,

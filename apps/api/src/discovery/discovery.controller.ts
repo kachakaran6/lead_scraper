@@ -1,7 +1,9 @@
-import { Body, Controller, Post, Get, Query, Req } from "@nestjs/common";
+import { Body, Controller, Post, Get, Query, Req, UseGuards } from "@nestjs/common";
 import { DiscoveryService } from "./discovery.service";
+import { ScraperAccessGuard, Public } from "../auth/scraper-access.guard";
 
 @Controller(["discovery", "discover"])
+@UseGuards(ScraperAccessGuard)
 export class DiscoveryController {
   private readonly discoveryService: DiscoveryService;
   constructor(discoveryService?: DiscoveryService) {
@@ -18,6 +20,7 @@ export class DiscoveryController {
     return this.discoveryService.search({ ...dto, userId: req.user?.id } as any);
   }
 
+  @Public()
   @Get("status")
   async getStatus() {
     return {

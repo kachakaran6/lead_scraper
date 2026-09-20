@@ -8,11 +8,14 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from "@nestjs/common";
 import { BusinessesService } from "./businesses.service";
 import { RequireAction } from "../auth/roles.guard";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("businesses")
+@UseGuards(ScraperAccessGuard)
 export class BusinessesController {
   private readonly businessesService: BusinessesService;
   constructor(businessesService?: BusinessesService) {

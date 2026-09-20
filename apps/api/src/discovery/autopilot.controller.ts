@@ -12,8 +12,10 @@ import {
 import { AutopilotService } from "./autopilot.service";
 import { expandNicheQuery } from "@ultimate-leads/shared";
 import { prisma } from "@ultimate-leads/database";
+import { ScraperAccessGuard } from "../auth/scraper-access.guard";
 
 @Controller("autopilot")
+@UseGuards(ScraperAccessGuard)
 export class AutopilotController {
   constructor(private readonly autopilotService: AutopilotService) {}
 
