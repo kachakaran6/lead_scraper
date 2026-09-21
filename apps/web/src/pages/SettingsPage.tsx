@@ -268,20 +268,26 @@ export const SettingsPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded-md bg-bg-base border border-border-subtle">
                 <span className="text-text-tertiary block text-[11px]">Display Name</span>
-                <span className="font-medium text-text-primary text-sm mt-0.5 block">{user?.name || "Admin User"}</span>
+                <span className="font-medium text-text-primary text-sm mt-0.5 block">
+                  {user?.name || user?.email?.split("@")[0] || "User Profile"}
+                </span>
               </div>
 
               <div className="p-3 rounded-md bg-bg-base border border-border-subtle">
                 <span className="text-text-tertiary block text-[11px]">Email Address</span>
-                <span className="font-mono text-text-primary mt-0.5 block">{user?.email || "admin@ultimateleads.com"}</span>
+                <span className="font-mono text-text-primary mt-0.5 block">
+                  {user?.email || "No email on record"}
+                </span>
               </div>
 
               <div className="p-3 rounded-md bg-bg-base border border-border-subtle flex items-center justify-between">
                 <div>
                   <span className="text-text-tertiary block text-[11px]">System Role</span>
-                  <span className="font-mono font-medium text-text-primary uppercase mt-0.5 block">{user?.role || "OWNER"}</span>
+                  <span className="font-mono font-medium text-text-primary uppercase mt-0.5 block">
+                    {user?.role || "MEMBER"}
+                  </span>
                 </div>
-                <Badge variant="neutral" size="sm">{user?.role || "OWNER"}</Badge>
+                <Badge variant="neutral" size="sm">{user?.role || "MEMBER"}</Badge>
               </div>
             </div>
 

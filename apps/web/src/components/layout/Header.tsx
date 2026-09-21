@@ -35,7 +35,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
-  const [isAppearanceSubmenuOpen, setIsAppearanceSubmenuOpen] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState("Primary Workspace");
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -50,7 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
-        setIsAppearanceSubmenuOpen(false);
       }
       if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target as Node)) {
         setIsWorkspaceMenuOpen(false);
@@ -82,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const getInitials = (name?: string | null, email?: string) => {
+  const getInitials = (name?: string | null, email?: string | null) => {
     if (name) {
       return name
         .split(" ")
@@ -95,11 +93,9 @@ export const Header: React.FC<HeaderProps> = ({
     return "LE";
   };
 
-  const activeTheme = THEME_PALETTES.find((t) => t.id === palette) || THEME_PALETTES[0];
-
   return (
     <>
-      <header className="sticky top-0 z-30 h-16 w-full border-b border-border-subtle bg-bg-surface flex items-stretch select-none shrink-0 transition-colors">
+      <header className="sticky top-0 z-30 h-16 w-full max-w-full border-b border-border-subtle bg-bg-surface flex items-stretch select-none shrink-0 transition-colors overflow-hidden">
         {/* 1. LEFT BRAND BLOCK: Exactly w-60 (240px) on desktop to align seamlessly with the sidebar */}
         <div className="hidden md:flex md:w-60 h-full items-center px-4 sm:px-5 border-r border-border-subtle shrink-0 bg-bg-surface">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
@@ -118,42 +114,42 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile brand & drawer toggle (<md devices) */}
-        <div className="flex md:hidden items-center gap-2 px-3 h-full border-r border-border-subtle shrink-0 bg-bg-surface">
+        <div className="flex md:hidden items-center gap-1.5 px-2.5 h-full border-r border-border-subtle shrink-0 bg-bg-surface">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-md border border-border-default bg-bg-base hover:bg-bg-surface-hover text-text-secondary shrink-0"
+            className="p-1.5 rounded-md border border-border-default bg-bg-base hover:bg-bg-surface-hover text-text-secondary shrink-0 focus-ring"
             aria-label="Toggle navigation menu"
           >
             <Menu className="w-4 h-4" />
           </button>
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to="/" className="flex items-center gap-1.5 shrink-0">
             <div className="w-6 h-6 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
               <Layers className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-xs tracking-tight text-text-primary">LeadEngine</span>
-            <span className="text-[9px] font-bold text-accent px-1 rounded bg-accent/10 border border-accent/20">PRO</span>
+            <span className="font-bold text-xs tracking-tight text-text-primary hidden xs:inline">LeadEngine</span>
           </Link>
         </div>
 
         {/* 2. MAIN HEADER STRIP: Global Omnibar Search (Center) + Actions & Profile (Right) */}
-        <div className="flex-1 h-full flex items-center justify-between px-3 sm:px-6 lg:px-8 gap-3 sm:gap-4 min-w-0 bg-bg-surface/95 backdrop-blur-md">
+        <div className="flex-1 h-full flex items-center justify-between px-2 sm:px-4 lg:px-6 gap-2 sm:gap-4 min-w-0 bg-bg-surface/95 backdrop-blur-md overflow-hidden">
           {/* CENTER: Global Omnibar Search with Ctrl+K shortcut */}
-          <div className="flex-1 max-w-md lg:max-w-lg min-w-0">
-            <form onSubmit={handleSearchSubmit} className="relative group w-full">
-              <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-accent transition-colors pointer-events-none" />
+          <div className="flex-1 max-w-xs sm:max-w-md lg:max-w-lg min-w-0">
+            {/* Desktop / Tablet Omnibar */}
+            <form onSubmit={handleSearchSubmit} className="relative group w-full min-w-0">
+              <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 group-focus-within:text-accent transition-colors pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onClick={() => setIsSearchModalOpen(true)}
-                placeholder="Search leads, businesses, cities, categories..."
-                className="w-full pl-8 pr-16 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors cursor-pointer"
+                placeholder="Search leads, cities, niches..."
+                className="w-full pl-7 sm:pl-8 pr-2 sm:pr-12 py-1.5 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent transition-colors cursor-pointer min-w-0"
               />
               <button
                 type="button"
                 onClick={() => setIsSearchModalOpen(true)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-bg-surface border border-border-default text-[10px] font-mono text-text-tertiary"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-bg-surface border border-border-default text-[10px] font-mono text-text-tertiary"
               >
                 ⌘K
               </button>
@@ -161,9 +157,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* RIGHT: Workspace Selector, Primary CTA (+ New Scrape), User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
-            {/* Workspace Selector Dropdown */}
-            <div className="relative hidden md:block" ref={workspaceMenuRef}>
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto min-w-0">
+            {/* Workspace Selector Dropdown (Desktop Only) */}
+            <div className="relative hidden lg:block" ref={workspaceMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsWorkspaceMenuOpen((prev) => !prev)}
@@ -171,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Select Active Workspace"
               >
                 <Building className="w-3.5 h-3.5 text-text-tertiary" />
-                <span className="font-medium text-text-primary truncate max-w-[130px]">
+                <span className="font-medium text-text-primary truncate max-w-[110px]">
                   {activeWorkspace}
                 </span>
                 <ChevronDown className="w-3 h-3 text-text-tertiary" />
@@ -207,49 +203,51 @@ export const Header: React.FC<HeaderProps> = ({
               variant="primary"
               size="sm"
               onClick={onOpenQuickScrape || (() => navigate("/discover"))}
-              className="shrink-0 text-xs font-semibold px-3 py-1.5 h-8 gap-1.5 shadow-sm bg-accent hover:bg-accent-hover text-white transition-all"
+              className="shrink-0 text-xs font-semibold px-2.5 sm:px-3 py-1.5 h-8 gap-1 shadow-sm bg-accent hover:bg-accent-hover text-white transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">New Scrape</span>
             </Button>
 
             {/* User Profile Dropdown */}
-            <div className="relative pl-1 border-l border-border-subtle" ref={userMenuRef}>
+            <div className="relative pl-1 border-l border-border-subtle shrink-0" ref={userMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 p-1 rounded-lg hover:bg-bg-surface-hover transition-colors focus:outline-none"
+                className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-bg-surface-hover transition-colors focus:outline-none"
                 aria-label="User profile menu"
               >
                 <div className="w-7 h-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-[11px] font-bold text-accent shrink-0">
                   {getInitials(user?.name, user?.email)}
                 </div>
-                <div className="hidden lg:block text-left shrink-0">
-                  <div className="text-xs font-semibold text-text-primary leading-tight truncate max-w-[110px]">
-                    {user?.name || "Karan"}
+                <div className="hidden xl:block text-left shrink-0">
+                  <div className="text-xs font-semibold text-text-primary leading-tight truncate max-w-[100px]">
+                    {user?.name || user?.email?.split("@")[0] || "Account"}
                   </div>
-                  <div className="text-[10px] text-text-tertiary leading-none">
-                    {user?.role || "OWNER"}
+                  <div className="text-[10px] text-text-tertiary leading-none uppercase">
+                    {user?.role || "MEMBER"}
                   </div>
                 </div>
-                <ChevronDown className="w-3 h-3 text-text-tertiary hidden lg:block" />
+                <ChevronDown className="w-3 h-3 text-text-tertiary hidden xl:block" />
               </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-xl bg-bg-surface border border-border-subtle shadow-2xl py-1.5 z-50 divide-y divide-border-subtle animate-in fade-in duration-100">
+                <div className="absolute right-0 mt-2 w-60 rounded-xl bg-bg-surface border border-border-subtle shadow-2xl py-1.5 z-50 divide-y divide-border-subtle animate-in fade-in duration-100">
                   {/* User Identity */}
                   <div className="px-3.5 py-2.5">
                     <p className="text-xs font-bold text-text-primary truncate">
-                      {user?.name || "Karan Kacha"}
+                      {user?.name || "LeadEngine Account"}
                     </p>
                     <p className="text-[11px] text-text-tertiary truncate mt-0.5">
-                      {user?.email || "kachakaran6@gmail.com"}
+                      {user?.email || "No email attached"}
                     </p>
-                    <div className="mt-1.5">
-                      <span className="text-[10px] font-bold text-accent uppercase px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
-                        Role: {user?.role || "OWNER"}
-                      </span>
-                    </div>
+                    {user?.role && (
+                      <div className="mt-1.5">
+                        <span className="text-[10px] font-bold text-accent uppercase px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
+                          Role: {user.role}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Account & Workspace Links */}

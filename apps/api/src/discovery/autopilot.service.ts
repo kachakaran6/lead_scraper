@@ -797,9 +797,9 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       totalDiscovered: effectiveTotal,
       missingWebsitesCount: missingWebsites,
       duplicatesPrevented: profile?.duplicatesPrevented || 0,
-      currentRegion: profile?.currentRegion || "All Regions",
-      currentNiche: profile?.currentNiche || "Dentist",
-      currentCountry: profile?.currentCountry || "India",
+      currentRegion: profile?.currentRegion || (profile ? "All Regions" : null),
+      currentNiche: profile?.currentNiche || null,
+      currentCountry: profile?.currentCountry || null,
       gridProgress: {
         totalCells: Math.max(totalCells, 1),
         completedCells,

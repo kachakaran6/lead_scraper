@@ -1,26 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Building2,
   Plus,
+  DollarSign,
+  Kanban,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
+import {
+  DealsSkeleton,
+  ErrorState,
+  EmptyState,
+} from "../components/ui/LoadingStates";
 
 export const DealsPage: React.FC = () => {
   const [deals, setDeals] = useState<any[]>([]);
   const [stages, setStages] = useState<any[]>([]);
   const [isNewDealOpen, setIsNewDealOpen] = useState(false);
   const [newDealTitle, setNewDealTitle] = useState("");
-  const [newDealValue, setNewDealValue] = useState("2000");
+  const [newDealValue, setNewDealValue] = useState("");
   const [newDealBusinessId, setNewDealBusinessId] = useState("");
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const [dealsData, statsData, leadsData] = await Promise.all([
         leadEngineApi.getDeals(),
@@ -29,16 +38,23 @@ export const DealsPage: React.FC = () => {
       ]);
       setDeals(Array.isArray(dealsData) ? dealsData : (dealsData as any)?.items || []);
       setBusinesses(leadsData?.items || []);
-    } catch (err) {
+      if (statsData?.charts?.pipeline?.length) {
+        setStages(statsData.charts.pipeline);
+      }
+    } catch (err: any) {
       console.error("Failed to load deals pipeline:", err);
+      setError(
+        err?.response?.data?.message ||
+          "Unable to retrieve pipeline deals from the server. Please retry."
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleCreateDeal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +63,13 @@ export const DealsPage: React.FC = () => {
     try {
       await leadEngineApi.createDeal({
         title: newDealTitle.trim(),
-        value: Number(newDealValue) || 2000,
+        value: Number(newDealValue) || 1000,
         businessId: newDealBusinessId || undefined,
         stage: "NEW",
       });
       setIsNewDealOpen(false);
       setNewDealTitle("");
-      setNewDealValue("2000");
+      setNewDealValue("");
       setNewDealBusinessId("");
       fetchData();
     } catch (err) {
@@ -83,15 +99,6 @@ export const DealsPage: React.FC = () => {
     }
   };
 
-  const handleMoveStage = async (dealId: string, newStageId: string) => {
-    try {
-      await leadEngineApi.updateDealStage(dealId, newStageId);
-      fetchData();
-    } catch (err) {
-      console.error("Failed to move deal", err);
-    }
-  };
-
   const totalPipeline = deals.reduce((acc, d) => acc + (d.value || 0), 0);
 
   const pipelineStages = stages.length > 0
@@ -105,7 +112,9 @@ export const DealsPage: React.FC = () => {
         { id: "s6", name: "WON", color: "var(--success)" },
       ];
 
-  const stagesToRender = pipelineStages;
+  if (isLoading) {
+    return <DealsSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -114,7 +123,7 @@ export const DealsPage: React.FC = () => {
         title="Deals Pipeline"
         description="Track deal conversions, manage stage progression, and monitor active revenue pipeline."
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs font-mono text-text-secondary">
               <span className="text-accent font-bold tabular-nums text-sm">
                 ${totalPipeline.toLocaleString()}
@@ -129,30 +138,41 @@ export const DealsPage: React.FC = () => {
               className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-white"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Custom Deal</span>
+              <span>Add Deal</span>
             </Button>
           </div>
         }
       />
 
-      {isLoading ? (
-        <div className="py-24 text-center text-text-secondary">
-          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs text-text-tertiary">Loading pipeline...</p>
-        </div>
+      {error ? (
+        <ErrorState
+          title="Unable to load pipeline"
+          message={error}
+          onRetry={fetchData}
+        />
+      ) : deals.length === 0 ? (
+        <EmptyState
+          icon={Kanban}
+          title="Pipeline is currently empty"
+          description="Track incoming customer proposals, discovery conversions, and won contracts in this CRM pipeline."
+          actionLabel="Add First Deal"
+          onAction={() => setIsNewDealOpen(true)}
+        />
       ) : (
         /* Kanban Board */
         <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin">
-          {stagesToRender.map((stage) => {
+          {pipelineStages.map((stage) => {
             const stageDeals = deals.filter(
-              (d) => d.stageId === stage.id || d.stage?.name === stage.name
+              (d) => d.stageId === stage.id || d.stage === stage.name || d.stage?.name === stage.name
             );
             const stageTotal = stageDeals.reduce((acc, d) => acc + (d.value || 0), 0);
 
             return (
               <div
-                key={stage.id}
-                className="w-72 shrink-0 bg-bg-surface rounded-lg border border-border-subtle p-3 flex flex-col min-h-[520px]"
+                key={stage.id || stage.name}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, stage.name)}
+                className="w-72 shrink-0 bg-bg-surface rounded-lg border border-border-subtle p-3 flex flex-col min-h-[480px]"
               >
                 {/* Stage Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-3">
@@ -175,49 +195,35 @@ export const DealsPage: React.FC = () => {
 
                 {/* Deal Cards */}
                 <div className="space-y-2.5 flex-1 overflow-y-auto">
-                  {stageDeals.map((deal) => (
-                    <div
-                      key={deal.id}
-                      className="p-3.5 rounded-lg bg-bg-base border border-border-subtle hover:border-border-default transition-colors duration-150"
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <h4 className="font-medium text-text-primary text-xs leading-snug">
-                          {deal.title}
-                        </h4>
-                        <span className="text-xs font-mono font-semibold tabular-nums text-text-primary shrink-0">
-                          ${deal.value?.toLocaleString() || "0"}
-                        </span>
-                      </div>
-
-                      {deal.business && (
-                        <div className="text-[11px] text-text-secondary flex items-center gap-1.5 mt-2">
-                          <Building2 className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
-                          <span className="truncate">{deal.business.name}</span>
+                  {stageDeals.length === 0 ? (
+                    <div className="py-8 text-center text-[11px] text-text-tertiary">
+                      Drop deals here
+                    </div>
+                  ) : (
+                    stageDeals.map((deal) => (
+                      <div
+                        key={deal.id}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData("text/plain", deal.id)}
+                        className="p-3 rounded-md bg-bg-base border border-border-subtle hover:border-accent/40 cursor-grab active:cursor-grabbing transition-all space-y-2 shadow-xs"
+                      >
+                        <div className="font-semibold text-xs text-text-primary">{deal.title}</div>
+                        {deal.business && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-text-secondary truncate">
+                            <Building2 className="w-3 h-3 text-text-tertiary shrink-0" />
+                            <span className="truncate">{deal.business.name}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
+                          <span className="font-mono font-semibold text-accent">
+                            ${(deal.value || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-text-tertiary">
+                            {deal.createdAt ? new Date(deal.createdAt).toLocaleDateString() : "Active"}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Move stage selector */}
-                      <div className="pt-2.5 mt-3 border-t border-border-subtle flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-text-tertiary">Stage</span>
-                        <select
-                          value={deal.stageId || stage.id}
-                          onChange={(e) => handleMoveStage(deal.id, e.target.value)}
-                          className="text-[11px] bg-bg-surface text-text-primary rounded px-2 py-1 border border-border-default hover:border-border-subtle focus:outline-none focus:border-accent cursor-pointer transition-colors duration-150"
-                        >
-                          {stagesToRender.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
                       </div>
-                    </div>
-                  ))}
-
-                  {stageDeals.length === 0 && (
-                    <div className="h-28 border border-dashed border-border-subtle rounded-lg flex items-center justify-center text-xs text-text-tertiary">
-                      No deals in {stage.name}
-                    </div>
+                    ))
                   )}
                 </div>
               </div>
@@ -231,49 +237,55 @@ export const DealsPage: React.FC = () => {
         isOpen={isNewDealOpen}
         onClose={() => setIsNewDealOpen(false)}
         title="Create Pipeline Deal"
-        subtitle="Associate a target client with an estimated project value"
       >
         <form onSubmit={handleCreateDeal} className="space-y-4">
           <Input
             label="Deal Title"
-            placeholder="e.g. Apex Diagnostic - Full Website & WhatsApp CRM"
             value={newDealTitle}
             onChange={(e) => setNewDealTitle(e.target.value)}
+            placeholder="e.g. Website Redesign Package"
             required
           />
 
           <Input
-            label="Estimated Value ($ USD)"
+            label="Estimated Value ($)"
             type="number"
             value={newDealValue}
             onChange={(e) => setNewDealValue(e.target.value)}
+            placeholder="e.g. 2500"
             required
           />
 
-          <div className="space-y-1.5">
-            <label className="block text-meta text-text-tertiary">
-              Select Client / Lead
-            </label>
-            <select
-              value={newDealBusinessId}
-              onChange={(e) => setNewDealBusinessId(e.target.value)}
-              required
-              className="w-full rounded-lg border border-border-default bg-bg-surface px-3 py-2 text-xs text-text-primary focus:border-accent focus:outline-none cursor-pointer transition-colors duration-150"
-            >
-              <option value="">Select a business from CRM...</option>
-              {businesses.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name} ({b.city || "Rajkot"})
-                </option>
-              ))}
-            </select>
-          </div>
+          {businesses.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                Associated Business
+              </label>
+              <select
+                value={newDealBusinessId}
+                onChange={(e) => setNewDealBusinessId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-bg-base border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent"
+              >
+                <option value="">Select a business (optional)</option>
+                {businesses.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.city || "Local"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-border-subtle">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsNewDealOpen(false)}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsNewDealOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm">
+            <Button type="submit" variant="primary" size="sm" className="bg-accent text-white font-semibold">
               Create Deal
             </Button>
           </div>

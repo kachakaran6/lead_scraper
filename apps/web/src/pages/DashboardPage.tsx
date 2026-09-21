@@ -1,56 +1,127 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { leadEngineApi } from "../lib/api";
 import { Business } from "../types";
-import { Bot, Zap, Play, Pause, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
-
+import { Bot, Zap, ArrowRight, TrendingUp, Sparkles, Building2 } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
+import { DashboardSkeleton, ErrorState, EmptyState } from "../components/ui/LoadingStates";
 
 export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [topLeads, setTopLeads] = useState<Business[]>([]);
   const [autopilotStatus, setAutopilotStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsData, leadsData, autoData] = await Promise.all([
-          leadEngineApi.getDashboardKpis(),
-          leadEngineApi.getLeads({ limit: 5, sortBy: "leadScore", sortOrder: "desc" }),
-          leadEngineApi.getAutopilotStatus(),
-        ]);
-        setStats(statsData);
-        setTopLeads(leadsData?.items || []);
-        setAutopilotStatus(autoData);
-      } catch (err) {
-        console.error("Error loading dashboard data:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [statsData, leadsData, autoData] = await Promise.all([
+        leadEngineApi.getDashboardKpis(),
+        leadEngineApi.getLeads({ limit: 5, sortBy: "leadScore", sortOrder: "desc" }),
+        leadEngineApi.getAutopilotStatus(),
+      ]);
+      setStats(statsData);
+      setTopLeads(leadsData?.items || []);
+      setAutopilotStatus(autoData);
+    } catch (err: any) {
+      console.error("Error loading dashboard data:", err);
+      setError(
+        err?.response?.data?.message ||
+          "We couldn't retrieve the latest dashboard intelligence. Please verify your connection or retry."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const kpis = stats?.kpis || {
-    total: 0,
-    newToday: 0,
-    newWeek: 0,
-    newMonth: 0,
-    withoutWebsite: 0,
-    withWebsite: 0,
-    highOpportunity: 0,
-    contacted: 0,
-    replied: 0,
-    meetings: 0,
-    proposals: 0,
-    wonDeals: 0,
-  };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Dashboard Overview"
+          description="Real-time pipeline analytics, lead signals, and conversion metrics."
+        />
+        <ErrorState
+          title="Unable to load dashboard data"
+          message={error}
+          onRetry={fetchData}
+        />
+      </div>
+    );
+  }
+
+  const kpis = stats?.kpis || {};
+  const totalLeads = typeof kpis.total === "number" ? kpis.total : null;
+  const newToday = typeof kpis.newToday === "number" ? kpis.newToday : null;
+  const withoutWebsite = typeof kpis.withoutWebsite === "number" ? kpis.withoutWebsite : null;
+  const withWebsite = typeof kpis.withWebsite === "number" ? kpis.withWebsite : null;
+  const highOpportunity = typeof kpis.highOpportunity === "number" ? kpis.highOpportunity : null;
+  const meetings = typeof kpis.meetings === "number" ? kpis.meetings : null;
+  const wonDeals = typeof kpis.wonDeals === "number" ? kpis.wonDeals : null;
+  const contacted = typeof kpis.contacted === "number" ? kpis.contacted : 0;
 
   const opportunitiesBreakdown = stats?.charts?.opportunities || [];
+  const isAutopilotRunning = autopilotStatus?.status === "RUNNING";
+  const hasAutopilotProfile = Boolean(autopilotStatus?.profile);
+
+  // Conversion funnel stages calculated from real data
+  const funnelStages = [
+    {
+      stage: "Discovered",
+      count: totalLeads ?? 0,
+      percent: totalLeads && totalLeads > 0 ? 100 : 0,
+      color: "bg-accent/30",
+    },
+    {
+      stage: "Qualified",
+      count: highOpportunity ?? 0,
+      percent:
+        totalLeads && totalLeads > 0 && highOpportunity !== null
+          ? Math.min(Math.round((highOpportunity / totalLeads) * 100), 100)
+          : 0,
+      color: "bg-accent/50",
+    },
+    {
+      stage: "Contacted",
+      count: contacted,
+      percent:
+        totalLeads && totalLeads > 0
+          ? Math.min(Math.round((contacted / totalLeads) * 100), 100)
+          : 0,
+      color: "bg-accent/70",
+    },
+    {
+      stage: "Meeting",
+      count: meetings ?? 0,
+      percent:
+        totalLeads && totalLeads > 0 && meetings !== null
+          ? Math.min(Math.round((meetings / totalLeads) * 100), 100)
+          : 0,
+      color: "bg-accent/85",
+    },
+    {
+      stage: "Won Deals",
+      count: wonDeals ?? 0,
+      percent:
+        totalLeads && totalLeads > 0 && wonDeals !== null
+          ? Math.min(Math.round((wonDeals / totalLeads) * 100), 100)
+          : 0,
+      color: "bg-accent",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -59,7 +130,7 @@ export const DashboardPage: React.FC = () => {
         title="Dashboard Overview"
         description="Real-time pipeline analytics, lead signals, and conversion metrics."
         actions={
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             <Link to="/discover">
               <Button variant="primary" size="sm" className="text-xs font-semibold gap-1.5 bg-accent text-white">
                 <Zap className="w-3.5 h-3.5" />
@@ -76,23 +147,68 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* Autopilot 24/7 Autonomous Discovery Banner */}
-      <div className="p-4 rounded-xl bg-gradient-to-r from-bg-surface via-bg-surface to-accent/5 border border-border-subtle shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+      <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-bg-surface via-bg-surface to-accent/5 border border-border-subtle shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0 mt-0.5 sm:mt-0">
             <Bot className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-sm text-text-primary">
                 Autopilot 24/7 Discovery Engine
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success/15 border border-success/30 text-success">
-                <span className="w-1.5 h-1.5 rounded-full bg-success animate-ping" />
-                {autopilotStatus?.status === "RUNNING" ? "RUNNING" : "ACTIVE"}
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  isAutopilotRunning
+                    ? "bg-success/15 border-success/30 text-success"
+                    : hasAutopilotProfile
+                    ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                    : "bg-border-subtle border-border-default text-text-tertiary"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isAutopilotRunning
+                      ? "bg-success animate-ping"
+                      : hasAutopilotProfile
+                      ? "bg-amber-400"
+                      : "bg-text-tertiary"
+                  }`}
+                />
+                {isAutopilotRunning ? "RUNNING 24/7" : hasAutopilotProfile ? "PAUSED" : "UNCONFIGURED"}
               </span>
             </div>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Territory: <span className="text-text-primary font-medium">{autopilotStatus?.currentRegion || "Ahmedabad, India"}</span> · Niche: <span className="text-accent font-medium">{autopilotStatus?.currentNiche || "Dentist & Dental Clinics"}</span> · Today: <span className="font-mono text-text-primary font-semibold">{autopilotStatus?.todayDiscovered || 0} / {autopilotStatus?.dailyTarget || 150} leads</span>
+
+            <p className="text-xs text-text-secondary mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              {autopilotStatus?.currentRegion ? (
+                <>
+                  <span>
+                    Territory:{" "}
+                    <span className="text-text-primary font-medium">
+                      {autopilotStatus.currentRegion}
+                      {autopilotStatus.currentCountry ? `, ${autopilotStatus.currentCountry}` : ""}
+                    </span>
+                  </span>
+                  <span>·</span>
+                </>
+              ) : null}
+
+              {autopilotStatus?.currentNiche ? (
+                <>
+                  <span>
+                    Niche: <span className="text-accent font-medium">{autopilotStatus.currentNiche}</span>
+                  </span>
+                  <span>·</span>
+                </>
+              ) : null}
+
+              <span>
+                Today:{" "}
+                <span className="font-mono text-text-primary font-semibold">
+                  {autopilotStatus?.todayDiscovered ?? 0}
+                  {autopilotStatus?.dailyTarget ? ` / ${autopilotStatus.dailyTarget}` : ""} leads
+                </span>
+              </span>
             </p>
           </div>
         </div>
@@ -109,8 +225,8 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* KPI Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        {/* Total Businesses */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        {/* Total Leads */}
         <Card className="border border-border-subtle bg-bg-surface">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
@@ -119,17 +235,17 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             </div>
-            <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
-              {kpis.total}
+            <div className="text-[24px] sm:text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+              {totalLeads !== null ? totalLeads.toLocaleString() : "—"}
             </div>
             <div className="text-xs text-semantic-success mt-1 font-medium flex items-center gap-1">
-              <span>+{kpis.newToday}</span>
+              <span>+{newToday !== null ? newToday : 0}</span>
               <span className="text-text-tertiary font-normal">today</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Without Website */}
+        {/* No Website */}
         <Card className="border border-border-subtle bg-bg-surface">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
@@ -138,8 +254,8 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-semantic-warning" />
             </div>
-            <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
-              {kpis.withoutWebsite}
+            <div className="text-[24px] sm:text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+              {withoutWebsite !== null ? withoutWebsite.toLocaleString() : "—"}
             </div>
             <div className="text-xs text-text-secondary mt-1">Prime targets</div>
           </CardContent>
@@ -154,14 +270,14 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary" />
             </div>
-            <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
-              {kpis.withWebsite}
+            <div className="text-[24px] sm:text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+              {withWebsite !== null ? withWebsite.toLocaleString() : "—"}
             </div>
             <div className="text-xs text-text-secondary mt-1">Audit ready</div>
           </CardContent>
         </Card>
 
-        {/* High Opportunity */}
+        {/* High Priority */}
         <Card className="border border-border-subtle bg-bg-surface">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
@@ -170,10 +286,10 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-priority" />
             </div>
-            <div className="text-[26px] font-bold tabular-nums text-priority mt-2 tracking-tight">
-              {kpis.highOpportunity}
+            <div className="text-[24px] sm:text-[26px] font-bold tabular-nums text-priority mt-2 tracking-tight">
+              {highOpportunity !== null ? highOpportunity.toLocaleString() : "—"}
             </div>
-            <div className="text-xs text-text-secondary mt-1">Score ≥ 80</div>
+            <div className="text-xs text-text-secondary mt-1">Score ≥ 60</div>
           </CardContent>
         </Card>
 
@@ -186,8 +302,8 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-text-tertiary" />
             </div>
-            <div className="text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
-              {kpis.meetings}
+            <div className="text-[24px] sm:text-[26px] font-semibold tabular-nums text-text-primary mt-2 tracking-tight">
+              {meetings !== null ? meetings.toLocaleString() : "—"}
             </div>
             <div className="text-xs text-text-secondary mt-1">Scheduled</div>
           </CardContent>
@@ -202,8 +318,8 @@ export const DashboardPage: React.FC = () => {
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" />
             </div>
-            <div className="text-[26px] font-bold tabular-nums text-accent mt-2 tracking-tight">
-              {kpis.wonDeals || 1}
+            <div className="text-[24px] sm:text-[26px] font-bold tabular-nums text-accent mt-2 tracking-tight">
+              {wonDeals !== null ? wonDeals.toLocaleString() : "—"}
             </div>
             <div className="text-xs text-semantic-success mt-1 font-medium">Closed client</div>
           </CardContent>
@@ -232,30 +348,20 @@ export const DashboardPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-2">
-            {[
-              { stage: "Discovered", count: kpis.total, percent: 100 },
-              { stage: "Qualified", count: kpis.highOpportunity, percent: Math.round((kpis.highOpportunity / (kpis.total || 1)) * 100) },
-              { stage: "Contacted", count: kpis.contacted || 1, percent: Math.round(((kpis.contacted || 1) / (kpis.total || 1)) * 100) },
-              { stage: "Meeting", count: kpis.meetings, percent: Math.round((kpis.meetings / (kpis.total || 1)) * 100) },
-              { stage: "Won Deals", count: kpis.wonDeals || 1, percent: Math.round(((kpis.wonDeals || 1) / (kpis.total || 1)) * 100) },
-            ].map((f) => (
+            {funnelStages.map((f) => (
               <div key={f.stage} className="space-y-1.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-text-secondary font-medium">{f.stage}</span>
                   <span className="text-text-primary font-semibold tabular-nums">
-                    {f.count} <span className="font-semibold text-text-primary">({f.percent}%)</span>
+                    {f.count.toLocaleString()}{" "}
+                    <span className="font-normal text-text-tertiary text-[11px]">({f.percent}%)</span>
                   </span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-border-subtle overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      f.stage === "Discovered" ? "bg-accent/25" :
-                      f.stage === "Qualified" ? "bg-accent/45" :
-                      f.stage === "Contacted" ? "bg-accent/65" :
-                      f.stage === "Meeting" ? "bg-accent/85" : "bg-accent"
-                    }`}
-                    style={{ width: `${Math.max(f.percent, 2)}%` }}
-                  ></div>
+                    className={`h-full rounded-full transition-all duration-300 ${f.color}`}
+                    style={{ width: `${f.percent}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -290,13 +396,22 @@ export const DashboardPage: React.FC = () => {
                     {opp.type.replace(/_/g, " ")}
                   </div>
                   <span className="text-xs font-semibold tabular-nums text-text-primary">
-                    {opp.count} <span className="text-text-tertiary font-normal text-[11px]">leads</span>
+                    {opp.count.toLocaleString()}{" "}
+                    <span className="text-text-tertiary font-normal text-[11px]">leads</span>
                   </span>
                 </div>
               ))
             ) : (
-              <div className="py-8 text-center text-xs text-text-secondary">
-                No opportunities logged yet. Discovered leads will populate here.
+              <div className="py-12 text-center space-y-2">
+                <Sparkles className="w-6 h-6 text-text-tertiary mx-auto" />
+                <p className="text-xs text-text-secondary">
+                  No service opportunities recorded yet.
+                </p>
+                <Link to="/discover">
+                  <Button variant="ghost" size="sm" className="text-xs text-accent">
+                    Discover leads to populate opportunities &rarr;
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>
@@ -317,21 +432,20 @@ export const DashboardPage: React.FC = () => {
             </div>
             <Link to="/leads">
               <Button variant="ghost" size="sm" className="text-xs text-accent hover:text-accent font-medium">
-                View all {kpis.total} leads &rarr;
+                View all leads &rarr;
               </Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent>
           {topLeads.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-xs text-text-secondary mb-3">No verified leads stored in database yet.</p>
-              <Link to="/discover">
-                <Button variant="primary" size="sm" className="text-xs">
-                  Launch Lead Discovery &rarr;
-                </Button>
-              </Link>
-            </div>
+            <EmptyState
+              icon={Building2}
+              title="No verified leads stored in database"
+              description="Harvest commercial leads across any territory using the 24/7 Autopilot engine or manual registry search."
+              actionLabel="Launch Lead Discovery"
+              actionHref="/discover"
+            />
           ) : (
             <>
               {/* Mobile Card Layout (< md) */}
@@ -339,27 +453,33 @@ export const DashboardPage: React.FC = () => {
                 {topLeads.map((lead) => (
                   <div key={lead.id} className="p-3.5 rounded-lg bg-bg-base border border-border-subtle space-y-2">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold text-text-primary text-xs">{lead.name}</div>
-                        <div className="text-[11px] text-text-tertiary">{lead.category || "Business"}</div>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <div className="font-semibold text-text-primary text-xs truncate">{lead.name}</div>
+                        <div className="text-[11px] text-text-tertiary truncate">{lead.category || "Commercial Service"}</div>
                       </div>
-                      <div className="inline-flex items-center gap-1 tabular-nums font-semibold text-xs">
+                      <div className="inline-flex items-center gap-1 tabular-nums font-semibold text-xs shrink-0">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            lead.leadScore >= 90 ? "bg-semantic-success" : lead.leadScore >= 75 ? "bg-semantic-warning" : "bg-text-tertiary"
+                            lead.leadScore >= 80
+                              ? "bg-semantic-success"
+                              : lead.leadScore >= 60
+                              ? "bg-semantic-warning"
+                              : "bg-text-tertiary"
                           }`}
                         />
                         <span>{lead.leadScore}</span>
                       </div>
                     </div>
 
-                    <div className="text-xs text-text-secondary">
-                      {lead.city ? `${lead.city}, ` : ""}{lead.country || ""}
+                    <div className="text-xs text-text-secondary truncate">
+                      {lead.city ? `${lead.city}, ` : ""}{lead.state || lead.country || "Registered"}
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
                       {lead.website ? (
-                        <span className="text-accent text-[11px] truncate max-w-[140px]">{lead.website.replace(/^https?:\/\//, "")}</span>
+                        <span className="text-accent text-[11px] truncate max-w-[140px]">
+                          {lead.website.replace(/^https?:\/\//, "")}
+                        </span>
                       ) : (
                         <span className="text-semantic-danger text-[11px] font-medium">No website</span>
                       )}
@@ -391,15 +511,15 @@ export const DashboardPage: React.FC = () => {
                       <tr key={lead.id} className="hover:bg-bg-surface-hover transition-colors h-14">
                         <td className="py-3 px-3">
                           <div className="font-medium text-text-primary">{lead.name}</div>
-                          <div className="text-[11px] text-text-tertiary">{lead.category || "General"}</div>
+                          <div className="text-[11px] text-text-tertiary">{lead.category || "Commercial Service"}</div>
                         </td>
                         <td className="py-3 px-3 text-text-secondary">
-                          {lead.city}, {lead.state || lead.country}
+                          {lead.city ? `${lead.city}, ` : ""}{lead.state || lead.country || "Registered"}
                         </td>
                         <td className="py-3 px-3">
                           {lead.website ? (
                             <a
-                              href={lead.website}
+                              href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-accent hover:underline"
@@ -416,7 +536,11 @@ export const DashboardPage: React.FC = () => {
                           <div className="inline-flex items-center gap-1.5 tabular-nums font-semibold">
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
-                                lead.leadScore >= 90 ? "bg-semantic-success" : lead.leadScore >= 75 ? "bg-semantic-warning" : "bg-text-tertiary"
+                                lead.leadScore >= 80
+                                  ? "bg-semantic-success"
+                                  : lead.leadScore >= 60
+                                  ? "bg-semantic-warning"
+                                  : "bg-text-tertiary"
                               }`}
                             />
                             <span>{lead.leadScore}</span>

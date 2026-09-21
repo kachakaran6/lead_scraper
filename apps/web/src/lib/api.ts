@@ -20,47 +20,16 @@ api.interceptors.request.use((config) => {
 
 // API client endpoints
 export const leadEngineApi = {
-  // Stats
+  // Stats & Dashboard
   async getDashboardKpis() {
-    try {
-      const res = await api.get("/stats");
-      return res.data;
-    } catch {
-      return {
-        kpis: {
-          total: 0,
-          newToday: 0,
-          newWeek: 0,
-          newMonth: 0,
-          withoutWebsite: 0,
-          withWebsite: 0,
-          highOpportunity: 0,
-          contacted: 0,
-          replied: 0,
-          meetings: 0,
-          proposals: 0,
-          wonDeals: 0,
-        },
-        charts: {
-          byCity: [],
-          byCategory: [],
-          byCountry: [],
-          byState: [],
-          opportunities: [],
-          pipeline: [],
-        },
-      };
-    }
+    const res = await api.get("/stats");
+    return res.data;
   },
 
   // Businesses & Leads
   async getLeads(params?: Record<string, any>) {
-    try {
-      const res = await api.get("/businesses", { params });
-      return res.data;
-    } catch {
-      return { items: [], meta: { total: 0, page: 1, limit: 20 } };
-    }
+    const res = await api.get("/businesses", { params });
+    return res.data;
   },
 
   async getLead(id: string) {
@@ -75,12 +44,8 @@ export const leadEngineApi = {
 
   // Campaigns
   async getCampaigns(params?: Record<string, any>) {
-    try {
-      const res = await api.get("/campaigns", { params });
-      return res.data?.items || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await api.get("/campaigns", { params });
+    return res.data?.items || res.data || [];
   },
 
   async getCampaign(id: string) {
@@ -116,6 +81,7 @@ export const leadEngineApi = {
     cityName?: string;
     radiusKm?: number;
     provider?: string;
+    onlyWithoutWebsite?: boolean;
   }) {
     const res = await api.post("/discovery/search", payload);
     return res.data;
@@ -139,22 +105,14 @@ export const leadEngineApi = {
 
   // Opportunities
   async getOpportunities(params?: Record<string, any>) {
-    try {
-      const res = await api.get("/opportunities", { params });
-      return res.data?.items || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await api.get("/opportunities", { params });
+    return res.data?.items || res.data || [];
   },
 
   // Websites & Audits
   async getWebsites(params?: Record<string, any>) {
-    try {
-      const res = await api.get("/websites", { params });
-      return res.data?.items || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await api.get("/websites", { params });
+    return res.data?.items || res.data || [];
   },
 
   async getWebsiteAudit(id: string) {
@@ -195,7 +153,7 @@ export const leadEngineApi = {
     return res.data;
   },
 
-  // AI Services (OpenRouter server-side abstraction)
+  // AI Services
   async getAiStatus() {
     const res = await api.get("/ai/status");
     return res.data;
@@ -250,33 +208,13 @@ export const leadEngineApi = {
 
   // Autopilot 24/7 Discovery Engine
   async getAutopilotStatus() {
-    try {
-      const res = await api.get("/autopilot/status");
-      return res.data;
-    } catch {
-      return {
-        status: "IDLE",
-        todayDiscovered: 0,
-        dailyTarget: 150,
-        totalDiscovered: 0,
-        duplicatesPrevented: 0,
-        currentRegion: "All Regions",
-        currentNiche: "Dentist",
-        currentCountry: "India",
-        gridProgress: { totalCells: 1, completedCells: 0, percent: 0 },
-        recentLogs: [],
-        providersHealth: [],
-      };
-    }
+    const res = await api.get("/autopilot/status");
+    return res.data;
   },
 
   async getAutopilotProfiles() {
-    try {
-      const res = await api.get("/autopilot/profiles");
-      return res.data;
-    } catch {
-      return [];
-    }
+    const res = await api.get("/autopilot/profiles");
+    return res.data;
   },
 
   async createAutopilotProfile(data: {
@@ -315,21 +253,13 @@ export const leadEngineApi = {
   },
 
   async getAutopilotActivity(limit = 15) {
-    try {
-      const res = await api.get("/autopilot/activity", { params: { limit } });
-      return res.data;
-    } catch {
-      return [];
-    }
+    const res = await api.get("/autopilot/activity", { params: { limit } });
+    return res.data;
   },
 
   async getTodayDigest(date?: string) {
-    try {
-      const res = await api.get("/autopilot/digest/today", { params: { date } });
-      return res.data;
-    } catch {
-      return null;
-    }
+    const res = await api.get("/autopilot/digest/today", { params: { date } });
+    return res.data;
   },
 
   async expandNiche(niche: string, country?: string) {
@@ -339,5 +269,3 @@ export const leadEngineApi = {
     return res.data;
   },
 };
-
-

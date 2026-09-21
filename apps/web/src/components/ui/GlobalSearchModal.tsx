@@ -182,7 +182,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="font-mono text-[11px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">
-                        {lead.leadScore || 80} Score
+                        {typeof lead.leadScore === "number" ? `${lead.leadScore} Score` : "—"}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-text-tertiary group-hover:translate-x-0.5 transition-transform" />
                     </div>

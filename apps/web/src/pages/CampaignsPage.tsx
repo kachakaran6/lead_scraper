@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Megaphone,
   Play,
@@ -11,45 +11,58 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { Modal } from "../components/ui/Modal";
 import { Input } from "../components/ui/Input";
 import { leadEngineApi } from "../lib/api";
+import {
+  TableSkeleton,
+  ErrorState,
+  EmptyState,
+} from "../components/ui/LoadingStates";
 
 export const CampaignsPage: React.FC = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState("");
-  const [query, setQuery] = useState("Dental Clinics");
-  const [location, setLocation] = useState("Rajkot, Gujarat");
-  const [radiusKm, setRadiusKm] = useState("20");
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState("");
+  const [radiusKm, setRadiusKm] = useState("25");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const data = await leadEngineApi.getCampaigns();
       setCampaigns(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load campaigns", err);
+      setError(
+        err?.response?.data?.message ||
+          "Unable to retrieve campaigns from backend service. Please retry."
+      );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !query.trim() || !location.trim()) return;
 
     try {
       await leadEngineApi.createCampaign({
         name: name.trim(),
         query: query.trim(),
         location: location.trim(),
-        radiusKm: Number(radiusKm) || 20,
+        radiusKm: Number(radiusKm) || 25,
       });
       setIsModalOpen(false);
       setName("");
+      setQuery("");
+      setLocation("");
       fetchCampaigns();
     } catch (err) {
       console.error("Failed to create campaign", err);
@@ -74,6 +87,18 @@ export const CampaignsPage: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Scraping Campaigns"
+          description="Autonomous geo-targeted crawlers, real-time worker bot queues, and lead extraction schedules."
+        />
+        <TableSkeleton rows={4} cols={5} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header & Action */}
@@ -93,21 +118,30 @@ export const CampaignsPage: React.FC = () => {
         }
       />
 
-      {isLoading ? (
-        <div className="py-24 text-center text-text-secondary">
-          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs text-text-tertiary">Loading campaigns...</p>
-        </div>
+      {error ? (
+        <ErrorState
+          title="Unable to load campaigns"
+          message={error}
+          onRetry={fetchCampaigns}
+        />
+      ) : campaigns.length === 0 ? (
+        <EmptyState
+          icon={Megaphone}
+          title="No scraping campaigns configured"
+          description="Create and schedule geo-targeted scraper runs across any trade category."
+          actionLabel="Create Scraping Campaign"
+          onAction={() => setIsModalOpen(true)}
+        />
       ) : (
         <div className="space-y-3">
           {campaigns.map((camp) => (
             <div
               key={camp.id}
-              className="bg-bg-surface border border-border-subtle hover:border-border-default rounded-lg p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 transition-colors duration-150"
+              className="bg-bg-surface border border-border-subtle hover:border-border-default rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-colors duration-150 shadow-sm"
             >
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2.5">
-                  <h3 className="font-semibold text-text-primary text-sm">{camp.name}</h3>
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="font-semibold text-text-primary text-sm truncate">{camp.name}</h3>
                   {camp.status === "COMPLETED" ? (
                     <span className="inline-flex items-center gap-1.5 text-xs text-semantic-success font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-semantic-success" />
@@ -115,7 +149,7 @@ export const CampaignsPage: React.FC = () => {
                     </span>
                   ) : camp.status === "RUNNING" ? (
                     <span className="inline-flex items-center gap-1.5 text-xs text-semantic-warning font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-semantic-warning" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-semantic-warning animate-ping" />
                       <span>Running</span>
                     </span>
                   ) : (
@@ -127,37 +161,37 @@ export const CampaignsPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
                   <span>Target: <strong className="text-text-primary font-medium">{camp.query}</strong></span>
                   <span className="text-text-tertiary">•</span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-text-tertiary" />
-                    {camp.location || "Default Location"} ({camp.radiusKm || 15}km)
+                  <span className="flex items-center gap-1 truncate">
+                    <MapPin className="w-3 h-3 text-text-tertiary shrink-0" />
+                    <span className="truncate">{camp.location || "Default Location"} ({camp.radiusKm || 15}km)</span>
                   </span>
                 </div>
               </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-4 gap-2 text-center">
+              {/* Real Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center shrink-0">
                 <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
                   <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Discovered</span>
                   <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-1">
-                    {camp.discovered || 42}
+                    {typeof camp.discovered === "number" ? camp.discovered : 0}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
                   <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Unique</span>
                   <div className="text-xs font-semibold font-mono tabular-nums text-text-primary mt-1">
-                    {camp.unique || 38}
+                    {typeof camp.unique === "number" ? camp.unique : 0}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
                   <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">No Site</span>
                   <div className="text-xs font-semibold font-mono tabular-nums text-semantic-warning mt-1">
-                    {camp.noWebsite || 14}
+                    {typeof camp.noWebsite === "number" ? camp.noWebsite : 0}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-bg-base border border-border-subtle min-w-[76px]">
                   <span className="text-[10px] text-text-tertiary uppercase font-mono tracking-wider">Score &gt; 80</span>
                   <div className="text-xs font-semibold font-mono tabular-nums text-semantic-success mt-1">
-                    {camp.highOpportunity || 19}
+                    {typeof camp.highOpportunity === "number" ? camp.highOpportunity : 0}
                   </div>
                 </div>
               </div>
@@ -178,7 +212,7 @@ export const CampaignsPage: React.FC = () => {
                     size="sm"
                     variant="primary"
                     onClick={() => handleStart(camp.id)}
-                    className="text-xs"
+                    className="text-xs bg-accent text-white font-semibold"
                   >
                     <Play className="w-3 h-3 mr-1" /> Start Run
                   </Button>
@@ -186,13 +220,6 @@ export const CampaignsPage: React.FC = () => {
               </div>
             </div>
           ))}
-
-          {campaigns.length === 0 && !isLoading && (
-            <div className="text-center py-20 text-text-secondary bg-bg-surface border border-border-subtle rounded-lg">
-              <Megaphone className="w-8 h-8 mx-auto text-text-tertiary mb-2" />
-              <p className="text-xs text-text-tertiary">No campaigns found. Launch your first automated scraping run above.</p>
-            </div>
-          )}
         </div>
       )}
 
@@ -200,13 +227,13 @@ export const CampaignsPage: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Launch Autonomous Scraping Campaign"
+        title="Launch Scraping Campaign"
         subtitle="Queue high-speed worker bots to extract and score leads"
       >
         <form onSubmit={handleCreate} className="space-y-4">
           <Input
             label="Campaign Name"
-            placeholder="e.g. Rajkot Dental Clinics Wave 1"
+            placeholder="e.g. Dallas HVAC Contractors"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -214,15 +241,15 @@ export const CampaignsPage: React.FC = () => {
 
           <Input
             label="Search Query"
-            placeholder="e.g. Dental Clinic, Implant Center"
+            placeholder="e.g. HVAC Contractor, AC Repair"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             required
           />
 
           <Input
-            label="Target City & State"
-            placeholder="e.g. Rajkot, Gujarat, India"
+            label="Target City & State / Country"
+            placeholder="e.g. Dallas, Texas, USA"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             required
@@ -239,7 +266,7 @@ export const CampaignsPage: React.FC = () => {
             <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm">
+            <Button type="submit" variant="primary" size="sm" className="bg-accent text-white font-semibold">
               Queue Campaign
             </Button>
           </div>

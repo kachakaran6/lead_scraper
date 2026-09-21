@@ -52,6 +52,7 @@ First.md
 packages/*/src/**/*.d.ts
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map
+*.tsbuildinfo
 
 # Lock files and local npm configs
 package-lock.json

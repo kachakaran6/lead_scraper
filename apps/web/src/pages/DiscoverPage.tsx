@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -8,15 +8,6 @@ import {
   MapPin,
   CheckCircle2,
   AlertTriangle,
-  ExternalLink,
-  ShieldCheck,
-  AlertCircle,
-  Zap,
-  Sliders,
-  TrendingUp,
-  Layers,
-  ChevronRight,
-  Database,
   Bot,
   Play,
   Pause,
@@ -24,19 +15,22 @@ import {
   Sparkles,
   Settings2,
   Activity,
-  Award,
-  Filter,
   ArrowRight,
-  Plus,
   Cpu,
+  Radio,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { LocationSelector, LocationSelection } from "../components/ui/LocationSelector";
 import { leadEngineApi } from "../lib/api";
 import { cn } from "../lib/utils";
-
 import { PageHeader } from "../components/ui/PageHeader";
+import {
+  DiscoverySkeleton,
+  ErrorState,
+  EmptyState,
+  InlineSpinner,
+} from "../components/ui/LoadingStates";
 
 interface DiscoveredLead {
   id: string;
@@ -56,31 +50,27 @@ interface DiscoveredLead {
   leadGrade: string;
   sourceProvider?: string;
   verificationStatus?: string;
-  scoringFactors?: Array<{
-    name: string;
-    points: number;
-    met: boolean;
-    explanation: string;
-  }>;
 }
 
 export const DiscoverPage: React.FC = () => {
-  // Discovery Mode: 'autopilot' | 'manual'
+  // Mode: 'autopilot' | 'manual'
   const [activeTab, setActiveTab] = useState<"autopilot" | "manual">("autopilot");
 
   // --- Autopilot State ---
   const [autopilotStatus, setAutopilotStatus] = useState<any>(null);
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
   const [dailyDigest, setDailyDigest] = useState<any>(null);
+  const [isLoadingAutopilot, setIsLoadingAutopilot] = useState(true);
+  const [autopilotError, setAutopilotError] = useState<string | null>(null);
   const [isTriggering, setIsTriggering] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Autopilot Config Form State
-  const [strategyName, setStrategyName] = useState("Healthcare & Dental Growth Engine");
-  const [nichesInput, setNichesInput] = useState("Dentist, Dental Clinic, Orthodontist");
-  const [countriesInput, setCountriesInput] = useState("India, UAE");
-  const [regionsInput, setRegionsInput] = useState("Gujarat, Maharashtra, Dubai");
+  const [strategyName, setStrategyName] = useState("");
+  const [nichesInput, setNichesInput] = useState("");
+  const [countriesInput, setCountriesInput] = useState("");
+  const [regionsInput, setRegionsInput] = useState("");
   const [dailyTarget, setDailyTarget] = useState(150);
   const [resourceBudget, setResourceBudget] = useState<"LOW" | "MEDIUM" | "HIGH">("LOW");
   const [aiProcessingLevel, setAiProcessingLevel] = useState<"PROMISING_ONLY" | "FULL" | "MINIMAL">("PROMISING_ONLY");
@@ -88,7 +78,27 @@ export const DiscoverPage: React.FC = () => {
   const [oppFilterHasPhone, setOppFilterHasPhone] = useState(true);
   const [isSavingStrategy, setIsSavingStrategy] = useState(false);
 
-  // Sync state when autopilot status loads
+  // --- Manual Discovery State ---
+  const [query, setQuery] = useState("");
+  const [locationDetails, setLocationDetails] = useState<LocationSelection>({
+    countryCode: "IN",
+    countryName: "India",
+    stateCode: "MH",
+    stateName: "Maharashtra",
+    cityName: "Mumbai",
+    formatted: "Mumbai, Maharashtra, India",
+  });
+  const [location, setLocation] = useState("Mumbai, Maharashtra");
+  const [radius, setRadius] = useState(25);
+  const [onlyNoWebsite, setOnlyNoWebsite] = useState(false);
+  const [requirePhone, setRequirePhone] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<string>("");
+  const [results, setResults] = useState<DiscoveredLead[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Sync config form state when autopilot status loads
   useEffect(() => {
     if (autopilotStatus?.profile) {
       const p = autopilotStatus.profile;
@@ -112,47 +122,37 @@ export const DiscoverPage: React.FC = () => {
     }
   }, [autopilotStatus?.profile?.id]);
 
-  // --- Manual Discovery State ---
-  const [query, setQuery] = useState("Dentist");
-  const [locationDetails, setLocationDetails] = useState<LocationSelection>({
-    countryCode: "IN",
-    countryName: "India",
-    stateCode: "MH",
-    stateName: "Maharashtra",
-    cityName: "Mumbai",
-    formatted: "Mumbai, Maharashtra, India",
-  });
-  const [location, setLocation] = useState("Mumbai, Maharashtra");
-  const [radius, setRadius] = useState(25);
-  const [onlyNoWebsite, setOnlyNoWebsite] = useState(false);
-  const [requirePhone, setRequirePhone] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchStatus, setSearchStatus] = useState<string>("");
-  const [results, setResults] = useState<DiscoveredLead[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-
-  // Fetch Autopilot Status & Digest
-  const fetchAutopilotData = async () => {
+  // Fetch Autopilot Status & Activity
+  const fetchAutopilotData = useCallback(async (isInitial = false) => {
+    if (isInitial) setIsLoadingAutopilot(true);
+    setAutopilotError(null);
     try {
       const [status, activity, digest] = await Promise.all([
         leadEngineApi.getAutopilotStatus(),
-        leadEngineApi.getAutopilotActivity(8),
-        leadEngineApi.getTodayDigest(),
+        leadEngineApi.getAutopilotActivity(8).catch(() => []),
+        leadEngineApi.getTodayDigest().catch(() => null),
       ]);
       setAutopilotStatus(status);
-      setActivityFeed(activity);
+      setActivityFeed(Array.isArray(activity) ? activity : []);
       setDailyDigest(digest);
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Failed to fetch autopilot data:", err);
+      if (isInitial) {
+        setAutopilotError(
+          err?.response?.data?.message ||
+            "Unable to connect with the Autopilot Discovery Engine. Please verify server availability."
+        );
+      }
+    } finally {
+      if (isInitial) setIsLoadingAutopilot(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchAutopilotData();
-    const interval = setInterval(fetchAutopilotData, 10000); // 10s live pulse
+    fetchAutopilotData(true);
+    const interval = setInterval(() => fetchAutopilotData(false), 12000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAutopilotData]);
 
   const handleToggleAutopilot = async () => {
     if (!autopilotStatus?.profile?.id) {
@@ -162,8 +162,8 @@ export const DiscoverPage: React.FC = () => {
     setIsToggling(true);
     try {
       await leadEngineApi.toggleAutopilot(autopilotStatus.profile.id);
-      await fetchAutopilotData();
-    } catch (err) {
+      await fetchAutopilotData(false);
+    } catch (err: any) {
       console.error("Toggle error:", err);
     } finally {
       setIsToggling(false);
@@ -174,8 +174,8 @@ export const DiscoverPage: React.FC = () => {
     setIsTriggering(true);
     try {
       await leadEngineApi.triggerAutopilotRun(autopilotStatus?.profile?.id);
-      await fetchAutopilotData();
-    } catch (err) {
+      await fetchAutopilotData(false);
+    } catch (err: any) {
       console.error("Trigger error:", err);
     } finally {
       setIsTriggering(false);
@@ -201,8 +201,8 @@ export const DiscoverPage: React.FC = () => {
 
     const payload = {
       name: strategyName.trim() || "LeadEngine Growth Strategy",
-      targetNiches: parsedNiches.length > 0 ? parsedNiches : ["Dentist"],
-      targetCountries: parsedCountries.length > 0 ? parsedCountries : ["India"],
+      targetNiches: parsedNiches.length > 0 ? parsedNiches : ["Commercial Services"],
+      targetCountries: parsedCountries.length > 0 ? parsedCountries : ["United States"],
       targetRegions: parsedRegions,
       dailyTarget: Number(dailyTarget) || 150,
       resourceBudget,
@@ -225,7 +225,7 @@ export const DiscoverPage: React.FC = () => {
         targetProfileId = created?.id;
       }
       setShowConfigModal(false);
-      await fetchAutopilotData();
+      await fetchAutopilotData(false);
     } catch (err) {
       console.error("Save profile error:", err);
     } finally {
@@ -238,8 +238,8 @@ export const DiscoverPage: React.FC = () => {
     setLocation(sel.formatted);
   };
 
-  const handleManualSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleManualSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!query.trim()) return;
 
     setIsSearching(true);
@@ -277,27 +277,37 @@ export const DiscoverPage: React.FC = () => {
   };
 
   const isRunning = autopilotStatus?.status === "RUNNING";
-  const todayCount = autopilotStatus?.todayDiscovered || 0;
-  const targetCount = autopilotStatus?.dailyTarget || 150;
-  const progressPercent = Math.min(Math.round((todayCount / targetCount) * 100), 100);
+  const hasProfile = Boolean(autopilotStatus?.profile);
+  const todayCount = typeof autopilotStatus?.todayDiscovered === "number" ? autopilotStatus.todayDiscovered : null;
+  const targetCount = typeof autopilotStatus?.dailyTarget === "number" ? autopilotStatus.dailyTarget : 150;
+  const progressPercent =
+    todayCount !== null && targetCount > 0
+      ? Math.min(Math.round((todayCount / targetCount) * 100), 100)
+      : 0;
+
+  const activeTerritory =
+    autopilotStatus?.currentRegion && autopilotStatus?.currentCountry
+      ? `${autopilotStatus.currentRegion} · ${autopilotStatus.currentCountry}`
+      : autopilotStatus?.currentRegion || autopilotStatus?.currentCountry || null;
 
   return (
     <div className="space-y-6">
-      {/* 1. Standardized Global Page Header with Dual Mode Switcher */}
+      {/* 1. Page Header with Responsive Mode Switcher */}
       <PageHeader
         title={
           <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-text-primary">
-            <Zap className="w-5 h-5 text-accent" />
+            <Radio className="w-5 h-5 text-accent" />
             <span>Discovery</span>
           </div>
         }
         description="Autonomous 24/7 territory harvesting, multi-signal deduplication, and verified lead collection."
         actions={
-          <div className="flex items-center p-1 rounded-lg bg-bg-surface border border-border-subtle shrink-0">
+          <div className="flex flex-wrap items-center p-1 rounded-lg bg-bg-surface border border-border-subtle shrink-0">
             <button
+              type="button"
               onClick={() => setActiveTab("autopilot")}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all focus-ring",
                 activeTab === "autopilot"
                   ? "bg-accent text-white shadow-sm"
                   : "text-text-secondary hover:text-text-primary"
@@ -307,16 +317,17 @@ export const DiscoverPage: React.FC = () => {
               <span>Autopilot Engine (24/7)</span>
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("manual")}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all focus-ring",
                 activeTab === "manual"
                   ? "bg-accent text-white shadow-sm"
                   : "text-text-secondary hover:text-text-primary"
               )}
             >
               <Search className="w-3.5 h-3.5" />
-              <span>Manual Registry Search</span>
+              <span>Manual Search</span>
             </button>
           </div>
         }
@@ -326,302 +337,322 @@ export const DiscoverPage: React.FC = () => {
       {/* AUTOPILOT MODE                                           */}
       {/* ======================================================== */}
       {activeTab === "autopilot" && (
-        <div className="space-y-6">
-          {/* A. Status & Control Banner */}
-          <div className="p-5 rounded-xl bg-bg-surface border border-border-subtle shadow-sm space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center border",
-                    isRunning
-                      ? "bg-success/15 border-success/30 text-success"
-                      : "bg-amber-500/15 border-amber-500/30 text-amber-400"
-                  )}
-                >
-                  <Bot className="w-5 h-5" />
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-text-primary">
-                      {autopilotStatus?.profile?.name || "Autonomous Lead Harvester"}
-                    </h2>
-                    <span
+        <>
+          {isLoadingAutopilot ? (
+            <DiscoverySkeleton />
+          ) : autopilotError ? (
+            <ErrorState
+              title="Autopilot Service Unavailable"
+              message={autopilotError}
+              onRetry={() => fetchAutopilotData(true)}
+            />
+          ) : (
+            <div className="space-y-6">
+              {/* A. Status & Control Banner */}
+              <div className="p-4 sm:p-5 rounded-xl bg-bg-surface border border-border-subtle shadow-sm space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div
                       className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                        "w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 mt-0.5 sm:mt-0",
                         isRunning
                           ? "bg-success/15 border-success/30 text-success"
-                          : "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                          : hasProfile
+                          ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                          : "bg-border-subtle border-border-default text-text-tertiary"
                       )}
                     >
-                      <span
-                        className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          isRunning ? "bg-success animate-ping" : "bg-amber-400"
-                        )}
-                      />
-                      {isRunning ? "RUNNING 24/7" : "PAUSED"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Continuously exploring geographic grid cells & collecting verified business entities.
-                  </p>
-                </div>
-              </div>
+                      <Bot className="w-5 h-5" />
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Button
-                  variant={isRunning ? "secondary" : "primary"}
-                  size="sm"
-                  onClick={handleToggleAutopilot}
-                  isLoading={isToggling}
-                  className="gap-1.5 text-xs font-semibold"
-                >
-                  {isRunning ? (
-                    <>
-                      <Pause className="w-3.5 h-3.5" />
-                      <span>Pause Autopilot</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Resume Autopilot</span>
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleTriggerCycle}
-                  isLoading={isTriggering}
-                  className="gap-1.5 text-xs font-semibold"
-                >
-                  <RefreshCw className={cn("w-3.5 h-3.5", isTriggering && "animate-spin")} />
-                  <span>Scan Next Cell</span>
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowConfigModal(true)}
-                  className="gap-1.5 text-xs font-semibold"
-                >
-                  <Settings2 className="w-3.5 h-3.5" />
-                  <span>Configure Strategy</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* B. Telemetry Strip */}
-            <div className="pt-3 border-t border-border-subtle grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="space-y-0.5">
-                <span className="text-text-tertiary text-[11px]">Active Territory</span>
-                <div className="font-semibold text-text-primary truncate">
-                  {autopilotStatus?.currentRegion || "Ahmedabad"} · {autopilotStatus?.currentCountry || "India"}
-                </div>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-text-tertiary text-[11px]">Current Niche</span>
-                <div className="font-semibold text-accent truncate">
-                  {autopilotStatus?.currentNiche || "Dentist & Dental Clinics"}
-                </div>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-text-tertiary text-[11px]">Resource Budget</span>
-                <div className="font-semibold text-text-primary flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-text-tertiary" />
-                  <span>{autopilotStatus?.profile?.resourceBudget || "LOW (2 Workers)"}</span>
-                </div>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-text-tertiary text-[11px]">Duplicates Prevented</span>
-                <div className="font-semibold font-mono text-emerald-400">
-                  {autopilotStatus?.duplicatesPrevented || 0} duplicates
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* C. Daily Progress & Discovery KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {/* Daily Target Card */}
-            <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-text-tertiary font-medium">Today's Qualified Leads</span>
-                <span className="font-mono text-accent font-semibold">{progressPercent}%</span>
-              </div>
-              <div className="text-2xl font-bold font-mono text-text-primary">
-                {todayCount} <span className="text-sm font-normal text-text-tertiary">/ {targetCount}</span>
-              </div>
-              <div className="w-full bg-bg-base rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-accent h-full transition-all duration-500 rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Total Harvested */}
-            <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
-              <span className="text-text-tertiary text-xs block font-medium">All-Time Unique Leads</span>
-              <div className="text-2xl font-bold font-mono text-text-primary">
-                {autopilotStatus?.totalDiscovered || 0}
-              </div>
-              <span className="text-[11px] text-success flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>One canonical record per entity</span>
-              </span>
-            </div>
-
-            {/* Missing Websites */}
-            <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
-              <span className="text-text-tertiary text-xs block font-medium">Missing Website Prospects</span>
-              <div className="text-2xl font-bold font-mono text-amber-400">
-                {dailyDigest?.missingWebsitesCount || Math.round(todayCount * 0.45)}
-              </div>
-              <span className="text-[11px] text-text-secondary">
-                Prime web design & booking targets
-              </span>
-            </div>
-
-            {/* Multi-Signal Deduplication */}
-            <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
-              <span className="text-text-tertiary text-xs block font-medium">Multi-Signal Dedup</span>
-              <div className="text-2xl font-bold font-mono text-emerald-400">
-                {autopilotStatus?.duplicatesPrevented || 0}
-              </div>
-              <span className="text-[11px] text-text-secondary">
-                Phone, domain & geo-hash checked
-              </span>
-            </div>
-          </div>
-
-          {/* D. Morning Daily Digest / Today's Leads Card */}
-          {dailyDigest && (
-            <div className="p-5 rounded-xl bg-gradient-to-br from-bg-surface to-bg-surface/80 border border-accent/20 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center text-accent">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-text-primary flex items-center gap-2">
-                      Today's Morning Lead Digest
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-text-secondary">
-                        {dailyDigest.date}
-                      </span>
-                    </h3>
-                    <p className="text-xs text-text-secondary mt-0.5">
-                      {dailyDigest.summaryText}
-                    </p>
-                  </div>
-                </div>
-
-                <Link to="/leads">
-                  <Button variant="secondary" size="sm" className="text-xs font-semibold gap-1">
-                    <span>View Today's Leads</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Top Recommended Leads Table */}
-              {Array.isArray(dailyDigest.topLeads) && dailyDigest.topLeads.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-border-subtle">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary block">
-                    Top Priority Prospects Ready for Outreach:
-                  </span>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {dailyDigest.topLeads.slice(0, 3).map((lead: any) => (
-                      <div
-                        key={lead.id}
-                        className="p-3 rounded-lg bg-bg-base border border-border-subtle hover:border-accent/40 transition-all space-y-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <Link
-                            to={`/leads/${lead.id}`}
-                            className="font-bold text-xs text-text-primary hover:text-accent truncate block"
-                          >
-                            {lead.name}
-                          </Link>
-                          <span className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-accent/15 text-accent">
-                            Score {lead.leadScore}
-                          </span>
-                        </div>
-
-                        <div className="text-[11px] text-text-secondary flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-text-tertiary" />
-                          <span>{lead.city}, {lead.country}</span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {lead.evidence?.map((ev: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-bg-surface border border-border-subtle text-text-secondary"
-                            >
-                              {ev}
-                            </span>
-                          ))}
-                        </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base font-bold text-text-primary truncate">
+                          {autopilotStatus?.profile?.name || "Autonomous Lead Harvester"}
+                        </h2>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                            isRunning
+                              ? "bg-success/15 border-success/30 text-success"
+                              : hasProfile
+                              ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                              : "bg-border-subtle border-border-default text-text-tertiary"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              isRunning ? "bg-success animate-ping" : hasProfile ? "bg-amber-400" : "bg-text-tertiary"
+                            )}
+                          />
+                          {isRunning ? "RUNNING 24/7" : hasProfile ? "PAUSED" : "IDLE / UNCONFIGURED"}
+                        </span>
                       </div>
-                    ))}
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        Continuously exploring geographic grid cells & collecting verified business entities.
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Responsive Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                    {hasProfile && (
+                      <Button
+                        variant={isRunning ? "secondary" : "primary"}
+                        size="sm"
+                        onClick={handleToggleAutopilot}
+                        isLoading={isToggling}
+                        className="gap-1.5 text-xs font-semibold"
+                      >
+                        {isRunning ? (
+                          <>
+                            <Pause className="w-3.5 h-3.5" />
+                            <span>Pause Autopilot</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Resume Autopilot</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleTriggerCycle}
+                      isLoading={isTriggering}
+                      className="gap-1.5 text-xs font-semibold"
+                    >
+                      <RefreshCw className={cn("w-3.5 h-3.5", isTriggering && "animate-spin")} />
+                      <span>Scan Next Cell</span>
+                    </Button>
+
+                    <Button
+                      variant={hasProfile ? "secondary" : "primary"}
+                      size="sm"
+                      onClick={() => setShowConfigModal(true)}
+                      className="gap-1.5 text-xs font-semibold"
+                    >
+                      <Settings2 className="w-3.5 h-3.5" />
+                      <span>{hasProfile ? "Configure Strategy" : "Setup Strategy"}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* B. Telemetry Strip */}
+                <div className="pt-3 border-t border-border-subtle grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="space-y-0.5">
+                    <span className="text-text-tertiary text-[11px]">Active Territory</span>
+                    <div className="font-semibold text-text-primary truncate">
+                      {activeTerritory || "—"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <span className="text-text-tertiary text-[11px]">Current Niche</span>
+                    <div className="font-semibold text-accent truncate">
+                      {autopilotStatus?.currentNiche || "—"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <span className="text-text-tertiary text-[11px]">Resource Budget</span>
+                    <div className="font-semibold text-text-primary flex items-center gap-1.5">
+                      <Cpu className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+                      <span>{autopilotStatus?.profile?.resourceBudget || "LOW (2 Workers)"}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <span className="text-text-tertiary text-[11px]">Duplicates Prevented</span>
+                    <div className="font-semibold font-mono text-emerald-400">
+                      {(autopilotStatus?.duplicatesPrevented ?? 0).toLocaleString()} duplicates
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* C. Daily Progress & Discovery KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Daily Target Card */}
+                <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-tertiary font-medium">Today's Qualified Leads</span>
+                    <span className="font-mono text-accent font-semibold">{progressPercent}%</span>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-text-primary">
+                    {todayCount !== null ? todayCount : 0}{" "}
+                    <span className="text-sm font-normal text-text-tertiary">/ {targetCount}</span>
+                  </div>
+                  <div className="w-full bg-bg-base rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-accent h-full transition-all duration-500 rounded-full"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Total Harvested */}
+                <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
+                  <span className="text-text-tertiary text-xs block font-medium">All-Time Unique Leads</span>
+                  <div className="text-2xl font-bold font-mono text-text-primary">
+                    {typeof autopilotStatus?.totalDiscovered === "number"
+                      ? autopilotStatus.totalDiscovered.toLocaleString()
+                      : "—"}
+                  </div>
+                  <span className="text-[11px] text-success flex items-center gap-1 font-medium">
+                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    <span>One canonical record per entity</span>
+                  </span>
+                </div>
+
+                {/* Missing Websites */}
+                <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
+                  <span className="text-text-tertiary text-xs block font-medium">Missing Website Prospects</span>
+                  <div className="text-2xl font-bold font-mono text-amber-400">
+                    {typeof autopilotStatus?.missingWebsitesCount === "number"
+                      ? autopilotStatus.missingWebsitesCount.toLocaleString()
+                      : "—"}
+                  </div>
+                  <span className="text-[11px] text-text-secondary">
+                    Prime web design & booking targets
+                  </span>
+                </div>
+
+                {/* Multi-Signal Deduplication */}
+                <div className="p-4 rounded-xl bg-bg-surface border border-border-subtle space-y-1">
+                  <span className="text-text-tertiary text-xs block font-medium">Multi-Signal Dedup</span>
+                  <div className="text-2xl font-bold font-mono text-emerald-400">
+                    {typeof autopilotStatus?.duplicatesPrevented === "number"
+                      ? autopilotStatus.duplicatesPrevented.toLocaleString()
+                      : "0"}
+                  </div>
+                  <span className="text-[11px] text-text-secondary">
+                    Phone, domain & geo-hash checked
+                  </span>
+                </div>
+              </div>
+
+              {/* D. Morning Daily Digest Card (if present) */}
+              {dailyDigest && (
+                <div className="p-5 rounded-xl bg-gradient-to-br from-bg-surface to-bg-surface/80 border border-accent/20 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center text-accent shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-text-primary flex items-center gap-2">
+                          Today's Morning Lead Digest
+                          {dailyDigest.date && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-text-secondary">
+                              {dailyDigest.date}
+                            </span>
+                          )}
+                        </h3>
+                        {dailyDigest.summaryText && (
+                          <p className="text-xs text-text-secondary mt-0.5">
+                            {dailyDigest.summaryText}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link to="/leads">
+                      <Button variant="secondary" size="sm" className="text-xs font-semibold gap-1 shrink-0">
+                        <span>View Today's Leads</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+
+                  {/* Top Recommended Leads */}
+                  {Array.isArray(dailyDigest.topLeads) && dailyDigest.topLeads.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-border-subtle">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary block">
+                        Top Priority Prospects Ready for Outreach:
+                      </span>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {dailyDigest.topLeads.slice(0, 3).map((lead: any) => (
+                          <div
+                            key={lead.id}
+                            className="p-3 rounded-lg bg-bg-base border border-border-subtle hover:border-accent/40 transition-all space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <Link
+                                to={`/leads/${lead.id}`}
+                                className="font-bold text-xs text-text-primary hover:text-accent truncate block flex-1"
+                              >
+                                {lead.name}
+                              </Link>
+                              <span className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-accent/15 text-accent shrink-0">
+                                Score {lead.leadScore}
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] text-text-secondary flex items-center gap-1.5 truncate">
+                              <MapPin className="w-3 h-3 text-text-tertiary shrink-0" />
+                              <span className="truncate">{lead.city}, {lead.country}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* E. Live Activity Feed */}
+              <div className="p-5 rounded-xl bg-bg-surface border border-border-subtle shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-accent" />
+                    <h3 className="font-bold text-sm text-text-primary">Live Discovery Stream</h3>
+                  </div>
+                  <span className="text-[11px] font-mono text-text-tertiary">Real-time Node Ingestion</span>
+                </div>
+
+                <div className="space-y-2">
+                  {activityFeed.length > 0 ? (
+                    activityFeed.map((evt) => (
+                      <div
+                        key={evt.id}
+                        className="p-3 rounded-lg bg-bg-base border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                      >
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-text-primary truncate">
+                              {evt.title || evt.description}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-success/15 text-success shrink-0">
+                              Verified
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-text-secondary truncate">{evt.description}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 text-text-tertiary text-[11px] font-mono">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(evt.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center text-xs text-text-secondary">
+                      {isRunning
+                        ? "Autopilot is actively scanning. Incoming discovery events will stream here automatically."
+                        : "No discovery events logged yet. Launch a scan or configure a strategy to begin streaming."}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
-
-          {/* E. Live Activity Feed */}
-          <div className="p-5 rounded-xl bg-bg-surface border border-border-subtle shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-accent" />
-                <h3 className="font-bold text-sm text-text-primary">Live Discovery Stream</h3>
-              </div>
-              <span className="text-[11px] font-mono text-text-tertiary">Real-time Node Ingestion</span>
-            </div>
-
-            <div className="space-y-2">
-              {activityFeed.length > 0 ? (
-                activityFeed.map((evt) => (
-                  <div
-                    key={evt.id}
-                    className="p-3 rounded-lg bg-bg-base border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-text-primary truncate">
-                          {evt.title || evt.description}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-success/15 text-success">
-                          Verified
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-text-secondary truncate">{evt.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0 text-text-tertiary text-[11px] font-mono">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(evt.createdAt).toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-xs text-text-secondary">
-                  Autopilot is active. Incoming discovery events will stream here automatically.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        </>
       )}
 
       {/* ======================================================== */}
@@ -630,7 +661,7 @@ export const DiscoverPage: React.FC = () => {
       {activeTab === "manual" && (
         <div className="space-y-6">
           {/* Filter Workspace */}
-          <div className="p-5 rounded-xl bg-bg-surface border border-border-subtle space-y-4 shadow-sm">
+          <div className="p-4 sm:p-5 rounded-xl bg-bg-surface border border-border-subtle space-y-4 shadow-sm">
             <form onSubmit={handleManualSearch} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -638,7 +669,7 @@ export const DiscoverPage: React.FC = () => {
                     Target Business Niche / Service
                   </label>
                   <Input
-                    placeholder="e.g. Dentist, Law Firm, HVAC Contractor, Dermatologist"
+                    placeholder="e.g. Commercial HVAC, Dental Clinic, Law Firm, Solar Installer"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     icon={<Search className="w-4 h-4 text-text-tertiary" />}
@@ -677,7 +708,7 @@ export const DiscoverPage: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                     <span>Radius:</span>
                     <select
@@ -696,6 +727,7 @@ export const DiscoverPage: React.FC = () => {
                     type="submit"
                     variant="primary"
                     size="sm"
+                    disabled={isSearching}
                     isLoading={isSearching}
                     className="gap-1.5 px-4 bg-accent hover:bg-accent-hover text-white font-semibold"
                   >
@@ -707,8 +739,35 @@ export const DiscoverPage: React.FC = () => {
             </form>
           </div>
 
+          {/* Search Status / Skeletons */}
+          {isSearching && (
+            <div className="p-8 rounded-xl bg-bg-surface border border-border-subtle text-center space-y-3">
+              <InlineSpinner size="md" label={searchStatus || "Scanning verified registries..."} />
+              <p className="text-xs text-text-secondary">
+                Normalizing geo-hashes and validating contact signals...
+              </p>
+            </div>
+          )}
+
+          {searchError && (
+            <ErrorState
+              title="Discovery Search Error"
+              message={searchError}
+              onRetry={handleManualSearch}
+            />
+          )}
+
+          {/* Empty Results State */}
+          {!isSearching && hasSearched && !searchError && results.length === 0 && (
+            <EmptyState
+              icon={Search}
+              title="No commercial leads found"
+              description={`No entities matched "${query}" in "${location}". Try broadening the search radius or choosing a different trade category.`}
+            />
+          )}
+
           {/* Results Grid */}
-          {results.length > 0 && (
+          {!isSearching && results.length > 0 && (
             <div className="space-y-3">
               <div className="text-xs font-semibold text-text-secondary">
                 Showing {results.length} Discovered Entities in {location}
@@ -721,20 +780,20 @@ export const DiscoverPage: React.FC = () => {
                     className="p-4 rounded-xl bg-bg-surface border border-border-subtle hover:border-accent/40 transition-all space-y-3"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <Link
                           to={`/leads/${lead.id}`}
                           className="font-bold text-sm text-text-primary hover:text-accent truncate block"
                         >
                           {lead.name}
                         </Link>
-                        <div className="text-xs text-text-secondary flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-text-tertiary" />
-                          <span>{lead.address || lead.city || location}</span>
+                        <div className="text-xs text-text-secondary flex items-center gap-1.5 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+                          <span className="truncate">{lead.address || lead.city || location}</span>
                         </div>
                       </div>
 
-                      <span className="px-2 py-0.5 rounded font-mono text-xs font-bold bg-accent/15 text-accent">
+                      <span className="px-2 py-0.5 rounded font-mono text-xs font-bold bg-accent/15 text-accent shrink-0">
                         Score {lead.leadScore}
                       </span>
                     </div>
@@ -751,12 +810,12 @@ export const DiscoverPage: React.FC = () => {
 
                       {!lead.website ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 font-medium">
-                          No Website (High Opportunity)
+                          No Website (Opportunity)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-text-secondary">
-                          <Globe className="w-3 h-3 text-text-tertiary" />
-                          {lead.website}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-base border border-border-subtle text-text-secondary truncate max-w-[200px]">
+                          <Globe className="w-3 h-3 text-text-tertiary shrink-0" />
+                          <span className="truncate">{lead.website.replace(/^https?:\/\//, "")}</span>
                         </span>
                       )}
                     </div>
@@ -772,8 +831,8 @@ export const DiscoverPage: React.FC = () => {
       {/* AUTOPILOT CONFIGURATION STRATEGY MODAL                   */}
       {/* ======================================================== */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-bg-surface border border-border-subtle rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-bg-surface border border-border-subtle rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-auto max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div>
                 <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
@@ -785,8 +844,10 @@ export const DiscoverPage: React.FC = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowConfigModal(false)}
-                className="text-text-tertiary hover:text-text-primary text-sm font-semibold"
+                className="text-text-tertiary hover:text-text-primary text-sm font-semibold p-1 focus-ring rounded"
+                aria-label="Close modal"
               >
                 ✕
               </button>
@@ -798,14 +859,14 @@ export const DiscoverPage: React.FC = () => {
                 <Input
                   value={strategyName}
                   onChange={(e) => setStrategyName(e.target.value)}
-                  placeholder="e.g. India Healthcare Expansion"
+                  placeholder="e.g. Healthcare Expansion Strategy"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-text-primary mb-1">Daily Target</label>
+                  <label className="block font-semibold text-text-primary mb-1">Daily Target (Leads)</label>
                   <Input
                     type="number"
                     value={dailyTarget}
@@ -835,18 +896,18 @@ export const DiscoverPage: React.FC = () => {
                 <Input
                   value={nichesInput}
                   onChange={(e) => setNichesInput(e.target.value)}
-                  placeholder="Dentist, Dental Clinic, Orthodontist"
+                  placeholder="e.g. Dental Clinic, Orthopedic Hospital, HVAC"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-text-primary mb-1">Target Countries</label>
                   <Input
                     value={countriesInput}
                     onChange={(e) => setCountriesInput(e.target.value)}
-                    placeholder="India, UAE, United States"
+                    placeholder="e.g. United States, India, UAE"
                     required
                   />
                 </div>
@@ -856,7 +917,7 @@ export const DiscoverPage: React.FC = () => {
                   <Input
                     value={regionsInput}
                     onChange={(e) => setRegionsInput(e.target.value)}
-                    placeholder="Gujarat, Maharashtra, Dubai"
+                    placeholder="e.g. California, Texas, Gujarat"
                   />
                 </div>
               </div>
@@ -899,7 +960,7 @@ export const DiscoverPage: React.FC = () => {
                   isLoading={isSavingStrategy}
                   className="bg-accent text-white font-semibold"
                 >
-                  Launch Strategy
+                  Save & Launch Strategy
                 </Button>
               </div>
             </form>

@@ -35,6 +35,7 @@ import { Badge } from "../components/ui/Badge";
 import { leadEngineApi } from "../lib/api";
 import { Business } from "../types";
 import { cn } from "../lib/utils";
+import { ErrorState, Skeleton } from "../components/ui/LoadingStates";
 
 type TabKey = "intel" | "ai_analysis" | "assistant" | "outreach";
 
@@ -44,6 +45,7 @@ export const LeadDetailPage: React.FC = () => {
   const [lead, setLead] = useState<Business | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("intel");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [leadStatus, setLeadStatus] = useState<string>("QUALIFIED");
   const [isAuditing, setIsAuditing] = useState(false);
@@ -58,20 +60,26 @@ export const LeadDetailPage: React.FC = () => {
   const [assistantChat, setAssistantChat] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
 
-  useEffect(() => {
+  const fetchLead = async () => {
     if (!id) return;
-    const fetchLead = async () => {
-      setIsLoading(true);
-      try {
-        const data = await leadEngineApi.getLead(id);
-        setLead(data);
-        if (data?.status) setLeadStatus(data.status);
-      } catch (err) {
-        console.error("Failed to load lead intelligence record", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await leadEngineApi.getLead(id);
+      setLead(data);
+      if (data?.status) setLeadStatus(data.status);
+    } catch (err: any) {
+      console.error("Failed to load lead intelligence record", err);
+      setError(
+        err?.response?.data?.message ||
+          "Unable to retrieve lead dossier from database. Please retry."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLead();
   }, [id]);
 
@@ -129,16 +137,46 @@ export const LeadDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-pulse py-4">
-        <div className="h-4 bg-bg-surface rounded w-32" />
+      <div className="space-y-6 py-4" aria-busy="true">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24" />
+        </div>
         <div className="bg-bg-surface border border-border-subtle rounded-xl p-6 space-y-4">
-          <div className="h-8 bg-bg-surface-hover rounded w-1/3" />
-          <div className="h-4 bg-bg-surface-hover rounded w-1/4" />
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-7 w-64" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <Skeleton className="h-8 w-24 rounded-lg" />
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-64 bg-bg-surface border border-border-subtle rounded-xl col-span-2" />
-          <div className="h-64 bg-bg-surface border border-border-subtle rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="h-96 bg-bg-surface border border-border-subtle rounded-xl lg:col-span-2 p-6 space-y-4">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-20 w-full rounded" />
+            <Skeleton className="h-28 w-full rounded" />
+          </div>
+          <div className="h-96 bg-bg-surface border border-border-subtle rounded-xl p-6 space-y-4">
+            <Skeleton className="h-6 w-36" />
+            <Skeleton className="h-32 w-full rounded" />
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Link to="/leads" className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary">
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Leads</span>
+        </Link>
+        <ErrorState
+          title="Unable to load lead dossier"
+          message={error}
+          onRetry={fetchLead}
+        />
       </div>
     );
   }
