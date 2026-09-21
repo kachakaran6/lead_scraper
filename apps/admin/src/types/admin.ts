@@ -22,6 +22,12 @@ export interface AdminUserItem {
     discoveryProfiles: number;
     exports: number;
   };
+  // counts is the normalized alias used in admin API responses
+  counts?: {
+    businesses: number;
+    discoveryProfiles: number;
+    exports: number;
+  };
 }
 
 export type AdminUser = AdminUserItem;

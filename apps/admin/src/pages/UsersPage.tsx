@@ -68,9 +68,9 @@ export const UsersPage: React.FC = () => {
       ]);
 
       setStats(statsData);
-      setUsers(usersData.users);
-      setTotalUsers(usersData.total);
-      setTotalPages(usersData.totalPages);
+      setUsers(usersData.users ?? []);
+      setTotalUsers(usersData.total ?? 0);
+      setTotalPages(usersData.totalPages ?? 1);
     } catch (err: any) {
       console.error('Failed to fetch admin users:', err);
       showToast('error', err.response?.data?.message || 'Failed to load user management data');

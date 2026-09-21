@@ -171,15 +171,15 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 </h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                    <p className="text-lg font-bold text-slate-900">{data.user.counts?.businesses || 0}</p>
+                    <p className="text-lg font-bold text-slate-900">{(data.user.counts ?? data.user._count)?.businesses ?? 0}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">Discovered Leads</p>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                    <p className="text-lg font-bold text-slate-900">{data.user.counts?.discoveryProfiles || 0}</p>
+                    <p className="text-lg font-bold text-slate-900">{(data.user.counts ?? data.user._count)?.discoveryProfiles ?? 0}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">Autopilot Profiles</p>
                   </div>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                    <p className="text-lg font-bold text-slate-900">{data.user.counts?.exports || 0}</p>
+                    <p className="text-lg font-bold text-slate-900">{(data.user.counts ?? data.user._count)?.exports ?? 0}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">Data Exports</p>
                   </div>
                 </div>
@@ -192,12 +192,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   <span className="text-[10px] font-normal text-slate-500">Last 25 events</span>
                 </h4>
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto divide-y divide-slate-100">
-                  {data.auditLogs.length === 0 ? (
+                  {(data.auditLogs ?? []).length === 0 ? (
                     <div className="p-4 text-center text-xs text-slate-500">
                       No security audit events recorded for this user.
                     </div>
                   ) : (
-                    data.auditLogs.map((log) => (
+                    (data.auditLogs ?? []).map((log) => (
                       <div key={log.id} className="p-2.5 text-xs space-y-0.5 hover:bg-slate-50 transition">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-semibold text-slate-900 font-mono text-[11px]">

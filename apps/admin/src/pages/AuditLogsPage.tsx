@@ -29,9 +29,9 @@ export const AuditLogsPage: React.FC = () => {
         page,
         limit,
       });
-      setLogs(data.logs);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
+      setLogs(data.logs ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
     } catch (err: any) {
       console.error('Failed to load audit logs:', err);
     } finally {
