@@ -7,7 +7,8 @@ export type LeadStatus =
   | "PROPOSAL"
   | "NEGOTIATION"
   | "WON"
-  | "LOST";
+  | "LOST"
+  | "NOT_INTERESTED";
 
 export type WebsiteStatus =
   | "NO_WEBSITE"
@@ -69,6 +70,9 @@ export interface Business {
     explanation: string;
   }>;
   status: LeadStatus;
+  dispositionReason?: string | null;
+  dispositionNotes?: string | null;
+  dispositionedAt?: string | null;
   leadScore: number;
   leadGrade: string;
   opportunityScore: number;

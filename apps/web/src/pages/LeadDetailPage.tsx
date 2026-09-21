@@ -336,6 +336,7 @@ Lead Intelligence Team`;
             <option value="NEGOTIATION">IN NEGOTIATION</option>
             <option value="WON">CLOSED / WON</option>
             <option value="LOST">ARCHIVED / LOST</option>
+            <option value="NOT_INTERESTED">NOT INTERESTED</option>
           </select>
         </div>
       </div>

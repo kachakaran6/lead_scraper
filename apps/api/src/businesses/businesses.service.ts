@@ -96,35 +96,127 @@ export class BusinessesService {
 
   async findAll(query: Record<string, string | string[] | undefined>) {
     const { skip, take, page, limit } = parsePagination(query);
-    const where: Prisma.BusinessWhereInput = {};
+    const andConditions: Prisma.BusinessWhereInput[] = [];
 
-    if (query.search) {
-      const s = query.search as string;
-      where.OR = [
-        { name: { contains: s, mode: "insensitive" } },
-        { category: { contains: s, mode: "insensitive" } },
-        { city: { contains: s, mode: "insensitive" } },
-        { state: { contains: s, mode: "insensitive" } },
-        { country: { contains: s, mode: "insensitive" } },
-        { phone: { contains: s, mode: "insensitive" } },
-      ];
+    // Search filter across name, category, address, city, state, country, phone, websiteDomain, website
+    if (query.search && typeof query.search === "string" && query.search.trim().length > 0) {
+      const s = query.search.trim();
+      andConditions.push({
+        OR: [
+          { name: { contains: s, mode: "insensitive" } },
+          { category: { contains: s, mode: "insensitive" } },
+          { city: { contains: s, mode: "insensitive" } },
+          { state: { contains: s, mode: "insensitive" } },
+          { country: { contains: s, mode: "insensitive" } },
+          { address: { contains: s, mode: "insensitive" } },
+          { phone: { contains: s, mode: "insensitive" } },
+          { websiteDomain: { contains: s, mode: "insensitive" } },
+          { website: { contains: s, mode: "insensitive" } },
+        ],
+      });
     }
-    if (query.city) where.city = { contains: query.city as string, mode: "insensitive" };
-    if (query.state) where.state = { contains: query.state as string, mode: "insensitive" };
-    if (query.country) where.country = { contains: query.country as string, mode: "insensitive" };
-    if (query.category) where.category = { contains: query.category as string, mode: "insensitive" };
-    if (query.tag) {
-      where.tags = { some: { name: { equals: query.tag as string, mode: "insensitive" } } };
+
+    // City Filter
+    if (query.city && typeof query.city === "string" && query.city.trim().length > 0) {
+      const city = query.city.trim();
+      andConditions.push({
+        city: { equals: city, mode: "insensitive" },
+      });
     }
-    if (query.hasWebsite === "true") where.websites = { some: {} };
-    if (query.hasWebsite === "false") where.websites = { none: {} };
-    if (query.hasEmail === "true") where.emails = { some: {} };
-    if (query.hasEmail === "false") where.emails = { none: {} };
-    if (query.hasPhone === "true") where.phones = { some: {} };
-    if (query.hasPhone === "false") where.phones = { none: {} };
-    if (query.hasSocial === "true") where.socialProfiles = { some: {} };
+
+    // State / Country / Category / Tag filters
+    if (query.state && typeof query.state === "string" && query.state.trim().length > 0) {
+      andConditions.push({ state: { contains: query.state.trim(), mode: "insensitive" } });
+    }
+    if (query.country && typeof query.country === "string" && query.country.trim().length > 0) {
+      andConditions.push({ country: { contains: query.country.trim(), mode: "insensitive" } });
+    }
+    if (query.category && typeof query.category === "string" && query.category.trim().length > 0) {
+      andConditions.push({ category: { contains: query.category.trim(), mode: "insensitive" } });
+    }
+    if (query.tag && typeof query.tag === "string" && query.tag.trim().length > 0) {
+      andConditions.push({
+        tags: { some: { name: { equals: query.tag.trim(), mode: "insensitive" } } },
+      });
+    }
+
+    // Website Filter: ALL | MISSING_WEBSITE | HAS_ACTIVE_WEBSITE
+    const websiteFilter = (query.website as string || query.websiteStatus as string || "").toLowerCase();
+    if (websiteFilter === "missing" || websiteFilter === "missing_website" || query.hasWebsite === "false") {
+      andConditions.push({
+        OR: [
+          { website: null },
+          { website: "" },
+          { hasWebsite: false },
+          { websites: { none: {} } },
+        ],
+      });
+    } else if (websiteFilter === "active" || websiteFilter === "has_active_website" || query.hasWebsite === "true") {
+      andConditions.push({
+        AND: [
+          { website: { not: null } },
+          { website: { not: "" } },
+          {
+            OR: [
+              { hasWebsite: true },
+              { websites: { some: {} } },
+              { websiteDomain: { not: null } },
+            ],
+          },
+        ],
+      });
+    }
+
+    // Stage / Status Filter
+    const stage = (query.stage as string || query.status as string || "").toUpperCase();
+    if (stage && stage !== "ALL") {
+      if (stage === "ACTIVE") {
+        andConditions.push({
+          status: {
+            notIn: [LeadStatus.NOT_INTERESTED, LeadStatus.LOST],
+          },
+        });
+      } else if (Object.values(LeadStatus).includes(stage as LeadStatus)) {
+        andConditions.push({
+          status: stage as LeadStatus,
+        });
+      }
+    }
+
+    // Min Lead Score
     if (query.minLeadScore) {
-      where.leadScore = { gte: parseInt(query.minLeadScore as string, 10) };
+      const minScore = parseInt(query.minLeadScore as string, 10);
+      if (!isNaN(minScore)) {
+        andConditions.push({ leadScore: { gte: minScore } });
+      }
+    }
+
+    // Contact availability filters
+    if (query.hasEmail === "true") andConditions.push({ emails: { some: {} } });
+    if (query.hasEmail === "false") andConditions.push({ emails: { none: {} } });
+    if (query.hasPhone === "true") andConditions.push({ phones: { some: {} } });
+    if (query.hasPhone === "false") andConditions.push({ phones: { none: {} } });
+    if (query.hasSocial === "true") andConditions.push({ socialProfiles: { some: {} } });
+
+    const where: Prisma.BusinessWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+    // Sort order
+    let orderBy: Prisma.BusinessOrderByWithRelationInput[] = [];
+    const sort = (query.sort as string || "").toLowerCase();
+
+    if (sort === "score_desc" || sort === "score_high") {
+      orderBy = [{ leadScore: "desc" }, { createdAt: "desc" }];
+    } else if (sort === "score_asc" || sort === "score_low") {
+      orderBy = [{ leadScore: "asc" }, { createdAt: "desc" }];
+    } else if (sort === "date_asc" || sort === "oldest") {
+      orderBy = [{ createdAt: "asc" }];
+    } else if (sort === "date_desc" || sort === "newest") {
+      orderBy = [{ createdAt: "desc" }];
+    } else if (sort === "name_asc") {
+      orderBy = [{ name: "asc" }];
+    } else {
+      // Default: prioritize actionable leads over NOT_INTERESTED, sorted by score & date
+      orderBy = [{ status: "asc" }, { leadScore: "desc" }, { createdAt: "desc" }];
     }
 
     const [items, total] = await Promise.all([
@@ -132,7 +224,7 @@ export class BusinessesService {
         where,
         skip,
         take,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         include: {
           websites: { orderBy: { createdAt: "desc" }, take: 1 },
           websiteAudits: { orderBy: { createdAt: "desc" }, take: 1 },
@@ -155,7 +247,135 @@ export class BusinessesService {
       prisma.business.count({ where }),
     ]);
 
-    return { items, meta: { total, page, limit } };
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    };
+  }
+
+  async getDistinctCities(): Promise<string[]> {
+    const records = await prisma.business.findMany({
+      where: {
+        city: { not: null },
+      },
+      select: { city: true },
+      distinct: ["city"],
+      orderBy: { city: "asc" },
+    });
+
+    const cityMap = new Map<string, string>();
+    for (const r of records) {
+      if (r.city) {
+        const trimmed = r.city.trim();
+        if (trimmed.length > 0) {
+          const key = trimmed.toLowerCase();
+          if (!cityMap.has(key)) {
+            // Capitalize appropriately
+            const formatted = trimmed
+              .split(" ")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+              .join(" ");
+            cityMap.set(key, formatted);
+          }
+        }
+      }
+    }
+
+    return Array.from(cityMap.values()).sort((a, b) => a.localeCompare(b));
+  }
+
+  async markNotInterested(id: string, reason?: string, notes?: string) {
+    const previous = await prisma.business.findUnique({
+      where: { id },
+      select: { id: true, name: true, status: true },
+    });
+    if (!previous) throw new NotFoundException("Business not found");
+
+    const updated = await prisma.business.update({
+      where: { id },
+      data: {
+        status: LeadStatus.NOT_INTERESTED,
+        dispositionReason: reason || "Not interested",
+        dispositionNotes: notes || null,
+        dispositionedAt: new Date(),
+      },
+    });
+
+    try {
+      await prisma.leadEvent.create({
+        data: {
+          businessId: id,
+          type: "STATUS_CHANGED",
+          title: "Marked as Not Interested",
+          description: reason ? `Reason: ${reason}` : "Marked as Not Interested",
+          metadata: {
+            previousStatus: previous.status,
+            reason: reason || "Not interested",
+            notes: notes || null,
+          },
+        },
+      });
+    } catch {
+      // Non-blocking event log
+    }
+
+    return {
+      success: true,
+      lead: updated,
+      previousStatus: previous.status,
+    };
+  }
+
+  async restoreStatus(id: string, targetStatus?: LeadStatus) {
+    const previous = await prisma.business.findUnique({
+      where: { id },
+      select: { id: true, name: true, status: true },
+    });
+    if (!previous) throw new NotFoundException("Business not found");
+
+    const statusToSet = targetStatus && Object.values(LeadStatus).includes(targetStatus)
+      ? targetStatus
+      : LeadStatus.NEW;
+
+    const updated = await prisma.business.update({
+      where: { id },
+      data: {
+        status: statusToSet,
+        dispositionReason: null,
+        dispositionNotes: null,
+        dispositionedAt: null,
+      },
+    });
+
+    try {
+      await prisma.leadEvent.create({
+        data: {
+          businessId: id,
+          type: "STATUS_CHANGED",
+          title: "Lead Status Restored",
+          description: `Status restored to ${statusToSet}`,
+          metadata: {
+            previousStatus: previous.status,
+            newStatus: statusToSet,
+          },
+        },
+      });
+    } catch {
+      // Non-blocking event log
+    }
+
+    return {
+      success: true,
+      lead: updated,
+    };
   }
 
   async findOne(id: string) {

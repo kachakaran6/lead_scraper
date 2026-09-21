@@ -28,6 +28,12 @@ export class BusinessesController {
     return this.businessesService.findAll(query);
   }
 
+  @Get("filters/cities")
+  @RequireAction("LEADS_VIEW")
+  async getCities() {
+    return this.businessesService.getDistinctCities();
+  }
+
   @Get("stats/dashboard")
   @RequireAction("LEADS_VIEW")
   async stats() {
@@ -38,6 +44,24 @@ export class BusinessesController {
   @RequireAction("LEADS_VIEW")
   async listTags() {
     return this.businessesService.listTags();
+  }
+
+  @Post(":id/not-interested")
+  @RequireAction("LEADS_EDIT")
+  async markNotInterested(
+    @Param("id") id: string,
+    @Body() body: { reason?: string; notes?: string }
+  ) {
+    return this.businessesService.markNotInterested(id, body?.reason, body?.notes);
+  }
+
+  @Post(":id/restore-status")
+  @RequireAction("LEADS_EDIT")
+  async restoreStatus(
+    @Param("id") id: string,
+    @Body() body: { targetStatus?: any }
+  ) {
+    return this.businessesService.restoreStatus(id, body?.targetStatus);
   }
 
   @Get(":id")

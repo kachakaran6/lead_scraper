@@ -32,6 +32,11 @@ export const leadEngineApi = {
     return res.data;
   },
 
+  async getCities(): Promise<string[]> {
+    const res = await api.get("/businesses/filters/cities");
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
   async getLead(id: string) {
     const res = await api.get(`/businesses/${id}`);
     return res.data;
@@ -39,6 +44,16 @@ export const leadEngineApi = {
 
   async updateLeadStatus(id: string, status: string) {
     const res = await api.patch(`/businesses/${id}`, { status });
+    return res.data;
+  },
+
+  async markLeadNotInterested(id: string, reason?: string, notes?: string) {
+    const res = await api.post(`/businesses/${id}/not-interested`, { reason, notes });
+    return res.data;
+  },
+
+  async restoreLeadStatus(id: string, targetStatus?: string) {
+    const res = await api.post(`/businesses/${id}/restore-status`, { targetStatus });
     return res.data;
   },
 

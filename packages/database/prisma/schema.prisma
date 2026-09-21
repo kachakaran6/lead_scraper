@@ -40,6 +40,7 @@ enum LeadStatus {
   NEGOTIATION
   WON
   LOST
+  NOT_INTERESTED
 }
 
 enum WebsiteStatus {
@@ -284,6 +285,9 @@ model Business {
   verificationStatus String              @default("UNVERIFIED")
   duplicateConfidence Float?
   matchReason        String?
+  dispositionReason  String?
+  dispositionNotes   String?
+  dispositionedAt    DateTime?
   retrievedAt        DateTime            @default(now())
   lastVerifiedAt     DateTime?
   firstSeen          DateTime            @default(now())
@@ -320,9 +324,11 @@ model Business {
   @@index([domainHash])
   @@index([geoNameHash])
   @@index([identityHash])
+  @@index([city])
   @@index([city, state])
   @@index([category])
   @@index([website])
+  @@index([hasWebsite])
   @@index([phone])
   @@index([status])
   @@index([lifecycleStage])
@@ -333,6 +339,7 @@ model Business {
   @@index([source, sourceId])
   @@index([firstSeen])
   @@index([lastSeen])
+  @@index([createdAt])
 }
 
 model Website {
