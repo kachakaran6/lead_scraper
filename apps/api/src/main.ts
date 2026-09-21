@@ -15,6 +15,8 @@ import { AppModule } from "./app.module";
 import { getEnv } from "@ultimate-leads/config";
 import { prisma } from "@ultimate-leads/database";
 
+import { hashPassword } from "./auth/auth.utils";
+
 async function bootstrap() {
   const env = getEnv();
 
@@ -77,9 +79,48 @@ async function bootstrap() {
     console.warn("[DB] Prisma schema push notice:", dbErr);
   }
 
-  // Ensure database has active OWNER/ADMIN accounts
+  // Ensure bootstrap admin and synchronized authorizations
   try {
     console.log("[DB] Synchronizing administrator authorizations...");
+
+    const bootstrapEmail = (process.env.INITIAL_ADMIN_EMAIL || "kachakaran06@gmail.com").toLowerCase().trim();
+    const bootstrapPassword = process.env.INITIAL_ADMIN_PASSWORD || "99533206-5b44-41c0-941a-656b7f54055f";
+
+    if (bootstrapEmail && bootstrapPassword) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: bootstrapEmail },
+      });
+
+      if (existingUser) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            passwordHash: hashPassword(bootstrapPassword),
+            role: "OWNER",
+            accountStatus: "ACTIVE",
+            scraperAccess: true,
+            emailVerified: true,
+            approvedAt: new Date(),
+          },
+        });
+        console.log(`[DB] Bootstrap admin ${bootstrapEmail} updated with OWNER role and active credentials.`);
+      } else {
+        await prisma.user.create({
+          data: {
+            email: bootstrapEmail,
+            name: "Karan",
+            passwordHash: hashPassword(bootstrapPassword),
+            role: "OWNER",
+            accountStatus: "ACTIVE",
+            scraperAccess: true,
+            emailVerified: true,
+            approvedAt: new Date(),
+          },
+        });
+        console.log(`[DB] Created bootstrap administrator ${bootstrapEmail} with OWNER role.`);
+      }
+    }
+
     const ownerCount = await prisma.user.count({ where: { role: "OWNER" } });
     if (ownerCount === 0) {
       // If no OWNER exists, promote earliest user to OWNER
