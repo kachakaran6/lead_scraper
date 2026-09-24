@@ -262,6 +262,11 @@ export const leadEngineApi = {
     return res.data;
   },
 
+  async resetAutopilotTelemetry(profileId: string) {
+    const res = await api.post(`/autopilot/profiles/${profileId}/reset-telemetry`);
+    return res.data;
+  },
+
   async triggerAutopilotRun(profileId?: string) {
     const res = await api.post("/autopilot/trigger", { profileId });
     return res.data;

@@ -3,7 +3,30 @@ import { prisma } from "@ultimate-leads/database";
 import { Job, Worker } from "bullmq";
 import { SearxngProvider } from "../discovery/searxng.provider";
 import { DiscoveryResult } from "../discovery/types";
+import { DEFAULT_PROFESSIONAL_NICHES } from "@ultimate-leads/shared";
 import crypto from "crypto";
+
+const AGGREGATOR_DOMAINS = new Set([
+  "yelp.com",
+  "yellowpages.com",
+  "healthgrades.com",
+  "zocdoc.com",
+  "facebook.com",
+  "instagram.com",
+  "linkedin.com",
+  "mapquest.com",
+  "tripadvisor.com",
+  "angi.com",
+  "bbb.org",
+  "thumbtack.com",
+  "houzz.com",
+  "dnb.com",
+  "manta.com",
+  "superpages.com",
+  "whitepages.com",
+  "dexknows.com",
+  "cylex.us.com",
+]);
 
 export class DiscoveryWorker extends BaseWorker {
   constructor() {
@@ -34,7 +57,7 @@ export class DiscoveryWorker extends BaseWorker {
     try {
       const provider = new SearxngProvider();
       results = await provider.discover({
-        query: String(query || "Dentist"),
+        query: String(query || DEFAULT_PROFESSIONAL_NICHES[0]),
         location: location ? String(location) : undefined,
         limit: Number(limit) || 50,
       });
@@ -57,22 +80,36 @@ export class DiscoveryWorker extends BaseWorker {
       const country = result.country || (location ? location.split(",")[2]?.trim() : null);
 
       const digits = (result.phone || "").replace(/\D/g, "");
-      const phoneHash = digits.length >= 6 ? crypto.createHash("md5").update(digits).digest("hex") : null;
+      const phoneHash = digits.length >= 7 ? crypto.createHash("md5").update(digits).digest("hex") : null;
 
       let websiteDomain: string | null = null;
       let domainHash: string | null = null;
+      let isAggregatorDomain = false;
+
       if (result.website && result.website.length > 3) {
         try {
           const u = new URL(result.website.startsWith("http") ? result.website : `https://${result.website}`);
           websiteDomain = u.hostname.toLowerCase().replace(/^www\./, "");
-          domainHash = crypto.createHash("md5").update(websiteDomain).digest("hex");
+          for (const agg of AGGREGATOR_DOMAINS) {
+            if (websiteDomain === agg || websiteDomain.endsWith("." + agg)) {
+              isAggregatorDomain = true;
+              break;
+            }
+          }
+          if (!isAggregatorDomain) {
+            domainHash = crypto.createHash("md5").update(websiteDomain).digest("hex");
+          }
         } catch {
           websiteDomain = result.website;
         }
       }
 
-      const geoNameKey = `${normalizedName}|${(city || "").toLowerCase()}|${(country || "").toLowerCase()}`;
-      const geoNameHash = crypto.createHash("md5").update(geoNameKey).digest("hex");
+      // GeoNameHash is only created if normalized name has at least 3 characters
+      let geoNameHash: string | null = null;
+      if (normalizedName.length >= 3 && (city || country)) {
+        const geoNameKey = `${normalizedName}|${(city || "").toLowerCase()}|${(country || "").toLowerCase()}`;
+        geoNameHash = crypto.createHash("md5").update(geoNameKey).digest("hex");
+      }
 
       // Multi-signal deduplication check
       let existing: any = null;
@@ -83,7 +120,7 @@ export class DiscoveryWorker extends BaseWorker {
       if (!existing && domainHash) {
         existing = await prisma.business.findFirst({ where: { domainHash } });
       }
-      if (!existing && city) {
+      if (!existing && geoNameHash) {
         existing = await prisma.business.findFirst({ where: { geoNameHash } });
       }
 

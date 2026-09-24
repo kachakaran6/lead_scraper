@@ -52,6 +52,72 @@ interface DiscoveredLead {
   verificationStatus?: string;
 }
 
+export const NICHE_PRESETS = [
+  {
+    label: "🏢 All High-Value B2B",
+    description: "Diverse commercial services & high-ticket B2B targets",
+    niches: [
+      "Commercial HVAC",
+      "Roofing Contractor",
+      "Commercial Electrician",
+      "Commercial Plumbing",
+      "Solar Installation",
+      "Law Firm",
+      "CPA & Accountant",
+      "Wealth Management",
+      "Digital Marketing Agency",
+      "Managed IT Services",
+    ],
+  },
+  {
+    label: "🔨 Trade & Contractors",
+    description: "High-ticket commercial and residential contractors",
+    niches: [
+      "Roofing Contractor",
+      "Commercial HVAC",
+      "Commercial Electrician",
+      "Commercial Plumbing",
+      "General Contractor",
+      "Solar Energy Equipment",
+      "Landscaping Contractor",
+    ],
+  },
+  {
+    label: "⚖️ Legal & Financial",
+    description: "Attorneys, accounting firms, wealth advisors",
+    niches: [
+      "Law Firm",
+      "Personal Injury Attorney",
+      "Corporate Law Firm",
+      "CPA & Accountant",
+      "Wealth Management",
+      "Commercial Insurance Agency",
+    ],
+  },
+  {
+    label: "💻 Tech & Digital",
+    description: "MSPs, cyber, web agencies, SaaS marketing",
+    niches: [
+      "Managed IT Services",
+      "Cybersecurity Provider",
+      "Digital Marketing Agency",
+      "Web Design & SEO Agency",
+      "Commercial Printing",
+    ],
+  },
+  {
+    label: "🏥 Healthcare & Clinical",
+    description: "Dermatology, orthopedics, therapy, specialized care",
+    niches: [
+      "Dermatology Clinic",
+      "Orthopedic Clinic",
+      "Physical Therapy Clinic",
+      "Veterinary Hospital",
+      "Dental Practice",
+    ],
+  },
+];
+
 export const DiscoverPage: React.FC = () => {
   // Mode: 'autopilot' | 'manual'
   const [activeTab, setActiveTab] = useState<"autopilot" | "manual">("autopilot");
@@ -64,11 +130,13 @@ export const DiscoverPage: React.FC = () => {
   const [autopilotError, setAutopilotError] = useState<string | null>(null);
   const [isTriggering, setIsTriggering] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [isResettingTelemetry, setIsResettingTelemetry] = useState(false);
+  const [isReseeding, setIsReseeding] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Autopilot Config Form State
   const [strategyName, setStrategyName] = useState("");
-  const [nichesInput, setNichesInput] = useState("");
+  const [nichesInput, setNichesInput] = useState(NICHE_PRESETS[0].niches.join(", "));
   const [countriesInput, setCountriesInput] = useState("");
   const [regionsInput, setRegionsInput] = useState("");
   const [dailyTarget, setDailyTarget] = useState(150);
@@ -104,7 +172,16 @@ export const DiscoverPage: React.FC = () => {
       const p = autopilotStatus.profile;
       if (p.name) setStrategyName(p.name);
       if (Array.isArray(p.targetNiches) && p.targetNiches.length > 0) {
-        setNichesInput(p.targetNiches.join(", "));
+        const onlyDentalOrHospital = p.targetNiches.every(
+          (n: string) => n.toLowerCase().includes("dent") || n.toLowerCase().includes("hospital")
+        );
+        if (onlyDentalOrHospital) {
+          setNichesInput(NICHE_PRESETS[0].niches.join(", "));
+        } else {
+          setNichesInput(p.targetNiches.join(", "));
+        }
+      } else {
+        setNichesInput(NICHE_PRESETS[0].niches.join(", "));
       }
       if (Array.isArray(p.targetCountries) && p.targetCountries.length > 0) {
         setCountriesInput(p.targetCountries.join(", "));
@@ -167,6 +244,32 @@ export const DiscoverPage: React.FC = () => {
       console.error("Toggle error:", err);
     } finally {
       setIsToggling(false);
+    }
+  };
+
+  const handleResetTelemetry = async () => {
+    if (!autopilotStatus?.profile?.id) return;
+    setIsResettingTelemetry(true);
+    try {
+      await leadEngineApi.resetAutopilotTelemetry(autopilotStatus.profile.id);
+      await fetchAutopilotData(false);
+    } catch (err: any) {
+      console.error("Reset telemetry error:", err);
+    } finally {
+      setIsResettingTelemetry(false);
+    }
+  };
+
+  const handleReseedStrategy = async () => {
+    if (!autopilotStatus?.profile?.id) return;
+    setIsReseeding(true);
+    try {
+      await leadEngineApi.reseedAutopilotProfile(autopilotStatus.profile.id);
+      await fetchAutopilotData(false);
+    } catch (err: any) {
+      console.error("Reseed strategy error:", err);
+    } finally {
+      setIsReseeding(false);
     }
   };
 
@@ -430,6 +533,20 @@ export const DiscoverPage: React.FC = () => {
                       <span>Scan Next Cell</span>
                     </Button>
 
+                    {hasProfile && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleReseedStrategy}
+                        isLoading={isReseeding}
+                        className="gap-1.5 text-xs font-semibold text-accent hover:text-accent"
+                        title="Rebuild geographic cell queue and diversify target niches across commercial industries"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Diversify Strategy</span>
+                      </Button>
+                    )}
+
                     <Button
                       variant={hasProfile ? "secondary" : "primary"}
                       size="sm"
@@ -467,7 +584,20 @@ export const DiscoverPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-0.5">
-                    <span className="text-text-tertiary text-[11px]">Duplicates Prevented</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-tertiary text-[11px]">Duplicates Prevented</span>
+                      {(autopilotStatus?.duplicatesPrevented ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleResetTelemetry}
+                          disabled={isResettingTelemetry}
+                          className="text-[10px] text-accent hover:underline font-medium"
+                          title="Reset duplicate counter"
+                        >
+                          {isResettingTelemetry ? "Resetting..." : "Reset"}
+                        </button>
+                      )}
+                    </div>
                     <div className="font-semibold font-mono text-emerald-400">
                       {(autopilotStatus?.duplicatesPrevented ?? 0).toLocaleString()} duplicates
                     </div>
@@ -892,13 +1022,35 @@ export const DiscoverPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-text-primary mb-1">Target Niches (Comma Separated)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-semibold text-text-primary">Target Niches (Comma Separated)</label>
+                  <span className="text-[10px] text-text-tertiary">Quick 1-Click Presets:</span>
+                </div>
+
+                {/* 1-Click Industry Presets */}
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {NICHE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setNichesInput(preset.niches.join(", "))}
+                      className="px-2.5 py-1 rounded-lg bg-bg-base border border-border-subtle hover:border-accent/60 text-text-secondary hover:text-text-primary text-[11px] font-medium transition-colors"
+                      title={preset.description}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
                 <Input
                   value={nichesInput}
                   onChange={(e) => setNichesInput(e.target.value)}
-                  placeholder="e.g. Dental Clinic, Orthopedic Hospital, HVAC"
+                  placeholder="e.g. Commercial HVAC, Roofing Contractor, Solar, Law Firm, CPA"
                   required
                 />
+                <p className="text-[10px] text-text-tertiary mt-1">
+                  Autopilot rotates automatically across all configured niches each cycle.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

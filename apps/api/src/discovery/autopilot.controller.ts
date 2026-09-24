@@ -98,6 +98,11 @@ export class AutopilotController {
     return this.autopilotService.reseedProfile(id);
   }
 
+  @Post("profiles/:id/reset-telemetry")
+  async resetTelemetry(@Param("id") id: string) {
+    return this.autopilotService.resetTelemetry(id);
+  }
+
   @Post("trigger")
   async triggerCycle(@Body() body: { profileId?: string }) {
     return this.autopilotService.runAutopilotCycle(body.profileId);

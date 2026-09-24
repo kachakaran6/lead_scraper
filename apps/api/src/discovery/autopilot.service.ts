@@ -13,6 +13,7 @@ import {
   generateQueryHash,
   partitionBoundsIntoGrid,
   GeoBounds,
+  DEFAULT_PROFESSIONAL_NICHES,
 } from "@ultimate-leads/shared";
 import { AIService } from "../ai/ai.service";
 
@@ -296,6 +297,13 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
     resourceBudget?: ResourceBudget;
     aiProcessingLevel?: AiProcessingLevel;
   }) {
+    const targetNiches =
+      Array.isArray(data.targetNiches) &&
+      data.targetNiches.length > 0 &&
+      !data.targetNiches.every((n) => n.toLowerCase().includes("dent") || n.toLowerCase().includes("hospital"))
+        ? data.targetNiches
+        : DEFAULT_PROFESSIONAL_NICHES;
+
     const profile = await prisma.discoveryProfile.create({
       data: {
         userId,
@@ -304,7 +312,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
         targetCountries: data.targetCountries,
         targetRegions: data.targetRegions || [],
         targetCities: data.targetCities || [],
-        targetNiches: data.targetNiches,
+        targetNiches,
         opportunityFilters: data.opportunityFilters || {
           noWebsite: true,
           hasPhone: true,
@@ -478,39 +486,74 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    // Pick next pending cell or city region to explore
+    // Pick next pending cell or cooldown cell (prioritize unharvested cells first)
+    const cooldownThreshold = new Date(Date.now() - 25 * 60 * 1000); // 25 min cooldown
+
     let cell = await prisma.discoveryCell.findFirst({
       where: {
         region: { profileId: profile.id },
-        status: { in: ["PENDING", "COOLDOWN"] },
+        OR: [
+          { status: "PENDING" },
+          {
+            status: "COOLDOWN",
+            OR: [
+              { lastScannedAt: null },
+              { lastScannedAt: { lte: cooldownThreshold } },
+            ],
+          },
+        ],
       },
       include: { region: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: [
+        { lastScannedAt: { sort: "asc", nulls: "first" } },
+        { createdAt: "asc" },
+      ],
     });
 
     if (!cell) {
-      // Check if all cells are completed - if so, recycle completed cells to COOLDOWN so discovery runs 24/7 continuously
-      const completedCount = await prisma.discoveryCell.count({
-        where: { region: { profileId: profile.id }, status: "COMPLETED" },
+      // Check if all cells are completed
+      const totalCells = await prisma.discoveryCell.count({
+        where: { region: { profileId: profile.id } },
       });
-      if (completedCount > 0) {
-        await prisma.discoveryCell.updateMany({
-          where: { region: { profileId: profile.id }, status: "COMPLETED" },
-          data: { status: "COOLDOWN" },
-        });
-        cell = await prisma.discoveryCell.findFirst({
+
+      if (totalCells > 0) {
+        // Recycle cells whose last scan is older than 25 minutes
+        const eligibleCount = await prisma.discoveryCell.count({
           where: {
             region: { profileId: profile.id },
-            status: { in: ["PENDING", "COOLDOWN"] },
+            status: "COMPLETED",
+            lastScannedAt: { lte: cooldownThreshold },
           },
-          include: { region: true },
-          orderBy: { lastScannedAt: "asc" },
         });
+
+        if (eligibleCount > 0) {
+          await prisma.discoveryCell.updateMany({
+            where: {
+              region: { profileId: profile.id },
+              status: "COMPLETED",
+              lastScannedAt: { lte: cooldownThreshold },
+            },
+            data: { status: "COOLDOWN" },
+          });
+
+          cell = await prisma.discoveryCell.findFirst({
+            where: {
+              region: { profileId: profile.id },
+              status: "COOLDOWN",
+            },
+            include: { region: true },
+            orderBy: [
+              { lastScannedAt: { sort: "asc", nulls: "first" } },
+              { createdAt: "asc" },
+            ],
+          });
+        }
       } else {
         // No cells exist at all! Re-seed queue immediately
-        const countries = (Array.isArray(profile.targetCountries) && profile.targetCountries.length > 0)
-          ? (profile.targetCountries as string[])
-          : ["United States"];
+        const countries =
+          Array.isArray(profile.targetCountries) && profile.targetCountries.length > 0
+            ? (profile.targetCountries as string[])
+            : ["United States"];
         const regions = Array.isArray(profile.targetRegions) ? (profile.targetRegions as string[]) : [];
         await this.seedGeographicQueue(profile.id, countries, regions);
         cell = await prisma.discoveryCell.findFirst({
@@ -529,11 +572,11 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
         processed: false,
         discovered: 0,
         duplicates: 0,
-        message: "No cells ready for exploration in active profile.",
+        message: "Territory fully harvested for current window. Standby cooldown active to prevent duplicate queries.",
       };
     }
 
-    // Determine target location & niche
+    // Determine target location
     const targetCity = cell.region.city || "Denver";
     const targetState = cell.region.state || "";
     const targetCountry = cell.region.country || "United States";
@@ -545,12 +588,45 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       data: { status: "PROCESSING", lastScannedAt: new Date() },
     });
 
-    const niches = Array.isArray(profile.targetNiches) ? (profile.targetNiches as string[]) : ["Dentist"];
-    const targetNiche = niches[Math.floor(Math.random() * niches.length)] || "Dentist";
+    // Intelligent Niche Rotation across diverse high-value B2B industries
+    const userNiches = (
+      Array.isArray(profile.targetNiches) ? (profile.targetNiches as string[]) : []
+    )
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    // Expand niche into controlled variants
+    const niches =
+      userNiches.length > 0 &&
+      !userNiches.every((n) => n.toLowerCase().includes("dent") || n.toLowerCase().includes("hospital"))
+        ? userNiches
+        : DEFAULT_PROFESSIONAL_NICHES;
+
+    // Check recent query logs in this profile to select a niche that has not been scanned recently
+    const recentLogs = await prisma.discoveryQueryLog.findMany({
+      where: {
+        profileId: profile.id,
+        createdAt: { gte: new Date(Date.now() - 6 * 60 * 60 * 1000) },
+      },
+      select: { niche: true },
+      take: 40,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const recentNicheSet = new Set(recentLogs.map((l) => l.niche.toLowerCase()));
+    let eligibleNiches = niches.filter((n) => !recentNicheSet.has(n.toLowerCase()));
+    if (eligibleNiches.length === 0) {
+      eligibleNiches = niches;
+    }
+
+    const targetNiche =
+      eligibleNiches[Math.floor(Math.random() * eligibleNiches.length)] ||
+      niches[0] ||
+      "Commercial HVAC";
+
+    // Expand niche into controlled variants and rotate variants
     const expanded = expandNicheQuery(targetNiche, targetCountry, true, 4);
-    const queryTerm = expanded.variants[0] || targetNiche;
+    const variantIndex = Math.floor(Math.random() * (expanded.variants.length || 1));
+    const queryTerm = expanded.variants[variantIndex] || targetNiche;
 
     // Update profile live status
     await prisma.discoveryProfile.update({
@@ -558,7 +634,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       data: {
         currentCountry: targetCountry,
         currentRegion: targetCity,
-        currentNiche: queryTerm,
+        currentNiche: `${targetNiche} (${queryTerm})`,
         currentCellId: cell.geoCellId,
         lastRunAt: new Date(),
       },
@@ -887,6 +963,12 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
         ? `Good morning. Overnight autonomous discovery harvested ${totalDiscovered} verified business profiles, including ${missingWebsitesCount} prime web-design prospects with direct contact numbers.`
         : "Autonomous discovery is active and scanning configured territories.";
 
+      const categoryCounts: Record<string, number> = {};
+      for (const lead of recentLeads) {
+        const cat = lead.category || "Commercial Entity";
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      }
+
       digest = await prisma.dailyDigest.create({
         data: {
           userId,
@@ -900,13 +982,26 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
           topLeads: topLeadsFormatted as any,
           summaryText,
           breakdown: {
-            byCategory: { Healthcare: Math.round(totalDiscovered * 0.7), Other: Math.round(totalDiscovered * 0.3) },
+            byCategory: Object.keys(categoryCounts).length > 0 ? categoryCounts : { "Commercial Services": totalDiscovered },
           },
         },
       });
     }
 
     return digest;
+  }
+
+  /**
+   * Resets false duplicates counter and today's telemetry metrics
+   */
+  async resetTelemetry(profileId: string) {
+    return prisma.discoveryProfile.update({
+      where: { id: profileId },
+      data: {
+        duplicatesPrevented: 0,
+        todayDiscovered: 0,
+      },
+    });
   }
 
   /**
@@ -918,7 +1013,7 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
     });
     if (!profile) throw new Error("Profile not found");
 
-    this.logger.log(`Reseeding Autopilot profile [${profile.name}] with clean normalized territories...`);
+    this.logger.log(`Reseeding Autopilot profile [${profile.name}] with clean normalized territories and diverse niches...`);
 
     // 1. Delete old cells and regions
     await prisma.discoveryCell.deleteMany({
@@ -952,15 +1047,26 @@ export class AutopilotService implements OnModuleInit, OnModuleDestroy {
       normalizedCountries.push("United States");
     }
 
-    // Update profile with clean normalized countries and regions
+    // Ensure niches are diverse and not stuck on only dental/hospital
+    const rawNiches = Array.isArray(profile.targetNiches) ? (profile.targetNiches as string[]) : [];
+    const hasOnlyDentalOrHospital =
+      rawNiches.length === 0 ||
+      rawNiches.every((n) => n.toLowerCase().includes("dent") || n.toLowerCase().includes("hospital"));
+    const updatedNiches = hasOnlyDentalOrHospital ? DEFAULT_PROFESSIONAL_NICHES : rawNiches;
+
+    // Update profile with clean normalized countries, diverse niches, and reset duplicatesPrevented
     await prisma.discoveryProfile.update({
       where: { id: profileId },
       data: {
         targetCountries: normalizedCountries,
         targetRegions: normalizedRegions,
+        targetNiches: updatedNiches,
         currentCountry: normalizedCountries[0] || "United States",
         currentRegion: normalizedRegions[0] || "Denver",
+        currentNiche: updatedNiches[0] || "Commercial HVAC",
         status: "RUNNING",
+        duplicatesPrevented: 0,
+        todayDiscovered: 0,
       },
     });
 
