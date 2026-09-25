@@ -36,6 +36,10 @@ export class CreateSmtpAccountDto {
   @IsBoolean()
   @IsOptional()
   isDefault?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  skipVerify?: boolean;
 }
 
 export class TestSmtpAccountDto {

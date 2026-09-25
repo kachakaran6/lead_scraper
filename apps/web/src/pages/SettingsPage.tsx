@@ -20,6 +20,7 @@ import {
   Send,
   RefreshCw,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -28,6 +29,63 @@ import { Badge } from "../components/ui/Badge";
 import { useTheme, ThemePalette } from "../lib/theme";
 import { useAuth } from "../lib/auth";
 import { leadEngineApi } from "../lib/api";
+
+const SMTP_PRESETS = [
+  {
+    id: "gmail",
+    name: "Gmail / Workspace",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    userPlaceholder: "your-email@gmail.com",
+    passPlaceholder: "16-character App Password",
+  },
+  {
+    id: "outlook",
+    name: "Outlook / 365",
+    host: "smtp.office365.com",
+    port: 587,
+    secure: false,
+    userPlaceholder: "your-email@outlook.com",
+    passPlaceholder: "Password or App Password",
+  },
+  {
+    id: "resend",
+    name: "Resend",
+    host: "smtp.resend.com",
+    port: 465,
+    secure: true,
+    userPlaceholder: "resend",
+    passPlaceholder: "re_xxxxxxxxxxxxxxxx",
+  },
+  {
+    id: "sendgrid",
+    name: "SendGrid",
+    host: "smtp.sendgrid.net",
+    port: 587,
+    secure: false,
+    userPlaceholder: "apikey",
+    passPlaceholder: "SG.xxxxxxxxxxxxxxxx",
+  },
+  {
+    id: "ses",
+    name: "Amazon SES",
+    host: "email-smtp.us-east-1.amazonaws.com",
+    port: 587,
+    secure: false,
+    userPlaceholder: "SES SMTP Username",
+    passPlaceholder: "SES SMTP Password",
+  },
+  {
+    id: "custom",
+    name: "Custom SMTP",
+    host: "",
+    port: 465,
+    secure: true,
+    userPlaceholder: "user@domain.com",
+    passPlaceholder: "Mailbox Password",
+  },
+];
 
 export const SettingsPage: React.FC = () => {
   const { palette, setPalette, mode, setMode } = useTheme();
@@ -53,17 +111,20 @@ export const SettingsPage: React.FC = () => {
   // SMTP state
   const [smtpAccounts, setSmtpAccounts] = useState<any[]>([]);
   const [isLoadingSmtp, setIsLoadingSmtp] = useState(false);
+  const [isSubmittingSmtp, setIsSubmittingSmtp] = useState(false);
   const [isAddingSmtp, setIsAddingSmtp] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState("gmail");
   const [smtpForm, setSmtpForm] = useState({
     name: "",
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     username: "",
     password: "",
     fromName: "",
     fromEmail: "",
     isDefault: false,
+    skipVerify: false,
   });
   const [smtpFeedback, setSmtpFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isTestingSmtpId, setIsTestingSmtpId] = useState<string | null>(null);
@@ -121,6 +182,7 @@ export const SettingsPage: React.FC = () => {
   const handleCreateSmtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setSmtpFeedback(null);
+    setIsSubmittingSmtp(true);
     try {
       await leadEngineApi.createSmtpAccount({
         name: smtpForm.name,
@@ -132,26 +194,30 @@ export const SettingsPage: React.FC = () => {
         fromName: smtpForm.fromName || smtpForm.name,
         fromEmail: smtpForm.fromEmail || smtpForm.username,
         isDefault: smtpForm.isDefault,
+        skipVerify: smtpForm.skipVerify,
       });
-      setSmtpFeedback({ type: "success", message: "SMTP account verified and added successfully!" });
+      setSmtpFeedback({ type: "success", message: "SMTP account saved and verified successfully!" });
       setIsAddingSmtp(false);
       setSmtpForm({
         name: "",
         host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
+        port: 465,
+        secure: true,
         username: "",
         password: "",
         fromName: "",
         fromEmail: "",
         isDefault: false,
+        skipVerify: false,
       });
       await loadSmtpAccounts();
     } catch (err: any) {
       setSmtpFeedback({
         type: "error",
-        message: err?.response?.data?.message || "Verification failed. Check host, port, or app-password.",
+        message: err?.response?.data?.message || err?.message || "Verification failed. Check host, port, or app-password.",
       });
+    } finally {
+      setIsSubmittingSmtp(false);
     }
   };
 
@@ -704,13 +770,68 @@ export const SettingsPage: React.FC = () => {
             {/* Add SMTP Form Card */}
             {isAddingSmtp && (
               <form onSubmit={handleCreateSmtp} className="p-5 rounded-xl bg-bg-base border border-border-default space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
-                  New Outgoing Mail Server
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                    New Outgoing Mail Server
+                  </h4>
+                  <span className="text-[11px] text-text-tertiary">AES-256 Encrypted</span>
+                </div>
+
+                {/* Quick Service Presets */}
+                <div>
+                  <label className="block text-text-secondary font-medium mb-1.5 text-xs">Provider Preset</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    {SMTP_PRESETS.map((preset) => {
+                      const isSelected = selectedPresetId === preset.id || smtpForm.host === preset.host;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPresetId(preset.id);
+                            setSmtpForm({
+                              ...smtpForm,
+                              name: smtpForm.name || preset.name,
+                              host: preset.host,
+                              port: preset.port,
+                              secure: preset.secure,
+                            });
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all text-center truncate ${
+                            isSelected
+                              ? "border-accent bg-accent/15 text-accent font-semibold shadow-sm"
+                              : "border-border-default bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-subtle"
+                          }`}
+                        >
+                          {preset.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Gmail Guidance Alert */}
+                {(smtpForm.host.toLowerCase().includes("gmail") || smtpForm.username.toLowerCase().endsWith("@gmail.com")) && (
+                  <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5">
+                    <div className="font-semibold flex items-center gap-1.5 text-amber-200">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                      <span>Important for Gmail & Google Workspace</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      Google blocks regular passwords for SMTP. You must generate a 16-character <strong>App Password</strong>:
+                      <br />
+                      1. Enable <strong>2-Step Verification</strong> on your Google Account.
+                      <br />
+                      2. Visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="underline font-semibold text-white hover:text-amber-200 inline-flex items-center gap-0.5">Google App Passwords <ExternalLink className="w-2.5 h-2.5 inline" /></a>.
+                      <br />
+                      3. Create an App Password for "Mail" and paste the 16 letters into the password field below.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block text-text-secondary font-medium mb-1">Friendly Name</label>
+                    <label className="block text-text-secondary font-medium mb-1">Friendly Account Name</label>
                     <Input
                       type="text"
                       required
@@ -737,24 +858,38 @@ export const SettingsPage: React.FC = () => {
                       type="number"
                       required
                       value={smtpForm.port}
-                      onChange={(e) => setSmtpForm({ ...smtpForm, port: Number(e.target.value) })}
+                      onChange={(e) => {
+                        const p = Number(e.target.value);
+                        setSmtpForm({
+                          ...smtpForm,
+                          port: p,
+                          secure: p === 465 ? true : p === 587 ? false : smtpForm.secure,
+                        });
+                      }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-text-secondary font-medium mb-1">Security</label>
+                    <label className="block text-text-secondary font-medium mb-1">Security Protocol</label>
                     <select
                       value={smtpForm.secure ? "true" : "false"}
-                      onChange={(e) => setSmtpForm({ ...smtpForm, secure: e.target.value === "true" })}
+                      onChange={(e) => {
+                        const isSec = e.target.value === "true";
+                        setSmtpForm({
+                          ...smtpForm,
+                          secure: isSec,
+                          port: isSec ? 465 : 587,
+                        });
+                      }}
                       className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent"
                     >
-                      <option value="false">STARTTLS (Port 587 - Recommended)</option>
-                      <option value="true">SSL / TLS (Port 465)</option>
+                      <option value="true">SSL / TLS (Port 465 - Recommended for Gmail)</option>
+                      <option value="false">STARTTLS (Port 587 - Standard)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-text-secondary font-medium mb-1">Username / Email</label>
+                    <label className="block text-text-secondary font-medium mb-1">Username / Email Address</label>
                     <Input
                       type="text"
                       required
@@ -796,26 +931,47 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="isDefault"
-                    checked={smtpForm.isDefault}
-                    onChange={(e) => setSmtpForm({ ...smtpForm, isDefault: e.target.checked })}
-                    className="rounded border-border-default text-accent focus:ring-accent"
-                  />
-                  <label htmlFor="isDefault" className="text-xs text-text-secondary cursor-pointer">
-                    Set as default outgoing account for all cold outreach campaigns
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isDefault"
+                      checked={smtpForm.isDefault}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, isDefault: e.target.checked })}
+                      className="rounded border-border-default text-accent focus:ring-accent"
+                    />
+                    <label htmlFor="isDefault" className="text-xs text-text-secondary cursor-pointer">
+                      Set as default account for outreach campaigns
+                    </label>
+                  </div>
+
+                  <label className="flex items-center gap-2 text-xs text-text-tertiary hover:text-text-secondary cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={smtpForm.skipVerify}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, skipVerify: e.target.checked })}
+                      className="rounded border-border-default text-accent focus:ring-accent"
+                    />
+                    <span>Save without live test handshake</span>
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
                   <Button type="button" variant="outline" size="sm" onClick={() => setIsAddingSmtp(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" variant="primary" size="sm" className="gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Verify & Save Account</span>
+                  <Button type="submit" variant="primary" size="sm" disabled={isSubmittingSmtp} className="gap-1.5">
+                    {isSubmittingSmtp ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Verifying Connection...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{smtpForm.skipVerify ? "Save Account" : "Verify & Save Account"}</span>
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>

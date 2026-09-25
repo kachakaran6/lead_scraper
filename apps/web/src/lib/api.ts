@@ -311,6 +311,7 @@ export const leadEngineApi = {
     fromName?: string;
     fromEmail?: string;
     isDefault?: boolean;
+    skipVerify?: boolean;
   }) {
     const res = await api.post("/smtp-accounts", dto);
     return res.data;

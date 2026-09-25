@@ -21,11 +21,42 @@ export class SmtpAccountsService {
     secure: boolean;
     username: string;
     passwordPlain: string;
+    forceDirect?: boolean;
   }) {
+    const isGmail =
+      !params.forceDirect &&
+      (params.host.toLowerCase().includes("gmail.com") ||
+        params.host.toLowerCase().includes("googlemail.com") ||
+        params.username.toLowerCase().endsWith("@gmail.com"));
+
+    if (isGmail) {
+      // Nodemailer's specialized 'gmail' service handles connection routing and SSL/STARTTLS
+      return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: params.username,
+          pass: params.passwordPlain,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 25000,
+        greetingTimeout: 20000,
+        socketTimeout: 25000,
+      });
+    }
+
+    // Auto-align port & secure for known standards:
+    // Port 465 is always SSL/TLS (secure: true)
+    // Port 587, 2525, 25 are always explicit STARTTLS (secure: false)
+    const is465 = params.port === 465;
+    const isExplicitTls = params.port === 587 || params.port === 2525 || params.port === 25;
+    const secure = is465 ? true : isExplicitTls ? false : params.secure;
+
     return nodemailer.createTransport({
       host: params.host,
       port: params.port,
-      secure: params.secure,
+      secure,
       auth: {
         user: params.username,
         pass: params.passwordPlain,
@@ -33,29 +64,86 @@ export class SmtpAccountsService {
       tls: {
         rejectUnauthorized: false, // Prevents self-signed cert blocks on custom corporate SMTPs
       },
-      connectionTimeout: 10000,
+      connectionTimeout: 25000,
+      greetingTimeout: 20000,
+      socketTimeout: 25000,
     });
   }
 
   async create(userId: string, dto: CreateSmtpAccountDto) {
-    const port = dto.port || (dto.secure ? 465 : 587);
-    const secure = dto.secure ?? port === 465;
+    let port = dto.port || (dto.secure ? 465 : 587);
+    let secure = port === 465 ? true : (dto.secure ?? false);
+    let isVerified = false;
 
-    // Verify credentials first with SMTP host
-    const transporter = this.createTransporter({
-      host: dto.host,
-      port,
-      secure,
-      username: dto.username,
-      passwordPlain: dto.password,
-    });
+    if (!dto.skipVerify) {
+      let transporter = this.createTransporter({
+        host: dto.host,
+        port,
+        secure,
+        username: dto.username,
+        passwordPlain: dto.password,
+      });
 
-    try {
-      await transporter.verify();
-    } catch (verifyErr: any) {
-      throw new BadRequestException(
-        `SMTP Connection Verification Failed: ${verifyErr.message || "Invalid host, port, or authentication credentials"}`
-      );
+      try {
+        await transporter.verify();
+        isVerified = true;
+      } catch (verifyErr: any) {
+        // Smart Fallback attempt:
+        let fallbackOk = false;
+        const errMsg = verifyErr.message || "";
+        const isTimeoutOrConnect =
+          errMsg.toLowerCase().includes("timeout") ||
+          errMsg.toLowerCase().includes("connect") ||
+          verifyErr.code === "ETIMEDOUT" ||
+          verifyErr.code === "ECONNREFUSED";
+
+        if (isTimeoutOrConnect) {
+          // If port was 587, try 465 (SSL)
+          // If port was 465, try 587 (STARTTLS)
+          const altPort = port === 587 ? 465 : port === 465 ? 587 : null;
+          if (altPort) {
+            const altSecure = altPort === 465;
+            try {
+              const altTransporter = this.createTransporter({
+                host: dto.host,
+                port: altPort,
+                secure: altSecure,
+                username: dto.username,
+                passwordPlain: dto.password,
+                forceDirect: true,
+              });
+              await altTransporter.verify();
+              port = altPort;
+              secure = altSecure;
+              isVerified = true;
+              fallbackOk = true;
+            } catch {
+              // fallback failed
+            }
+          }
+        }
+
+        if (!fallbackOk) {
+          const isGmail =
+            dto.host.toLowerCase().includes("gmail") ||
+            dto.username.toLowerCase().endsWith("@gmail.com");
+
+          let hint = "";
+          if (isGmail) {
+            hint =
+              " For Gmail / Google Workspace: ensure you are using a 16-character Google App Password (not your standard password) generated from myaccount.google.com/apppasswords with 2-Step Verification enabled.";
+          } else if (isTimeoutOrConnect) {
+            hint =
+              " Connection timed out. Try toggling between Port 465 (SSL) and Port 587 (STARTTLS), or check your firewall / hosting outbound policy.";
+          }
+
+          throw new BadRequestException(
+            `SMTP Connection Verification Failed: ${errMsg}.${hint}`
+          );
+        }
+      }
+    } else {
+      isVerified = false;
     }
 
     const count = await prisma.smtpAccount.count({ where: { userId } });
@@ -220,7 +308,7 @@ export class SmtpAccountsService {
     }
 
     const passwordPlain = decryptText(account.passEncrypted);
-    const transporter = this.createTransporter({
+    let transporter = this.createTransporter({
       host: account.host,
       port: account.port,
       secure: account.secure,
@@ -231,11 +319,55 @@ export class SmtpAccountsService {
     try {
       await transporter.verify();
     } catch (err: any) {
-      await prisma.smtpAccount.update({
-        where: { id },
-        data: { isVerified: false },
-      });
-      throw new BadRequestException(`Verification failed: ${err.message}`);
+      let recovered = false;
+      const errMsg = err.message || "";
+      const isTimeoutOrConnect =
+        errMsg.toLowerCase().includes("timeout") ||
+        errMsg.toLowerCase().includes("connect") ||
+        err.code === "ETIMEDOUT" ||
+        err.code === "ECONNREFUSED";
+
+      if (isTimeoutOrConnect) {
+        const altPort = account.port === 587 ? 465 : account.port === 465 ? 587 : null;
+        if (altPort) {
+          const altSecure = altPort === 465;
+          try {
+            const altTrans = this.createTransporter({
+              host: account.host,
+              port: altPort,
+              secure: altSecure,
+              username: account.username,
+              passwordPlain,
+              forceDirect: true,
+            });
+            await altTrans.verify();
+            await prisma.smtpAccount.update({
+              where: { id },
+              data: { port: altPort, secure: altSecure, isVerified: true },
+            });
+            transporter = altTrans;
+            recovered = true;
+          } catch {
+            // failed
+          }
+        }
+      }
+
+      if (!recovered) {
+        await prisma.smtpAccount.update({
+          where: { id },
+          data: { isVerified: false },
+        });
+
+        const isGmail =
+          account.host.toLowerCase().includes("gmail") ||
+          account.username.toLowerCase().endsWith("@gmail.com");
+        const hint = isGmail
+          ? " For Gmail: ensure 2-Step Verification is active and a 16-character App Password is used."
+          : " Check port (465 vs 587) or check if your cloud provider blocks outgoing mail ports.";
+
+        throw new BadRequestException(`Verification failed: ${errMsg}.${hint}`);
+      }
     }
 
     let sentMessageId: string | null = null;
