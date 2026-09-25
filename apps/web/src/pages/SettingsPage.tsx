@@ -13,6 +13,13 @@ import {
   Server,
   Activity,
   Check,
+  Mail,
+  MessageSquare,
+  Plus,
+  Trash2,
+  Send,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -26,7 +33,9 @@ export const SettingsPage: React.FC = () => {
   const { palette, setPalette, mode, setMode } = useTheme();
   const { user, logout } = useAuth();
 
-  const [activeSection, setActiveSection] = useState<"appearance" | "account" | "integrations" | "security">("appearance");
+  const [activeSection, setActiveSection] = useState<
+    "appearance" | "account" | "smtp" | "whatsapp" | "integrations" | "security"
+  >("appearance");
 
   // Account / Password Change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -40,6 +49,32 @@ export const SettingsPage: React.FC = () => {
   const [providerStatus, setProviderStatus] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  // SMTP state
+  const [smtpAccounts, setSmtpAccounts] = useState<any[]>([]);
+  const [isLoadingSmtp, setIsLoadingSmtp] = useState(false);
+  const [isAddingSmtp, setIsAddingSmtp] = useState(false);
+  const [smtpForm, setSmtpForm] = useState({
+    name: "",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    username: "",
+    password: "",
+    fromName: "",
+    fromEmail: "",
+    isDefault: false,
+  });
+  const [smtpFeedback, setSmtpFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isTestingSmtpId, setIsTestingSmtpId] = useState<string | null>(null);
+  const [testEmailRecipient, setTestEmailRecipient] = useState("");
+
+  // WhatsApp state
+  const [whatsappAccounts, setWhatsappAccounts] = useState<any[]>([]);
+  const [isLoadingWhatsapp, setIsLoadingWhatsapp] = useState(false);
+  const [isAddingWhatsapp, setIsAddingWhatsapp] = useState(false);
+  const [whatsappForm, setWhatsappForm] = useState({ name: "", phone: "" });
+  const [whatsappFeedback, setWhatsappFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -55,7 +90,133 @@ export const SettingsPage: React.FC = () => {
       }
     };
     fetchStatus();
+    loadSmtpAccounts();
+    loadWhatsappAccounts();
   }, []);
+
+  const loadSmtpAccounts = async () => {
+    setIsLoadingSmtp(true);
+    try {
+      const data = await leadEngineApi.getSmtpAccounts();
+      setSmtpAccounts(data || []);
+    } catch (err) {
+      console.warn("Failed to load SMTP accounts", err);
+    } finally {
+      setIsLoadingSmtp(false);
+    }
+  };
+
+  const loadWhatsappAccounts = async () => {
+    setIsLoadingWhatsapp(true);
+    try {
+      const data = await leadEngineApi.getWhatsappAccounts();
+      setWhatsappAccounts(data || []);
+    } catch (err) {
+      console.warn("Failed to load WhatsApp accounts", err);
+    } finally {
+      setIsLoadingWhatsapp(false);
+    }
+  };
+
+  const handleCreateSmtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSmtpFeedback(null);
+    try {
+      await leadEngineApi.createSmtpAccount({
+        name: smtpForm.name,
+        host: smtpForm.host,
+        port: Number(smtpForm.port),
+        secure: smtpForm.secure,
+        username: smtpForm.username,
+        password: smtpForm.password,
+        fromName: smtpForm.fromName || smtpForm.name,
+        fromEmail: smtpForm.fromEmail || smtpForm.username,
+        isDefault: smtpForm.isDefault,
+      });
+      setSmtpFeedback({ type: "success", message: "SMTP account verified and added successfully!" });
+      setIsAddingSmtp(false);
+      setSmtpForm({
+        name: "",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        username: "",
+        password: "",
+        fromName: "",
+        fromEmail: "",
+        isDefault: false,
+      });
+      await loadSmtpAccounts();
+    } catch (err: any) {
+      setSmtpFeedback({
+        type: "error",
+        message: err?.response?.data?.message || "Verification failed. Check host, port, or app-password.",
+      });
+    }
+  };
+
+  const handleDeleteSmtp = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this SMTP account?")) return;
+    try {
+      await leadEngineApi.deleteSmtpAccount(id);
+      await loadSmtpAccounts();
+    } catch (err) {
+      console.error("Failed to delete SMTP account", err);
+    }
+  };
+
+  const handleSetDefaultSmtp = async (id: string) => {
+    try {
+      await leadEngineApi.setDefaultSmtpAccount(id);
+      await loadSmtpAccounts();
+    } catch (err) {
+      console.error("Failed to set default SMTP", err);
+    }
+  };
+
+  const handleTestSmtp = async (id: string) => {
+    setIsTestingSmtpId(id);
+    setSmtpFeedback(null);
+    try {
+      const res = await leadEngineApi.testSmtpAccount(id, testEmailRecipient || undefined);
+      setSmtpFeedback({ type: "success", message: res.message || "SMTP verified successfully!" });
+      await loadSmtpAccounts();
+    } catch (err: any) {
+      setSmtpFeedback({
+        type: "error",
+        message: err?.response?.data?.message || "SMTP test failed",
+      });
+    } finally {
+      setIsTestingSmtpId(null);
+    }
+  };
+
+  const handleCreateWhatsapp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWhatsappFeedback(null);
+    try {
+      await leadEngineApi.createWhatsappAccount(whatsappForm);
+      setWhatsappFeedback({ type: "success", message: "WhatsApp profile connected!" });
+      setIsAddingWhatsapp(false);
+      setWhatsappForm({ name: "", phone: "" });
+      await loadWhatsappAccounts();
+    } catch (err: any) {
+      setWhatsappFeedback({
+        type: "error",
+        message: err?.response?.data?.message || "Failed to connect WhatsApp account",
+      });
+    }
+  };
+
+  const handleDeleteWhatsapp = async (id: string) => {
+    if (!confirm("Are you sure you want to disconnect this WhatsApp profile?")) return;
+    try {
+      await leadEngineApi.deleteWhatsappAccount(id);
+      await loadWhatsappAccounts();
+    } catch (err) {
+      console.error("Failed to delete WhatsApp account", err);
+    }
+  };
 
   const loadAuditLogs = async () => {
     setIsLoadingLogs(true);
@@ -152,6 +313,8 @@ export const SettingsPage: React.FC = () => {
         {[
           { id: "appearance", label: "Appearance & Themes", icon: Palette },
           { id: "account", label: "Account & Credentials", icon: User },
+          { id: "smtp", label: "Email Accounts (SMTP)", icon: Mail },
+          { id: "whatsapp", label: "WhatsApp Integration", icon: MessageSquare },
           { id: "integrations", label: "API & Data Integrations", icon: Server },
           { id: "security", label: "Security & Audit Trail", icon: ShieldCheck },
         ].map((tab) => {
@@ -498,7 +661,373 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Section 4: Security & Audit Trail */}
+      {/* Section: Email Accounts (SMTP) */}
+      {activeSection === "smtp" && (
+        <div className="space-y-6">
+          <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 sm:p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
+              <div>
+                <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-accent" />
+                  <span>Outgoing Email Accounts (SMTP)</span>
+                </h3>
+                <p className="text-xs text-text-secondary mt-1">
+                  Connect your custom email accounts (Gmail, Google Workspace, Outlook, Amazon SES, SendGrid, or custom cPanel).
+                  Passwords are encrypted with AES-256 at rest.
+                </p>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsAddingSmtp(!isAddingSmtp)}
+                className="gap-1.5 text-xs self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{isAddingSmtp ? "Cancel" : "Add SMTP Account"}</span>
+              </Button>
+            </div>
+
+            {smtpFeedback && (
+              <div
+                className={`p-3 rounded-md text-xs flex items-center gap-2 ${
+                  smtpFeedback.type === "success"
+                    ? "bg-semantic-success/15 text-semantic-success border border-semantic-success/30"
+                    : "bg-semantic-danger/15 text-semantic-danger border border-semantic-danger/30"
+                }`}
+              >
+                {smtpFeedback.type === "success" ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                <span>{smtpFeedback.message}</span>
+              </div>
+            )}
+
+            {/* Add SMTP Form Card */}
+            {isAddingSmtp && (
+              <form onSubmit={handleCreateSmtp} className="p-5 rounded-xl bg-bg-base border border-border-default space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                  New Outgoing Mail Server
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Friendly Name</label>
+                    <Input
+                      type="text"
+                      required
+                      placeholder="e.g. Work Gmail or Primary Outreach"
+                      value={smtpForm.name}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">SMTP Host</label>
+                    <Input
+                      type="text"
+                      required
+                      placeholder="smtp.gmail.com or mail.domain.com"
+                      value={smtpForm.host}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, host: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Port</label>
+                    <Input
+                      type="number"
+                      required
+                      value={smtpForm.port}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, port: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Security</label>
+                    <select
+                      value={smtpForm.secure ? "true" : "false"}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, secure: e.target.value === "true" })}
+                      className="w-full px-3 py-2 rounded-lg bg-bg-surface border border-border-default text-xs text-text-primary focus:outline-none focus:border-accent"
+                    >
+                      <option value="false">STARTTLS (Port 587 - Recommended)</option>
+                      <option value="true">SSL / TLS (Port 465)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Username / Email</label>
+                    <Input
+                      type="text"
+                      required
+                      placeholder="yourname@gmail.com"
+                      value={smtpForm.username}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, username: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Password or App Password</label>
+                    <Input
+                      type="password"
+                      required
+                      placeholder="••••••••••••••••"
+                      value={smtpForm.password}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, password: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Sender Display Name (Optional)</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g. Karan from LeadEngine"
+                      value={smtpForm.fromName}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, fromName: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-text-secondary font-medium mb-1">Sender From Email (Optional)</label>
+                    <Input
+                      type="email"
+                      placeholder="Defaults to username"
+                      value={smtpForm.fromEmail}
+                      onChange={(e) => setSmtpForm({ ...smtpForm, fromEmail: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="isDefault"
+                    checked={smtpForm.isDefault}
+                    onChange={(e) => setSmtpForm({ ...smtpForm, isDefault: e.target.checked })}
+                    className="rounded border-border-default text-accent focus:ring-accent"
+                  />
+                  <label htmlFor="isDefault" className="text-xs text-text-secondary cursor-pointer">
+                    Set as default outgoing account for all cold outreach campaigns
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setIsAddingSmtp(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="primary" size="sm" className="gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Verify & Save Account</span>
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* List of Connected SMTP Accounts */}
+            {isLoadingSmtp ? (
+              <div className="py-8 text-center text-xs text-text-tertiary">Loading SMTP accounts...</div>
+            ) : smtpAccounts.length === 0 ? (
+              <div className="py-12 text-center space-y-3">
+                <div className="w-10 h-10 rounded-full bg-border-subtle flex items-center justify-center mx-auto text-text-tertiary">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-text-secondary">
+                  No SMTP accounts added yet. Click "Add SMTP Account" to send personalized outreach directly from LeadEngine.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {smtpAccounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="p-4 rounded-xl bg-bg-base border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-text-primary text-sm">{acc.name}</span>
+                        {acc.isDefault && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-accent/20 text-accent">
+                            DEFAULT
+                          </span>
+                        )}
+                        {acc.isVerified && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-success/15 text-success">
+                            VERIFIED
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-text-secondary flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                        <span>{acc.username}</span>
+                        <span>•</span>
+                        <span>{acc.host}:{acc.port}</span>
+                        <span>•</span>
+                        <span>Sender: {acc.fromName || acc.name}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="email"
+                        placeholder="Test to: email@..."
+                        value={testEmailRecipient}
+                        onChange={(e) => setTestEmailRecipient(e.target.value)}
+                        className="px-2.5 py-1 rounded bg-bg-surface border border-border-default text-xs text-text-primary w-40"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestSmtp(acc.id)}
+                        isLoading={isTestingSmtpId === acc.id}
+                        className="text-xs gap-1"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>Test</span>
+                      </Button>
+                      {!acc.isDefault && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSetDefaultSmtp(acc.id)}
+                          className="text-xs"
+                        >
+                          Set Default
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteSmtp(acc.id)}
+                        className="text-xs text-danger hover:bg-danger/10 border-border-default"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Section: WhatsApp Integration */}
+      {activeSection === "whatsapp" && (
+        <div className="space-y-6">
+          <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 sm:p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border-subtle">
+              <div>
+                <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-success" />
+                  <span>WhatsApp Outreach Profiles</span>
+                </h3>
+                <p className="text-xs text-text-secondary mt-1">
+                  Connect your business phone lines for one-click deep link outreach and client conversation history tracking.
+                </p>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsAddingWhatsapp(!isAddingWhatsapp)}
+                className="gap-1.5 text-xs self-start sm:self-auto bg-success hover:bg-success/90 text-white"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{isAddingWhatsapp ? "Cancel" : "Connect WhatsApp Profile"}</span>
+              </Button>
+            </div>
+
+            {whatsappFeedback && (
+              <div
+                className={`p-3 rounded-md text-xs flex items-center gap-2 ${
+                  whatsappFeedback.type === "success"
+                    ? "bg-success/15 text-success border border-success/30"
+                    : "bg-danger/15 text-danger border border-danger/30"
+                }`}
+              >
+                {whatsappFeedback.type === "success" ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                <span>{whatsappFeedback.message}</span>
+              </div>
+            )}
+
+            {isAddingWhatsapp && (
+              <form onSubmit={handleCreateWhatsapp} className="p-5 rounded-xl bg-bg-base border border-border-default space-y-4 max-w-md">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                  Connect WhatsApp Business Line
+                </h4>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Profile Name</label>
+                  <Input
+                    type="text"
+                    required
+                    placeholder="e.g. Sales WhatsApp Line"
+                    value={whatsappForm.name}
+                    onChange={(e) => setWhatsappForm({ ...whatsappForm, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Phone Number (with Country Code)</label>
+                  <Input
+                    type="tel"
+                    required
+                    placeholder="+91 99999 99999 or +1 (555) 000-0000"
+                    value={whatsappForm.phone}
+                    onChange={(e) => setWhatsappForm({ ...whatsappForm, phone: e.target.value })}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setIsAddingWhatsapp(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="primary" size="sm" className="bg-success hover:bg-success/90 text-white">
+                    Save Profile
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {isLoadingWhatsapp ? (
+              <div className="py-8 text-center text-xs text-text-tertiary">Loading WhatsApp profiles...</div>
+            ) : whatsappAccounts.length === 0 ? (
+              <div className="py-12 text-center space-y-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center mx-auto text-success">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-text-secondary">
+                  No WhatsApp accounts registered. Add your phone line to enable instant deep-linking and outreach tracking.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {whatsappAccounts.map((w) => (
+                  <div
+                    key={w.id}
+                    className="p-4 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-between gap-4 text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-text-primary text-sm">{w.name}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-success/15 text-success">
+                          {w.status}
+                        </span>
+                      </div>
+                      <div className="font-mono text-text-secondary text-[11px] mt-0.5">
+                        {w.phone || "No phone set"}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteWhatsapp(w.id)}
+                      className="text-xs text-danger hover:bg-danger/10"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {activeSection === "security" && (
         <div className="space-y-6">
           <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 sm:p-6 space-y-4">

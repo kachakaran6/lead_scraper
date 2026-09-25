@@ -10,6 +10,7 @@ import { DealsPage } from "./pages/DealsPage";
 import { WebsitesPage } from "./pages/WebsitesPage";
 import { CampaignsPage } from "./pages/CampaignsPage";
 import { OutreachPage } from "./pages/OutreachPage";
+import { AutomationPage } from "./pages/AutomationPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 import { LoginPage } from "./pages/LoginPage";
@@ -50,6 +51,7 @@ export const App: React.FC = () => {
               <Route path="deals" element={<DealsPage />} />
               <Route path="websites" element={<WebsitesPage />} />
               <Route path="campaigns" element={<CampaignsPage />} />
+              <Route path="automations" element={<AutomationPage />} />
               <Route path="outreach" element={<OutreachPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />

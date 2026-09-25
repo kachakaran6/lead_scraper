@@ -3,6 +3,7 @@ import { DiscoveryWorker } from "./workers/discovery.worker";
 import { CrawlWorker } from "./workers/crawl.worker";
 import { EnrichmentWorker } from "./workers/enrichment.worker";
 import { AnalysisWorker } from "./workers/analysis.worker";
+import { AutomationWorker } from "./workers/automation.worker";
 import { Worker } from "bullmq";
 
 async function main() {
@@ -15,6 +16,7 @@ async function main() {
   workers.push(await new CrawlWorker().start());
   workers.push(await new EnrichmentWorker().start());
   workers.push(await new AnalysisWorker().start());
+  workers.push(await new AutomationWorker().start());
 
   console.log(`All ${workers.length} workers started`);
 

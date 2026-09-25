@@ -36,4 +36,10 @@ export class AIController {
   ) {
     return this.aiService.researchAssistant(body.lead, body.question);
   }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Post("generate-website-prompt")
+  async generateWebsitePrompt(@Body() body: { businessId: string }) {
+    return this.aiService.generateWebsitePrompt(body.businessId);
+  }
 }

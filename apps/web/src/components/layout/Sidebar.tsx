@@ -13,6 +13,7 @@ import {
   Layers,
   X,
   Radio,
+  Zap,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -49,6 +50,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Website Audits", path: "/websites", icon: Globe },
       { label: "Campaigns", path: "/campaigns", icon: Megaphone },
+      { label: "Automations", path: "/automations", icon: Zap, badge: "⚡" },
       { label: "Outreach & AI", path: "/outreach", icon: Send },
     ],
   },

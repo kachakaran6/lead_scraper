@@ -212,6 +212,9 @@ model User {
   businesses           Business[]
   discoveryProfiles    DiscoveryProfile[]
   dailyDigests         DailyDigest[]
+  smtpAccounts         SmtpAccount[]
+  whatsappAccounts     WhatsappAccount[]
+  automationCampaigns  AutomationCampaign[]
 
   @@index([email])
   @@index([accountStatus])
@@ -314,6 +317,9 @@ model Business {
   tags               Tag[]
   proposals          Proposal[]
   leadEvents         LeadEvent[]
+  outreachEmails     OutreachEmail[]
+  whatsappMessages   WhatsappMessage[]
+  automationRuns     AutomationRun[]
 
   @@index([userId])
   @@index([name])
@@ -893,5 +899,187 @@ model ProviderHealth {
   updatedAt           DateTime        @updatedAt
 
   @@index([provider])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Email SMTP & Outreach Track
+// ─────────────────────────────────────────────────────────────
+
+model SmtpAccount {
+  id            String          @id @default(uuid())
+  userId        String
+  name          String
+  host          String
+  port          Int             @default(587)
+  secure        Boolean         @default(false)
+  username      String
+  passEncrypted String
+  fromName      String?
+  fromEmail     String?
+  isDefault     Boolean         @default(false)
+  isVerified    Boolean         @default(false)
+  lastUsedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentEmails    OutreachEmail[]
+
+  @@index([userId])
+}
+
+model OutreachEmail {
+  id            String       @id @default(uuid())
+  smtpAccountId String?
+  businessId    String?
+  toEmail       String
+  fromEmail     String?
+  subject       String
+  body          String
+  templateId    String?
+  status        String       @default("PENDING") // PENDING | SENT | FAILED | OPENED | CLICKED
+  messageId     String?
+  sentAt        DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  failReason    String?
+  trackingId    String       @unique @default(uuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  smtpAccount   SmtpAccount? @relation(fields: [smtpAccountId], references: [id], onDelete: SetNull)
+  business      Business?    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([smtpAccountId])
+  @@index([businessId])
+  @@index([status])
+  @@index([trackingId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// WhatsApp Outreach Track
+// ─────────────────────────────────────────────────────────────
+
+model WhatsappAccount {
+  id          String            @id @default(uuid())
+  userId      String
+  name        String
+  status      String            @default("DISCONNECTED") // DISCONNECTED | QR_PENDING | CONNECTED
+  sessionData Json?
+  qrCode      String?
+  phone       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    WhatsappMessage[]
+
+  @@index([userId])
+}
+
+model WhatsappMessage {
+  id          String           @id @default(uuid())
+  accountId   String?
+  businessId  String?
+  toPhone     String
+  message     String
+  status      String           @default("SENT") // PENDING | SENT | DELIVERED | READ | FAILED
+  sentAt      DateTime?        @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+  account     WhatsappAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  business    Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([businessId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Automation Engine Track
+// ─────────────────────────────────────────────────────────────
+
+enum AutomationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model AutomationCampaign {
+  id              String               @id @default(uuid())
+  userId          String
+  name            String
+  description     String?
+  status          AutomationStatus     @default(DRAFT)
+  
+  // Lead Discovery Settings
+  searchQuery     String
+  location        String?
+  dailyLeadTarget Int                  @default(10)
+  totalLeadTarget Int?
+  
+  // Schedule Settings
+  startDate       DateTime             @default(now())
+  endDate         DateTime?
+  timezone        String               @default("UTC")
+  sendWindowStart String               @default("09:00") // HH:MM
+  sendWindowEnd   String               @default("18:00") // HH:MM
+  daysOfWeek      Json                 @default("[1,2,3,4,5]") // Mon-Fri
+  
+  // Filters for discovered leads
+  leadFilters     Json?
+  
+  // Stats
+  leadsDiscovered Int                  @default(0)
+  emailsSent      Int                  @default(0)
+  emailsOpened    Int                  @default(0)
+  emailsClicked   Int                  @default(0)
+  emailsFailed    Int                  @default(0)
+  replies         Int                  @default(0)
+  
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sequences       AutomationSequence[]
+  runs            AutomationRun[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AutomationSequence {
+  id            String             @id @default(uuid())
+  campaignId    String
+  stepIndex     Int                // order: 0, 1, 2, ...
+  channel       String             // EMAIL | WHATSAPP
+  templateId    String?
+  customSubject String?
+  customBody    String?
+  delayDays     Int                @default(0)
+  delayHours    Int                @default(0)
+  condition     String?            // NOT_OPENED | NOT_REPLIED | ALWAYS
+  campaign      AutomationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+}
+
+model AutomationRun {
+  id           String             @id @default(uuid())
+  campaignId   String
+  businessId   String
+  currentStep  Int                @default(0)
+  status       String             @default("ACTIVE") // ACTIVE | COMPLETED | OPTED_OUT
+  startedAt    DateTime           @default(now())
+  nextActionAt DateTime?
+  campaign     AutomationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  business     Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, businessId])
+  @@index([campaignId])
+  @@index([businessId])
   @@index([status])
 }

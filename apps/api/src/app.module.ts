@@ -29,6 +29,10 @@ import { NotesModule } from "./notes/notes.module";
 import { ActivitiesModule } from "./activities/activities.module";
 import { AIModule } from "./ai/ai.module";
 import { AdminModule } from "./admin/admin.module";
+import { SmtpAccountsModule } from "./smtp-accounts/smtp-accounts.module";
+import { OutreachEmailsModule } from "./outreach-emails/outreach-emails.module";
+import { WhatsappModule } from "./whatsapp/whatsapp.module";
+import { AutomationsModule } from "./automations/automations.module";
 
 @Module({
   imports: [
@@ -84,6 +88,13 @@ import { AdminModule } from "./admin/admin.module";
         backoff: { type: "exponential", delay: 5000 },
       },
     }),
+    BullModule.registerQueue({
+      name: "automation",
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: "exponential", delay: 5000 },
+      },
+    }),
     AuthModule,
     AdminModule,
     UsersModule,
@@ -108,6 +119,10 @@ import { AdminModule } from "./admin/admin.module";
     NotesModule,
     ActivitiesModule,
     AIModule,
+    SmtpAccountsModule,
+    OutreachEmailsModule,
+    WhatsappModule,
+    AutomationsModule,
   ],
   providers: [
     {

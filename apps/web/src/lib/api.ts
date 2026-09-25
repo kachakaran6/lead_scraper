@@ -288,4 +288,156 @@ export const leadEngineApi = {
     });
     return res.data;
   },
+
+  // Website Prompt Generator
+  async generateWebsitePrompt(businessId: string) {
+    const res = await api.post("/ai/generate-website-prompt", { businessId });
+    return res.data;
+  },
+
+  // SMTP Accounts
+  async getSmtpAccounts() {
+    const res = await api.get("/smtp-accounts");
+    return res.data;
+  },
+
+  async createSmtpAccount(dto: {
+    name: string;
+    host: string;
+    port?: number;
+    secure?: boolean;
+    username: string;
+    password: string;
+    fromName?: string;
+    fromEmail?: string;
+    isDefault?: boolean;
+  }) {
+    const res = await api.post("/smtp-accounts", dto);
+    return res.data;
+  },
+
+  async updateSmtpAccount(id: string, dto: any) {
+    const res = await api.patch(`/smtp-accounts/${id}`, dto);
+    return res.data;
+  },
+
+  async deleteSmtpAccount(id: string) {
+    const res = await api.delete(`/smtp-accounts/${id}`);
+    return res.data;
+  },
+
+  async testSmtpAccount(id: string, recipientEmail?: string) {
+    const res = await api.post(`/smtp-accounts/${id}/test`, { recipientEmail });
+    return res.data;
+  },
+
+  async setDefaultSmtpAccount(id: string) {
+    const res = await api.post(`/smtp-accounts/${id}/set-default`);
+    return res.data;
+  },
+
+  // Outreach Emails
+  async sendOutreachEmail(dto: {
+    smtpAccountId?: string;
+    businessId?: string;
+    toEmail: string;
+    subject: string;
+    body: string;
+    templateId?: string;
+  }) {
+    const res = await api.post("/outreach-emails", dto);
+    return res.data;
+  },
+
+  async getOutreachEmails(params?: { businessId?: string; status?: string; limit?: number; offset?: number }) {
+    const res = await api.get("/outreach-emails", { params });
+    return res.data;
+  },
+
+  async getOutreachAnalytics() {
+    const res = await api.get("/outreach-emails/analytics");
+    return res.data;
+  },
+
+  // WhatsApp
+  async getWhatsappAccounts() {
+    const res = await api.get("/whatsapp/accounts");
+    return res.data;
+  },
+
+  async createWhatsappAccount(dto: { name: string; phone?: string }) {
+    const res = await api.post("/whatsapp/accounts", dto);
+    return res.data;
+  },
+
+  async deleteWhatsappAccount(id: string) {
+    const res = await api.delete(`/whatsapp/accounts/${id}`);
+    return res.data;
+  },
+
+  async sendWhatsappMessage(dto: {
+    accountId?: string;
+    businessId?: string;
+    toPhone: string;
+    message: string;
+  }) {
+    const res = await api.post("/whatsapp/messages", dto);
+    return res.data;
+  },
+
+  async getWhatsappMessages(businessId?: string) {
+    const res = await api.get("/whatsapp/messages", { params: { businessId } });
+    return res.data;
+  },
+
+  // Automations
+  async getAutomations() {
+    const res = await api.get("/automations");
+    return res.data;
+  },
+
+  async getAutomation(id: string) {
+    const res = await api.get(`/automations/${id}`);
+    return res.data;
+  },
+
+  async createAutomation(dto: any) {
+    const res = await api.post("/automations", dto);
+    return res.data;
+  },
+
+  async updateAutomation(id: string, dto: any) {
+    const res = await api.patch(`/automations/${id}`, dto);
+    return res.data;
+  },
+
+  async deleteAutomation(id: string) {
+    const res = await api.delete(`/automations/${id}`);
+    return res.data;
+  },
+
+  async startAutomation(id: string) {
+    const res = await api.post(`/automations/${id}/start`);
+    return res.data;
+  },
+
+  async pauseAutomation(id: string) {
+    const res = await api.post(`/automations/${id}/pause`);
+    return res.data;
+  },
+
+  async resumeAutomation(id: string) {
+    const res = await api.post(`/automations/${id}/resume`);
+    return res.data;
+  },
+
+  async getAutomationAnalytics(id: string) {
+    const res = await api.get(`/automations/${id}/analytics`);
+    return res.data;
+  },
+
+  async getAutomationRuns(id: string) {
+    const res = await api.get(`/automations/${id}/runs`);
+    return res.data;
+  },
 };
